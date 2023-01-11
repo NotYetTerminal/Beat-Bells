@@ -7,6 +7,7 @@
 
 START   ORG     $1000
 
+    ; sets up time
     MOVE.W  #8,D0
     TRAP    #15
     MOVE.L  D1,last_frame_time
@@ -24,26 +25,28 @@ START   ORG     $1000
     MOVE.B  #50,D0
     TRAP    #15
     
-    ; loads in a sound
-    ;MOVE.L  #'note',$100
-    ;MOVE.L  #'s/a1',$104
-    ;MOVE.L  #'0.wa',$108
-    ;MOVE.B  #'v',$10C
-    ;MOVE.B  #0,$10D
-    
-    ;MOVE.B  #74,D0
-    ;MOVE.W  #$100,A1
-    ;MOVE.B  #0,D1
-    ;TRAP    #15
-    
-    ; plays loaded sound
-    ;MOVE.B  #75,D0
-    ;TRAP    #15
+    ; loads in note rest times
+    LEA     rest_times_array,A1
+    MOVE.B  #2,(A1)
+    ADD.L   #1,A1
+    MOVE.B  #3,(A1)
+    ADD.L   #1,A1
+    MOVE.B  #5,(A1)
+    ADD.L   #1,A1
+    MOVE.B  #7,(A1)
+    ADD.L   #1,A1
+    MOVE.B  #9,(A1)
+    ADD.L   #1,A1
+    MOVE.B  #13,(A1)
+    ADD.L   #1,A1
+    MOVE.B  #17,(A1)
     
     BSR     LOAD_IN_ALL_NOTES
     BSR     PLAY_IN_MUSIC
     SIMHALT
 
+; loads in all notes into DirectX memory
+; some note files do not exist and will cause warnings
 LOAD_IN_ALL_NOTES
     LEA     A10,A1
     FOR D1 = #0 TO #30  DO
@@ -54,7 +57,7 @@ LOAD_IN_ALL_NOTES
 
     RTS
 
-
+; plays music that is loaded in
 PLAY_IN_MUSIC
     LEA     FILE_CONTENTS,A0
     MOVE.L  #0,D3
@@ -89,15 +92,24 @@ PLAY_IN_MUSIC
                 IF #0 <NE> D2   THEN
                     MOVE.B  D6,D1
                     ADD.B   D6,D1
-                    BTST.L  #3,D2
+                    BTST.L  #3,D2                    
                     IF  <NE>    THEN
                         ADD.B   #16,D1
                         SUB.B   #8,D2
+                        ; choose which rest time to put in
+                        LEA     rest_times_array,A2
+                        ADD.L   D2,A2
+                        SUB.L   #1,A2
+                        ; puts in rest time
                         ADD.L   #16,A1
-                        MOVE.B  D2,(A1)
+                        MOVE.B  (A2),(A1)
                         SUB.L   #16,A1
                     ELSE
-                        MOVE.B  D2,(A1)
+                        ; choose which rest time to put in
+                        LEA     rest_times_array,A2
+                        ADD.L   D2,A2
+                        SUB.L   #1,A2
+                        MOVE.B  (A2),(A1)
                     ENDI
                     MOVE.B  #75,D0
                     TRAP    #15
@@ -107,37 +119,47 @@ PLAY_IN_MUSIC
                     ADD.B   D6,D1
                     ADD.B   #1,D1
                     BTST.L  #3,D3
+                    ADD.L   #1,A1
                     IF  <NE>    THEN
                         ADD.B   #16,D1
                         SUB.B   #8,D3
+                        ; choose which rest time to put in
+                        LEA     rest_times_array,A2
+                        ADD.L   D3,A2
+                        SUB.L   #1,A2
+                        ; puts in rest time
                         ADD.L   #16,A1
-                        MOVE.B  D3,(A1)
+                        MOVE.B  (A2),(A1)
                         SUB.L   #16,A1
                     ELSE
-                        MOVE.B  D3,(A1)
+                        ; choose which rest time to put in
+                        LEA     rest_times_array,A2
+                        ADD.L   D3,A2
+                        SUB.L   #1,A2
+                        MOVE.B  (A2),(A1)
                     ENDI
+                    SUB.L   #1,A1
                     MOVE.B  #75,D0
                     TRAP    #15
                 ENDI
             ENDI
             ADD.W   #1,A0
-            ADD.L   #1,A1
+            ADD.L   #2,A1
         ENDF
         ; loops over music time array
         ; decrements times for each note
         LEA notes_times_array,A1
         FOR D6 = #0 TO #30  DO
             ADD.L   D6,A1
-            IF.B    (A1) <NE> #0    THEN
-                IF.B    (A1) <NE> #$FF  THEN
-                    SUB.B   #1,(A1)
-                    IF.B    (A1) <EQ> #0    THEN
-                        ; stops a note playing
-                        MOVE.B  D6,D1
-                        MOVE.L  #2,D2
-                        MOVE.B  #77,D0
-                        TRAP    #15
-                    ENDI
+            IF.B    (A1) <NE> #$FF  THEN
+                SUB.B   #1,(A1)
+                IF.B    (A1) <EQ> #0    THEN
+                    ; stops a note playing
+                    MOVE.B  D6,D1
+                    MOVE.L  #2,D2
+                    MOVE.B  #77,D0
+                    TRAP    #15
+                    MOVE.B  #$FF,(A1)
                 ENDI
             ENDI
             SUB.L   D6,A1
@@ -202,13 +224,15 @@ G21 DC.B    'notes/g21.wav',0
 
 A31 DC.B    'notes/a31.wav',0
 
-notes_times_array   DS.B    31
-
+notes_times_array   DS.B    31  ; contains the times for each note that needs to be hold
+rest_times_array    DS.B    7   ; contains the number of quater beats needed for each note
 
 FILENAME    DC.B    'songs/number_one.sun',0
 FILE_CONTENTS   DS.B    512
 
     END    START
+
+
 
 
 
