@@ -59,8 +59,8 @@ PLAY_IN_MUSIC
     LEA     FILE_CONTENTS,A0
     MOVE.L  #0,D3
     FOR D5 = #0 TO #63  DO
+        LEA notes_times_array,A1
         FOR D6 = #0 TO #7   DO
-            ADD.W   #1,A0
             MOVE.B  (A0),D3
             MOVE.L  #0,D2
             IF.L #0 <NE> D3 THEN
@@ -88,25 +88,61 @@ PLAY_IN_MUSIC
                 ; checks if note is played
                 IF #0 <NE> D2   THEN
                     MOVE.B  D6,D1
+                    ADD.B   D6,D1
                     BTST.L  #3,D2
                     IF  <NE>    THEN
                         ADD.B   #16,D1
+                        SUB.B   #8,D2
+                        ADD.L   #16,A1
+                        MOVE.B  D2,(A1)
+                        SUB.L   #16,A1
+                    ELSE
+                        MOVE.B  D2,(A1)
                     ENDI
                     MOVE.B  #75,D0
                     TRAP    #15
                 ENDI
                 IF #0 <NE> D3   THEN
                     MOVE.B  D6,D1
+                    ADD.B   D6,D1
+                    ADD.B   #1,D1
                     BTST.L  #3,D3
                     IF  <NE>    THEN
                         ADD.B   #16,D1
+                        SUB.B   #8,D3
+                        ADD.L   #16,A1
+                        MOVE.B  D3,(A1)
+                        SUB.L   #16,A1
+                    ELSE
+                        MOVE.B  D3,(A1)
                     ENDI
                     MOVE.B  #75,D0
                     TRAP    #15
                 ENDI
             ENDI
-            BSR FRAME_DELAY
+            ADD.W   #1,A0
+            ADD.L   #1,A1
         ENDF
+        ; loops over music time array
+        ; decrements times for each note
+        LEA notes_times_array,A1
+        FOR D6 = #0 TO #30  DO
+            ADD.L   D6,A1
+            IF.B    (A1) <NE> #0    THEN
+                IF.B    (A1) <NE> #$FF  THEN
+                    SUB.B   #1,(A1)
+                    IF.B    (A1) <EQ> #0    THEN
+                        ; stops a note playing
+                        MOVE.B  D6,D1
+                        MOVE.L  #2,D2
+                        MOVE.B  #77,D0
+                        TRAP    #15
+                    ENDI
+                ENDI
+            ENDI
+            SUB.L   D6,A1
+        ENDF
+        BSR FRAME_DELAY
     ENDF
 
     RTS
@@ -117,7 +153,7 @@ FRAME_DELAY
         TRAP    #15
 
         SUB.L   last_frame_time,D1  ; subtracts the two times
-        CMP.L   #1,D1               ; n number of centiseconds have passed
+        CMP.L   #10,D1               ; n number of centiseconds have passed
         BLO     frame_delay
 
         MOVE.W  #8,D0               ; save time
@@ -166,11 +202,16 @@ G21 DC.B    'notes/g21.wav',0
 
 A31 DC.B    'notes/a31.wav',0
 
+notes_times_array   DS.B    31
+
 
 FILENAME    DC.B    'songs/number_one.sun',0
 FILE_CONTENTS   DS.B    512
 
     END    START
+
+
+
 
 
 
