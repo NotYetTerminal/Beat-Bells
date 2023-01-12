@@ -19,7 +19,7 @@ START   ORG     $1000
 
     MOVE.B  #53,D0
     LEA     FILE_CONTENTS,A1
-    MOVE.L  #512,D2
+    MOVE.L  #FILE_SIZE,D2
     TRAP    #15
     
     MOVE.B  #50,D0
@@ -61,7 +61,7 @@ LOAD_IN_ALL_NOTES
 PLAY_IN_MUSIC
     LEA     FILE_CONTENTS,A0
     MOVE.L  #0,D3
-    FOR D5 = #0 TO #63  DO
+    FOR D5 = #0 TO #SECOND_SIZE-1 DO
         LEA notes_times_array,A1
         FOR D6 = #0 TO #7   DO
             MOVE.B  (A0),D3
@@ -175,7 +175,7 @@ FRAME_DELAY
         TRAP    #15
 
         SUB.L   last_frame_time,D1  ; subtracts the two times
-        CMP.L   #10,D1               ; n number of centiseconds have passed
+        CMP.L   #8,D1               ; n number of centiseconds have passed
         BLO     frame_delay
 
         MOVE.W  #8,D0               ; save time
@@ -227,10 +227,14 @@ A31 DC.B    'notes/a31.wav',0
 notes_times_array   DS.B    31  ; contains the times for each note that needs to be hold
 rest_times_array    DS.B    7   ; contains the number of quater beats needed for each note
 
-FILENAME    DC.B    'songs/number_one.sun',0
-FILE_CONTENTS   DS.B    512
+FILE_SIZE   EQU     12032      ; the size of the .sun file in bytes
+SECOND_SIZE EQU     1504       ; the size of the .sun file divided by 8 in bytes
+
+FILENAME    DC.B    'songs/number_two.sun',0
+FILE_CONTENTS   DS.B    FILE_SIZE
 
     END    START
+
 
 
 
