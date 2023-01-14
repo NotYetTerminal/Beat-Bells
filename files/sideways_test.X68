@@ -19,6 +19,7 @@
 * 
 * Gameplay
 * implement difficulty for see through notes
+* psudo randomize note path index
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
