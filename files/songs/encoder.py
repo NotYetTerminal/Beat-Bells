@@ -51,61 +51,8 @@ for beat_string in song_data:
     current_beat_bytes = [0, 0, 0, 0, 0, 0, 0, 0]
 
 
-with open(file_name + '.sun', 'wb') as f:
+with open(file_name, 'wb') as f:
     f.write(bytearray(outputting_data))
 
 print('Done')
 
-# current_beat_bytes: list = [0, 0, 0, 0, 0, 0, 0, 0]
-# input_data: str = ''
-# while True:
-#     input_data = input('Note: ').lower()
-#     if input_data == 'q':
-#         outputting_data.extend(current_beat_bytes)
-#         print(current_beat_bytes)
-#         print('Quitting')
-#         break
-#     if input_data =='i':
-#         outputting_data.extend(current_beat_bytes)
-#         print(current_beat_bytes)
-#         current_beat_bytes = [0, 0, 0, 0, 0, 0, 0, 0]
-#         print('Beat saved')
-#         continue
-#     if input_data == 'd':
-#         for index in range(8):
-#             outputting_data.pop()
-#         print('Deleted')
-#         continue
-#     if input_data[0] == '0':
-#         for index in range(int(input_data[1:])):
-#             outputting_data.extend(current_beat_bytes)
-#             print(current_beat_bytes)
-#             current_beat_bytes = [0, 0, 0, 0, 0, 0, 0, 0]
-#             print('Beat saved')
-#         continue
-
-#     # input_data structure is 4a20
-#     # length of note
-#     # note and scale
-#     # if it is a sharp
-
-#     if len(input_data) == 3:
-#         input_data += '0'
-#     if len(input_data) != 4:
-#         print('Error length')
-#         continue
-
-#     if input_data[1:3] in notes_dict.keys():
-#         byte_index: int = int(notes_dict[input_data[1:3]] // 2)
-#         note_number: int = (int(input_data[3]) * 8) + int(input_data[0])
-#         if notes_dict[input_data[1:3]] % 2 == 0:
-#             note_number *= 16
-#         current_beat_bytes[byte_index] += note_number
-#     else:
-#         print('Note note found')
-
-
-# with open(input('File name: '), 'wb') as f:
-#     f.write(bytearray(outputting_data))
-
-# print('Done')

@@ -1,11 +1,16 @@
 *-----------------------------------------------------------
-* Title      :
-* Written by :
-* Date       :
-* Description:
+* Title      :  music reader test
+* Written by :  Gabor Major
+* Date       :  12/01/2023
+* Description:  test for project
 *-----------------------------------------------------------
 
 START   ORG     $1000
+
+    ; checks if $10000 has been accidentally used
+    IF.L FILE_CONTENTS <NE> #$FFFFFFFF  THEN
+        DIVU    #0,D0
+    ENDI
 
     ; sets up time
     MOVE.W  #8,D0
@@ -14,17 +19,24 @@ START   ORG     $1000
 
     ; loads in a song binary file
     MOVE.B  #51,D0
-    LEA     FILENAME,A1
+    LEA     file_name,A1
     TRAP    #15
 
     MOVE.B  #53,D0
     LEA     FILE_CONTENTS,A1
-    MOVE.L  #FILE_SIZE,D2
+    MOVE.L  #$FFFFF,D2
     TRAP    #15
     
     MOVE.B  #50,D0
     TRAP    #15
     
+    ; saves the file size
+    MOVE.L  D2,file_size
+    DIVU    #8,D2
+    MOVE.L  #0,D1
+    MOVE.W  D2,D1
+    MOVE.L  D1,second_size
+
     ; loads in note rest times
     LEA     rest_times_array,A1
     MOVE.B  #2,(A1)
@@ -48,11 +60,18 @@ START   ORG     $1000
 ; loads in all notes into DirectX memory
 ; some note files do not exist and will cause warnings
 LOAD_IN_ALL_NOTES
-    LEA     A10,A1
+    LEA     BASIC_PATH,A1
+    LEA     A10,A2
     FOR D1 = #0 TO #30  DO
+        FOR D2 = #0 TO #2   DO
+            MOVE.L  A1,A3
+            ADD.W   #6,A3
+            ADD.W   D2,A3
+            MOVE.B  (A2),(A3)
+            ADD.W   #1,A2
+        ENDF
         MOVE.B  #74,D0
         TRAP    #15
-        ADD.W   #14,A1
     ENDF
 
     RTS
@@ -102,6 +121,12 @@ PLAY_IN_MUSIC
                         SUB.L   #1,A2
                         ; puts in rest time
                         ADD.L   #16,A1
+                        ; stops a note playing if it is
+                        IF.B (A1) <NE> #$FF   THEN
+                            MOVE.L  #2,D2
+                            MOVE.L  #77,D0
+                            TRAP    #15
+                        ENDI
                         MOVE.B  (A2),(A1)
                         SUB.L   #16,A1
                     ELSE
@@ -109,6 +134,12 @@ PLAY_IN_MUSIC
                         LEA     rest_times_array,A2
                         ADD.L   D2,A2
                         SUB.L   #1,A2
+                        ; stops a note playing if it is
+                        IF.B (A1) <NE> #$FF   THEN
+                            MOVE.L  #2,D2
+                            MOVE.L  #77,D0
+                            TRAP    #15
+                        ENDI
                         MOVE.B  (A2),(A1)
                     ENDI
                     MOVE.B  #75,D0
@@ -129,6 +160,12 @@ PLAY_IN_MUSIC
                         SUB.L   #1,A2
                         ; puts in rest time
                         ADD.L   #16,A1
+                        ; stops a note playing if it is
+                        IF.B (A1) <NE> #$FF   THEN
+                            MOVE.L  #2,D2
+                            MOVE.L  #77,D0
+                            TRAP    #15
+                        ENDI
                         MOVE.B  (A2),(A1)
                         SUB.L   #16,A1
                     ELSE
@@ -136,6 +173,12 @@ PLAY_IN_MUSIC
                         LEA     rest_times_array,A2
                         ADD.L   D3,A2
                         SUB.L   #1,A2
+                        ; stops a note playing if it is
+                        IF.B (A1) <NE> #$FF   THEN
+                            MOVE.L  #2,D2
+                            MOVE.L  #77,D0
+                            TRAP    #15
+                        ENDI
                         MOVE.B  (A2),(A1)
                     ENDI
                     SUB.L   #1,A1
@@ -157,7 +200,7 @@ PLAY_IN_MUSIC
                     ; stops a note playing
                     MOVE.B  D6,D1
                     MOVE.L  #2,D2
-                    MOVE.B  #77,D0
+                    MOVE.L  #77,D0
                     TRAP    #15
                     MOVE.B  #$FF,(A1)
                 ENDI
@@ -175,7 +218,7 @@ FRAME_DELAY
         TRAP    #15
 
         SUB.L   last_frame_time,D1  ; subtracts the two times
-        CMP.L   #8,D1               ; n number of centiseconds have passed
+        CMP.L   #10,D1               ; n number of centiseconds have passed
         BLO     frame_delay
 
         MOVE.W  #8,D0               ; save time
@@ -187,53 +230,57 @@ FRAME_DELAY
 last_frame_time         DS.L    1   ; stores the time at last frame
 
 ; notes names
-A10 DC.B    'notes/a10.wav',0
-B10 DC.B    'notes/b10.wav',0
-C10 DC.B    'notes/c10.wav',0
-D10 DC.B    'notes/d10.wav',0
-E10 DC.B    'notes/e10.wav',0
-F10 DC.B    'notes/f10.wav',0
-G10 DC.B    'notes/g10.wav',0
+BASIC_PATH  DC.B    'notes/aaa.wav',0
+A10 DC.B    'a10'
+B10 DC.B    'b10'
+C10 DC.B    'c10'
+D10 DC.B    'd10'
+E10 DC.B    'e10'
+F10 DC.B    'f10'
+G10 DC.B    'g10'
 
-A20 DC.B    'notes/a20.wav',0
-B20 DC.B    'notes/b20.wav',0
-C20 DC.B    'notes/c20.wav',0
-D20 DC.B    'notes/d20.wav',0
-E20 DC.B    'notes/e20.wav',0
-F20 DC.B    'notes/f20.wav',0
-G20 DC.B    'notes/g20.wav',0
+A20 DC.B    'a20'
+B20 DC.B    'b20'
+C20 DC.B    'c20'
+D20 DC.B    'd20'
+E20 DC.B    'e20'
+F20 DC.B    'f20'
+G20 DC.B    'g20'
 
-A30 DC.B    'notes/a30.wav',0
-B30 DC.B    'notes/b30.wav',0
+A30 DC.B    'a30'
+B30 DC.B    'b30'
 
-A11 DC.B    'notes/a11.wav',0
-B11 DC.B    'notes/b11.wav',0
-C11 DC.B    'notes/c11.wav',0
-D11 DC.B    'notes/d11.wav',0
-E11 DC.B    'notes/e11.wav',0
-F11 DC.B    'notes/f11.wav',0
-G11 DC.B    'notes/g11.wav',0
+A11 DC.B    'a11'
+B11 DC.B    'b11'
+C11 DC.B    'c11'
+D11 DC.B    'd11'
+E11 DC.B    'e11'
+F11 DC.B    'f11'
+G11 DC.B    'g11'
 
-A21 DC.B    'notes/a21.wav',0
-B21 DC.B    'notes/b21.wav',0
-C21 DC.B    'notes/c21.wav',0
-D21 DC.B    'notes/d21.wav',0
-E21 DC.B    'notes/e21.wav',0
-F21 DC.B    'notes/f21.wav',0
-G21 DC.B    'notes/g21.wav',0
+A21 DC.B    'a21'
+B21 DC.B    'b21'
+C21 DC.B    'c21'
+D21 DC.B    'd21'
+E21 DC.B    'e21'
+F21 DC.B    'f21'
+G21 DC.B    'g21'
 
-A31 DC.B    'notes/a31.wav',0
+A31 DC.B    'a31'
 
 notes_times_array   DS.B    31  ; contains the times for each note that needs to be hold
 rest_times_array    DS.B    7   ; contains the number of quater beats needed for each note
 
-FILE_SIZE   EQU     12032      ; the size of the .sun file in bytes
-SECOND_SIZE EQU     1504       ; the size of the .sun file divided by 8 in bytes
+file_size   DS.L    1      ; the size of the .sun file in bytes
+second_size DS.L    1      ; the size of the .sun file divided by 8 in bytes
 
-FILENAME    DC.B    'songs/number_two.sun',0
-FILE_CONTENTS   DS.B    FILE_SIZE
+file_name       DC.B    'songs/number_one',0
+; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
+FILE_CONTENTS   EQU     $10000
 
     END    START
+
+
 
 
 

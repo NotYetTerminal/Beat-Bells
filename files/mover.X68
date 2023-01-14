@@ -27,7 +27,7 @@ START   ORG    $1000
         MOVE.L		#17,D1
 		TRAP		#15
 
-        ; store time in variable
+        ; store time in variableS
         MOVE.W  #8,D0
         TRAP    #15
         MOVE.L  D1,last_frame_time
@@ -874,6 +874,7 @@ WHITE       EQU     $00FFFFFF
 
 
     END     START
+
 
 
 
