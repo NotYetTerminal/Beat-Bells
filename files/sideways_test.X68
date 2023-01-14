@@ -8,7 +8,6 @@
 * TODO
 * Notes
 * drawing notes should be looped over lane objects
-* notes need to be put in lane objects array
 * notes need to be moved to the left
 * notes need to be deleted when gone past the beat line, MUST CHANGE THE COLOUR TO #$FFFF
 * notes need to be played when hit at beat line
@@ -20,6 +19,9 @@
 * 
 * Gameplay
 * implement difficulty for see through notes
+* 
+* Graphics
+* check if the centre of lanes is calculated correctly
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -351,6 +353,20 @@ SPAWN_NEW_NOTE
         RTS
 
 
+; returns new object address in A2
+; 0 in A2 means that the array is full
+CREATE_NOTE_OBJECT
+        LEA     note_objects,A2
+        FOR D5 = #0 TO #15  DO
+            IF.W (A2) <EQ> #$FFFF   THEN
+                RTS
+            ENDI
+            ADD.W   #NOTE_OBJECT_SIZE,A2
+        ENDF
+        MOVE.L  #0,A2
+        RTS
+
+
 LOAD_NOTE_DATA
         ; load the music data into the note object
         SUB.W   #4,A0
@@ -378,9 +394,16 @@ LOAD_NOTE_DATA
         ADD.W   #2,A2
         MOVE.W  #SCREEN_WIDTH/2,(A2)
         ADD.W   #2,A2
-        MOVE.L  note_path_index,D2
+        CLR     D2
+        MOVE.B  note_path_index,D2
         BSR     GET_LANE_Y_POSITION
         MOVE.W  D3,(A2)
+        SUB.W   #NOTE_SIZE/2,(A2)
+
+        ; adds note object to the end of the lane queue
+        BSR     GET_LANE_ADDRESS_FROM_INDEX
+        SUB.W   #4,A2
+        BSR     ENQUEUE_OBJECT_TO_LANE
         RTS
             
 
@@ -442,7 +465,48 @@ CHOOSE_RANDOM_AND_PICK
 
 ASSIGN_COLOUR_INDEX
         SUB.W   #6,A2
+        ; modulo 7
+        IF D3 <GE> #7   THEN
+            SUB.B   #7,D3
+            IF D3 <GE> #7   THEN
+                SUB.B   #7,D3
+            ENDI
+        ENDI
         MOVE.W  D3,(A2)
+        RTS
+
+
+; returns the lane address in A0
+GET_LANE_ADDRESS_FROM_INDEX
+        IF.B note_path_index <EQ> #0    THEN
+            LEA     lane_0_object_addresses,A0
+        ELSE
+            IF.B note_path_index <EQ> #1    THEN
+                LEA     lane_1_object_addresses,A0
+            ELSE
+                IF.B note_path_index <EQ> #2    THEN
+                    LEA     lane_2_object_addresses,A0
+                ELSE
+                    IF.B note_path_index <EQ> #3    THEN
+                        LEA     lane_3_object_addresses,A0
+                    ELSE
+                        LEA     lane_4_object_addresses,A0
+                    ENDI
+                ENDI
+            ENDI
+        ENDI
+        RTS
+
+
+; uses A1
+; lane address needs to be in A0
+; object address needs to be in A2
+ENQUEUE_OBJECT_TO_LANE
+        MOVE.L  A0,A1
+        SUB.W   #2,A1
+        ADD.W   (A1),A0
+        MOVE.W  A2,(A0)
+        ADD.W   #2,(A1)
         RTS
 
 * SPAWN_NEW_NOTE_OLD
@@ -530,19 +594,6 @@ ASSIGN_COLOUR_INDEX
         * ENDF
         * ADD.L   #8,song_file_index
         * RTS
-
-; returns new object address in A2
-; 0 in A2 means that the array is full
-CREATE_NOTE_OBJECT
-        LEA     note_objects,A2
-        FOR D5 = #0 TO #15  DO
-            IF.W (A2) <EQ> #$FFFF   THEN
-                RTS
-            ENDI
-            ADD.W   #NOTE_OBJECT_SIZE,A2
-        ENDF
-        MOVE.L  #0,A2
-        RTS
 
 
 PLAY_MUSIC_ON_HIT
@@ -919,13 +970,20 @@ player_1_position       DS.W    2       ; stores the top right player position x
 player_1_lane_number    DS.B    1       ; stores the lane number
 player_1_moving         DS.B    1       ; stores whther the player is moving up or down
 
+; stores the number of objects in the arrays
+lane_0_object_count     DC.B    0
 ; stores the addresses of objects in the rows
 ; these are queues
 lane_0_object_addresses DS.W    16
+lane_1_object_count     DC.W    0
 lane_1_object_addresses DS.W    16
+lane_2_object_count     DC.W    0
 lane_2_object_addresses DS.W    16
+lane_3_object_count     DC.W    0
 lane_3_object_addresses DS.W    16
+lane_4_object_count     DC.W    0
 lane_4_object_addresses DS.W    16
+
 
 note_objects            DS.W    NOTE_OBJECT_SIZE*8    ; stores the notes objects data
 ;   note object structure:
@@ -975,6 +1033,9 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
+
+
 
 
 
