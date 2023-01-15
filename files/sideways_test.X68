@@ -9,7 +9,6 @@
 * Notes
 * drawing notes should be looped over lane objects
 * notes need to play automatically when invisible NOT TESTED YET
-* decrement note times
 * 
 * Controls
 * add delay to repeted actions, but not when action is correct
@@ -19,12 +18,19 @@
 * change the timing of notes spawning
 * make it so that only on every full or half beat the notes are spawned
 * change psudo random path index to change after long not change
+* make it so there is a delay before ending the game
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
 * change beat line to be only infront of player
 * change only player beat line and player model colours
 * GRAPHICAL TESTING
+* 
+* 
+* ISSUES
+* weird ghost notes, that play when they shouldn't
+* sometimes some notes don't render
+* song file index goes above what is required
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -298,17 +304,29 @@ CHECK_COLLISIONS
         ENDF
         RTS
 
+
 ; must not use D5, A0, A1
 PLAY_MUSIC_ON_HIT
-        ; sets the position to the left to make the note disappear when cheking collision
+        ; sets the position to the left to make the note disappear when checking collision
         ADD.W   #2,A1
         CLR     (A1)
         ADD.W   #4,A1
+
+        CLR 	D3
+        FOR D6 = #0 TO #7   DO
+            IF.B (A1,D6) <NE> #0    THEN
+                MOVE.B  #1,D3
+            ENDI
+        ENDF
+
+        IF.B D3 <NE> #0 THEN
+            CLR     D3
+        ENDI
         
         CLR 	D3
-        LEA notes_times_array,A2
+        LEA     notes_times_array,A2
         FOR D6 = #0 TO #7   DO
-            MOVE.B  (A1),D3
+            MOVE.B  (A1,D6),D3
             IF.L #0 <NE> D3 THEN
                 CLR     D2
                 ; splits the four bits of d2 byte into d1
@@ -353,15 +371,16 @@ PLAY_MUSIC_ON_HIT
                     TRAP    #15
                 ENDI
                 IF #0 <NE> D3   THEN
+                    MOVE.B  D3,D2
                     MOVE.B  D6,D1
                     LSL.B   #1,D1
                     ADD.B   #1,D1
                     ; checks for sharp
-                    BTST.L  #3,D3
+                    BTST.L  #3,D2
                     ADD.L   #1,A2
                     IF  <NE>    THEN
                         ADD.B   #16,D1
-                        SUB.B   #8,D3
+                        SUB.B   #8,D2
                         BSR     REST_TIME_FROM_INDEX
                         ; puts in rest time
                         ADD.L   #16,A2
@@ -379,10 +398,9 @@ PLAY_MUSIC_ON_HIT
                     TRAP    #15
                 ENDI
             ENDI
-            ADD.W   #1,A1
             ADD.L   #2,A2
         ENDF
-        SUB.W   #14,A1
+        SUB.W   #6,A1
 
         RTS
 
@@ -566,6 +584,10 @@ CHANGE_PATH_INDEX
 
 SPAWN_NEW_NOTE
         MOVE.L  song_file_index,A0
+        ; song has ended
+        IF.L (A0) <EQ> #$FFFFFFFF   THEN
+            BSR     EXIT_PROGRAM
+        ENDI
         ; two longs are checked if there are any notes being played
         IF.L #0 <NE> (A0) THEN
             ADD.W   #4,A0
