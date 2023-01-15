@@ -33,6 +33,7 @@
 * NOTES ARE REFERENCED WRONG WHEN PUT INTO THE LANE QUEUES
 * or when left shifting
 * or something else is modify the queues
+* GO THROUGH CLR AND CHANGE THEM TO LONGS
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -53,7 +54,7 @@ START   ORG    $1000
 
         ; turn off input echo
         MOVE.L  #12,D0
-        CLR     D1
+        ; 0 in D1
         TRAP    #15
         
         ; turn on double buffering
@@ -157,10 +158,6 @@ LOAD_IN_SONG
 ; saves the file size
 SAVE_FILE_SIZE
         MOVE.L  D2,file_size
-        DIVU    #8,D2
-        CLR     D1
-        MOVE.W  D2,D1
-        MOVE.L  D1,second_size
         RTS
 
 
@@ -311,10 +308,10 @@ CHECK_COLLISIONS
 PLAY_MUSIC_ON_HIT
         ; sets the position to the left to make the note disappear when checking collision
         ADD.W   #2,A1
-        CLR     (A1)
+        CLR.W   (A1)
         ADD.W   #4,A1
 
-        CLR 	D3
+        CLR.L 	D3
         LEA     notes_times_array,A2
         FOR D6 = #0 TO #7   DO
             MOVE.B  (A1,D6),D3
@@ -400,7 +397,7 @@ STOP_NOTE_PLAYING
         ENDI
         RTS
 
-; shifts the lane in A0 one to the left, deleting the ojetct at index 0
+; shifts the lane in A0 one to the left, deleting the object at index 0
 LANE_LEFT_SHIFT
         MOVE.W  A0,A2
         SUB.W   #2,A2
@@ -517,7 +514,7 @@ HANDLE_MOVEMENT
 
 
 CHANGE_PLAYER_1_POSITION
-        CLR     D2
+        CLR.L   D2
         MOVE.B  player_1_lane_number,D2
         BSR     GET_LANE_Y_POSITION
         MOVE.W  D3,player_1_position+2
@@ -604,6 +601,8 @@ CREATE_NOTE_OBJECT
 
 
 LOAD_NOTE_DATA
+        MOVE.L  #$A0000000,D7
+        BSR     CHECK_A2_ENDING
         ; load the music data into the note object
         SUB.W   #4,A0
         ADD.W   #6,A2
@@ -611,10 +610,12 @@ LOAD_NOTE_DATA
         ADD.W   #4,A0
         ADD.W   #4,A2
         MOVE.L  (A0),(A2)
+        MOVE.L  #$40000000,D7
+        BSR     CHECK_A2_ENDING
 
         ; assign a colour based on the playing notes
         ; and the difficulty
-        CLR     D3
+        CLR.L   D3
         ADD.W   #3,A2
         FOR D5 = #0 TO #7  DO
             IF.B (A2) <NE> #0   THEN
@@ -623,25 +624,47 @@ LOAD_NOTE_DATA
             SUB.W   #1,A2
         ENDF
         ADD.W   #1,A2
+        MOVE.L  #$00000000,D7
+        BSR     CHECK_A2_ENDING
 
         BSR     PICK_NOTE_COLOUR
+        MOVE.L  #$A0000000,D7
+        BSR     CHECK_A2_ENDING
 
         ; assign x and y position based on the path index
         ADD.W   #2,A2
         MOVE.W  #SCREEN_WIDTH,(A2)
         ADD.W   #2,A2
-        CLR     D2
+        CLR.L   D2
         MOVE.B  note_path_index,D2
         BSR     GET_LANE_Y_POSITION
         MOVE.W  D3,(A2)
         SUB.W   #NOTE_SIZE/2,(A2)
+        MOVE.L  #$E0000000,D7
+        BSR     CHECK_A2_ENDING
 
         ; adds note object to the end of the lane queue
         BSR     GET_LANE_ADDRESS_FROM_INDEX
         SUB.W   #4,A2
+        MOVE.L  #$A0000000,D7
+        BSR     CHECK_A2_ENDING
         BSR     ENQUEUE_OBJECT_TO_LANE
+        MOVE.L  #$A0000000,D7
+        BSR     CHECK_A2_ENDING
         RTS
-            
+       
+
+CHECK_A2_ENDING
+        MOVE.L  A2,D4
+        LSL.L   #8,D4
+        LSL.L   #8,D4
+        LSL.L   #8,D4
+        LSL.L   #4,D4
+        IF.L D4 <NE> D7 THEN
+            SIMHALT
+        ENDI
+        RTS
+     
 
 ; choose a random frequency to pick as the visible colour
 PICK_NOTE_COLOUR
@@ -650,7 +673,8 @@ PICK_NOTE_COLOUR
         ELSE
             MOVE.W  #1,D2
         ENDI
-        CLR     D3
+        CLR.L   D3
+        CLR.L   D7
         FOR D5 = #0 TO #7   DO
             IF.B (A2,D5) <NE> #0    THEN
                 SUB.B   #1,D2
@@ -675,6 +699,7 @@ PICK_NOTE_COLOUR
                         ENDI
                         ; only left side has bits
                         BSR     ASSIGN_COLOUR_INDEX
+                        RTS
                     ELSE
                         ; second half of byte
                         ADD.B   #1,D3
@@ -1042,7 +1067,6 @@ notes_times_array       DS.B    31      ; contains the times for each note that 
 rest_times_array        DS.B    7       ; contains the number of quater beats needed for each note
 
 file_size               DS.L    1      ; stores the size of the song file in bytes
-second_size             DS.L    1      ; stores the size of the song file divided by 8 in bytes
 file_name               DC.B    'songs/number_one',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
