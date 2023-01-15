@@ -314,12 +314,17 @@ PLAY_MUSIC_ON_HIT
 
         CLR 	D3
         FOR D6 = #0 TO #7   DO
-            IF.B (A1,D6) <NE> #0    THEN
+            MOVE.B  (A1,D6),D7
+            IF.B D7 <GT> #15    THEN
+                MOVE.B  #1,D3
+            ENDI
+            LSL.B   #4,D7
+            IF.B D7 <GT> #15    THEN
                 MOVE.B  #1,D3
             ENDI
         ENDF
 
-        IF.B D3 <NE> #0 THEN
+        IF.B D3 <GT> #1 THEN
             CLR     D3
         ENDI
         
@@ -329,7 +334,7 @@ PLAY_MUSIC_ON_HIT
             MOVE.B  (A1,D6),D3
             IF.L #0 <NE> D3 THEN
                 CLR     D2
-                ; splits the four bits of d2 byte into d1
+                ; splits the four bits of d3 byte into d2
                 BCLR.L  #7,D3
                 IF  <NE>    THEN
                     ADD.B   #8,D2
