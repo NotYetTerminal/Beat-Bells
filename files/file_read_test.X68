@@ -86,7 +86,7 @@ PLAY_IN_MUSIC
             MOVE.B  (A0),D3
             MOVE.L  #0,D2
             IF.L #0 <NE> D3 THEN
-                ; splits the four bits of d2 byte into d1
+                ; splits the four bits of d3 byte into d2
                 BTST.L  #7,D3
                 IF  <NE>    THEN
                     ADD.B   #8,D2

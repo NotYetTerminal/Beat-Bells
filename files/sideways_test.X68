@@ -26,9 +26,8 @@
 * change only player beat line and player model colours
 * GRAPHICAL TESTING
 * 
-* 
 * ISSUES
-* notes are played off key
+* at the big slap the note times array is incorrect
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -41,6 +40,7 @@ BEAT_LINE_X         EQU     200
 PLAYER_SIZE         EQU     20
 NOTE_SIZE           EQU     40
 
+; should be 14 but put it up for debug purposes
 NOTE_OBJECT_SIZE    EQU     16
 
 
@@ -310,10 +310,13 @@ PLAY_MUSIC_ON_HIT
         LEA     notes_times_array,A2
         FOR D6 = #0 TO #7   DO
             MOVE.B  (A1,D6),D3
-            IF.B #0 <NE> D3 THEN
-                ; splits the four bits of d3 byte into d2
-                IF.B D3 <GT> #15    THEN
+            IF #0 <NE> D3   THEN
+                IF D3 <GT> #15  THEN
+                    ; splits the upper four bits of D3.B into D2.B
                     MOVE.L  D3,D2
+                    LSR.B   #4,D2
+                    LSL.B   #4,D2
+                    SUB.B   D2,D3
                     LSR.B   #4,D2
 
                     MOVE.B  D6,D1
@@ -341,13 +344,14 @@ PLAY_MUSIC_ON_HIT
                     LSL.B   #4,D3
                 ENDI
                 IF #0 <NE> D3   THEN
-                    MOVE.B  D3,D2
+                    MOVE.L  D3,D2
+
                     MOVE.B  D6,D1
                     LSL.B   #1,D1
                     ADD.B   #1,D1
+                    ADD.L   #1,A2
                     ; checks for sharp
                     BTST.L  #3,D2
-                    ADD.L   #1,A2
                     IF  <NE>    THEN
                         ADD.B   #16,D1
                         SUB.B   #8,D2
