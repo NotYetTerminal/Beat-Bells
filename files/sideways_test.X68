@@ -215,7 +215,7 @@ LOOP
         SUB.L   last_note_spawn_time,D1
         IF.L #100 <LE> D1    THEN
             BSR     SPAWN_NEW_NOTE
-            BSR     DECREMENT_NOTES_TIMES
+            ;BSR     DECREMENT_NOTES_TIMES
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_note_spawn_time
@@ -273,18 +273,18 @@ CHECK_COLLISIONS
                 ; check if the note is close to beat line
                 IF.W (A1) <LT> #BEAT_LINE_X-NOTE_OBJECT_SIZE    THEN
                     ; check collision with player line
-                    IF.B player_1_lane_number <EQ> D5   THEN
-                        MOVE.W  -(A1),D1
-                        IF.W D1 <EQ> #0 THEN
-                            BSR     PLAY_MUSIC_ON_HIT
-                        ELSE
-                            BSR     GET_COLOUR_FROM_INDEX
-                            IF.L player_1_action_colour <EQ> D1 THEN
-                                BSR     PLAY_MUSIC_ON_HIT
-                            ENDI
-                        ENDI
-                        ADD.W   #2,A1
-                    ENDI
+                    * IF.B player_1_lane_number <EQ> D5   THEN
+                    *     MOVE.W  -(A1),D1
+                    *     IF.W D1 <EQ> #0 THEN
+                    *         BSR     PLAY_MUSIC_ON_HIT
+                    *     ELSE
+                    *         BSR     GET_COLOUR_FROM_INDEX
+                    *         IF.L player_1_action_colour <EQ> D1 THEN
+                    *             BSR     PLAY_MUSIC_ON_HIT
+                    *         ENDI
+                    *     ENDI
+                    *     ADD.W   #2,A1
+                    * ENDI
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_OBJECT_SIZE-NOTE_OBJECT_SIZE   THEN
                         SUB.W   #2,A1
@@ -744,7 +744,7 @@ ENQUEUE_OBJECT_TO_LANE
 ; loops over music time array
 ; decrements times for each note
 DECREMENT_NOTES_TIMES
-        E   RROR
+        ;E   RROR
         LEA notes_times_array,A1
         FOR D6 = #0 TO #30  DO
             ADD.L   D6,A1
