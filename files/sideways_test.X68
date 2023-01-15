@@ -45,7 +45,7 @@ BEAT_LINE_X         EQU     200
 PLAYER_SIZE         EQU     20
 NOTE_SIZE           EQU     40
 
-NOTE_OBJECT_SIZE    EQU     14
+NOTE_OBJECT_SIZE    EQU     16
 
 
 ; program start
@@ -200,7 +200,7 @@ LOOP
         TRAP    #15
         SUB.L   last_path_change_time,D1
         IF.L #200 <LE> D1    THEN
-            BSR     CHANGE_PATH_INDEX
+            ;BSR     CHANGE_PATH_INDEX
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_path_change_time
@@ -279,7 +279,7 @@ CHECK_COLLISIONS
                 MOVE.W  (A0),A1
                 ADD.W   #2,A1
                 ; check if the note is close to beat line
-                IF.W (A1) <LT> #BEAT_LINE_X-NOTE_OBJECT_SIZE    THEN
+                IF.W (A1) <LT> #BEAT_LINE_X THEN
                     ; check collision with player line
                     IF.B player_1_lane_number <EQ> D5   THEN
                         MOVE.W  -(A1),D1
@@ -295,7 +295,7 @@ CHECK_COLLISIONS
                         ADD.W   #2,A1
                     ENDI
                     ; check collision with the beat line, ie too late
-                    IF.W (A1) <LT> #BEAT_LINE_X-NOTE_OBJECT_SIZE-NOTE_OBJECT_SIZE   THEN
+                    IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
                         SUB.W   #2,A1
                         MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
