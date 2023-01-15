@@ -8,8 +8,8 @@
 * TODO
 * Notes
 * drawing notes should be looped over lane objects
-* notes need to be played when hit at beat line
-* notes need to play automatically when invisible
+* notes need to play automatically when invisible NOT TESTED YET
+* decrement note times
 * 
 * Controls
 * add delay to repeted actions, but not when action is correct
@@ -22,7 +22,7 @@
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
-* change beat line to be only infornt of player
+* change beat line to be only infront of player
 * change only player beat line and player model colours
 * GRAPHICAL TESTING
 
@@ -164,7 +164,7 @@ LOOP
         MOVE.W  #8,D0
         TRAP    #15
         SUB.L   last_object_time,D1
-        IF.L #10 <LE> D1    THEN
+        IF.L #2 <LE> D1    THEN
             BSR     MOVE_OBJECTS
             BSR     CHECK_COLLISIONS
             MOVE.W  #8,D0
@@ -213,9 +213,9 @@ LOOP
         MOVE.W  #8,D0
         TRAP    #15
         SUB.L   last_note_spawn_time,D1
-        IF.L #100 <LE> D1    THEN
+        IF.L #10 <LE> D1    THEN
             BSR     SPAWN_NEW_NOTE
-            ;BSR     DECREMENT_NOTES_TIMES
+            BSR     DECREMENT_NOTES_TIMES
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_note_spawn_time
@@ -275,6 +275,7 @@ CHECK_COLLISIONS
                     ; check collision with player line
                     IF.B player_1_lane_number <EQ> D5   THEN
                         MOVE.W  -(A1),D1
+                        MOVE.W  #0,D1
                         IF.W D1 <EQ> #0 THEN
                             BSR     PLAY_MUSIC_ON_HIT
                         ELSE
@@ -300,8 +301,10 @@ CHECK_COLLISIONS
 ; must not use D5, A0, A1
 PLAY_MUSIC_ON_HIT
         ; sets the position to the left to make the note disappear when cheking collision
-        MOVE.W  #0,(A1)
-        RTS
+        ADD.W   #2,A1
+        CLR     (A1)
+        ADD.W   #4,A1
+        
         CLR 	D3
         LEA notes_times_array,A2
         FOR D6 = #0 TO #7   DO
@@ -379,7 +382,7 @@ PLAY_MUSIC_ON_HIT
             ADD.W   #1,A1
             ADD.L   #2,A2
         ENDF
-        SUB.W   #8,A1
+        SUB.W   #14,A1
 
         RTS
 
@@ -596,6 +599,7 @@ CREATE_NOTE_OBJECT
             ADD.W   #NOTE_OBJECT_SIZE,A2
         ENDF
         MOVE.L  #0,A2
+        ILLEGAL
         RTS
 
 
@@ -744,22 +748,19 @@ ENQUEUE_OBJECT_TO_LANE
 ; loops over music time array
 ; decrements times for each note
 DECREMENT_NOTES_TIMES
-        ;E   RROR
         LEA notes_times_array,A1
-        FOR D6 = #0 TO #30  DO
-            ADD.L   D6,A1
-            IF.B    (A1) <NE> #$FF  THEN
-                SUB.B   #1,(A1)
-                IF.B    (A1) <EQ> #0    THEN
+        FOR D5 = #0 TO #30  DO
+            IF.B (A1,D5) <NE> #$FF  THEN
+                SUB.B   #1,(A1,D5)
+                IF.B (A1,D5) <EQ> #0    THEN
                     ; stops a note playing
-                    MOVE.B  D6,D1
+                    MOVE.B  D5,D1
                     MOVE.L  #2,D2
                     MOVE.L  #77,D0
                     TRAP    #15
-                    MOVE.B  #$FF,(A1)
+                    MOVE.B  #$FF,(A1,D5)
                 ENDI
             ENDI
-            SUB.L   D6,A1
         ENDF
         RTS
 
@@ -1075,6 +1076,8 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
+
 
 
 *~Font name~Courier New~
