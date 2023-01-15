@@ -28,11 +28,7 @@
 * 
 * 
 * ISSUES
-* weird ghost notes, that play when they shouldn't
-* sometimes some notes don't render
-* NOTES ARE REFERENCED WRONG WHEN PUT INTO THE LANE QUEUES
-* or when left shifting
-* or something else is modify the queues
+* notes are played off key
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -600,8 +596,6 @@ CREATE_NOTE_OBJECT
 
 
 LOAD_NOTE_DATA
-        MOVE.L  #$60000000,D7
-        BSR     CHECK_A2_ENDING
         ; load the music data into the note object
         SUB.W   #4,A0
         ADD.W   #6,A2
@@ -609,8 +603,6 @@ LOAD_NOTE_DATA
         ADD.W   #4,A0
         ADD.W   #4,A2
         MOVE.L  (A0),(A2)
-        MOVE.L  #$00000000,D7
-        BSR     CHECK_A2_ENDING
 
         ; assign a colour based on the playing notes
         ; and the difficulty
@@ -623,12 +615,8 @@ LOAD_NOTE_DATA
             SUB.W   #1,A2
         ENDF
         ADD.W   #1,A2
-        MOVE.L  #$C0000000,D7
-        BSR     CHECK_A2_ENDING
 
         BSR     PICK_NOTE_COLOUR
-        MOVE.L  #$60000000,D7
-        BSR     CHECK_A2_ENDING
 
         ; assign x and y position based on the path index
         ADD.W   #2,A2
@@ -639,31 +627,13 @@ LOAD_NOTE_DATA
         BSR     GET_LANE_Y_POSITION
         MOVE.W  D3,(A2)
         SUB.W   #NOTE_SIZE/2,(A2)
-        MOVE.L  #$A0000000,D7
-        BSR     CHECK_A2_ENDING
 
         ; adds note object to the end of the lane queue
         BSR     GET_LANE_ADDRESS_FROM_INDEX
         SUB.W   #4,A2
-        MOVE.L  #$60000000,D7
-        BSR     CHECK_A2_ENDING
         BSR     ENQUEUE_OBJECT_TO_LANE
-        MOVE.L  #$60000000,D7
-        BSR     CHECK_A2_ENDING
         RTS
-       
 
-CHECK_A2_ENDING
-        MOVE.L  A2,D4
-        LSL.L   #8,D4
-        LSL.L   #8,D4
-        LSL.L   #8,D4
-        LSL.L   #4,D4
-        IF.L D4 <NE> D7 THEN
-            ADD.W   #0,D7
-        ENDI
-        RTS
-     
 
 ; choose a random frequency to pick as the visible colour
 PICK_NOTE_COLOUR
