@@ -10,7 +10,6 @@
 * drawing notes should be looped over lane objects
 * notes need to be played when hit at beat line
 * notes need to play automatically when invisible
-* check collisions when notes move or when player moves
 * 
 * Controls
 * add delay to repeted actions, but not when action is correct
@@ -25,6 +24,7 @@
 * check if the centre of lanes is calculated correctly
 * change beat line to be only infornt of player
 * change only player beat line and player model colours
+* GRAPHICAL TESTING
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -273,18 +273,18 @@ CHECK_COLLISIONS
                 ; check if the note is close to beat line
                 IF.W (A1) <LT> #BEAT_LINE_X-NOTE_OBJECT_SIZE    THEN
                     ; check collision with player line
-                    * IF.B player_1_lane_number <EQ> D5   THEN
-                    *     MOVE.W  -(A1),D1
-                    *     IF.W D1 <EQ> #0 THEN
-                    *         BSR     PLAY_MUSIC_ON_HIT
-                    *     ELSE
-                    *         BSR     GET_COLOUR_FROM_INDEX
-                    *         IF.L player_1_action_colour <EQ> D1 THEN
-                    *             BSR     PLAY_MUSIC_ON_HIT
-                    *         ENDI
-                    *     ENDI
-                    *     ADD.W   #2,A1
-                    * ENDI
+                    IF.B player_1_lane_number <EQ> D5   THEN
+                        MOVE.W  -(A1),D1
+                        IF.W D1 <EQ> #0 THEN
+                            BSR     PLAY_MUSIC_ON_HIT
+                        ELSE
+                            BSR     GET_COLOUR_FROM_INDEX
+                            IF.L player_1_action_colour <EQ> D1 THEN
+                                BSR     PLAY_MUSIC_ON_HIT
+                            ENDI
+                        ENDI
+                        ADD.W   #2,A1
+                    ENDI
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_OBJECT_SIZE-NOTE_OBJECT_SIZE   THEN
                         SUB.W   #2,A1
@@ -301,7 +301,7 @@ CHECK_COLLISIONS
 PLAY_MUSIC_ON_HIT
         ; sets the position to the left to make the note disappear when cheking collision
         MOVE.W  #0,(A1)
-
+        RTS
         CLR 	D3
         LEA notes_times_array,A2
         FOR D6 = #0 TO #7   DO
@@ -843,7 +843,7 @@ DRAW_NOTES
             ; sets pen and fill colour to white
             MOVE.W  (A0),D1
             IF.W D1 <NE> #0 THEN
-                IF.W D1 <NE> #$FF   THEN
+                IF.W D1 <NE> #$FFFF THEN
                     MOVE.B  #80,D0
                     BSR     GET_COLOUR_FROM_INDEX
                     TRAP    #15
