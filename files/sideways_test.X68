@@ -215,6 +215,7 @@ LOOP
         SUB.L   last_note_spawn_time,D1
         IF.L #100 <LE> D1    THEN
             BSR     SPAWN_NEW_NOTE
+            BSR     DECREMENT_NOTES_TIMES
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_note_spawn_time
@@ -273,7 +274,7 @@ CHECK_COLLISIONS
                 IF.W (A1) <LT> #BEAT_LINE_X-NOTE_OBJECT_SIZE    THEN
                     ; check collision with player line
                     IF.B player_1_lane_number <EQ> D5   THEN
-                        MOVE.W  -(A1)+,D1
+                        MOVE.W  -(A1),D1
                         IF.W D1 <EQ> #0 THEN
                             BSR     PLAY_MUSIC_ON_HIT
                         ELSE
@@ -282,6 +283,7 @@ CHECK_COLLISIONS
                                 BSR     PLAY_MUSIC_ON_HIT
                             ENDI
                         ENDI
+                        ADD.W   #2,A1
                     ENDI
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_OBJECT_SIZE-NOTE_OBJECT_SIZE   THEN
@@ -295,146 +297,109 @@ CHECK_COLLISIONS
         ENDF
         RTS
 
-
+; must not use D5, A0, A1
 PLAY_MUSIC_ON_HIT
         ; sets the position to the left to make the note disappear when cheking collision
         MOVE.W  #0,(A1)
 
-        LEA     FILE_CONTENTS,A0
-        MOVE.L  #0,D3
-        FOR D5 = #0 TO #SECOND_SIZE-1 DO
-            LEA notes_times_array,A1
-            FOR D6 = #0 TO #7   DO
-                MOVE.B  (A0),D3
-                MOVE.L  #0,D2
-                IF.L #0 <NE> D3 THEN
-                    ; splits the four bits of d2 byte into d1
-                    BTST.L  #7,D3
-                    IF  <NE>    THEN
-                        ADD.B   #8,D2
-                        SUB.B   #128,D3
-                    ENDI
-                    BTST.L  #6,D3
-                    IF  <NE>    THEN
-                        ADD.B   #4,D2
-                        SUB.B   #64,D3
-                    ENDI
-                    BTST.L  #5,D3
-                    IF  <NE>    THEN
-                        ADD.B   #2,D2
-                        SUB.B   #32,D3
-                    ENDI
-                    BTST.L  #4,D3
-                    IF  <NE>    THEN
-                        ADD.B   #1,D2
-                        SUB.B   #16,D3
-                    ENDI
-                    ; checks if note is played
-                    IF #0 <NE> D2   THEN
-                        MOVE.B  D6,D1
-                        ADD.B   D6,D1
-                        BTST.L  #3,D2                    
-                        IF  <NE>    THEN
-                            ADD.B   #16,D1
-                            SUB.B   #8,D2
-                            ; choose which rest time to put in
-                            LEA     rest_times_array,A2
-                            ADD.L   D2,A2
-                            SUB.L   #1,A2
-                            ; puts in rest time
-                            ADD.L   #16,A1
-                            ; stops a note playing if it is
-                            IF.B (A1) <NE> #$FF   THEN
-                                MOVE.L  #2,D2
-                                MOVE.L  #77,D0
-                                TRAP    #15
-                            ENDI
-                            MOVE.B  (A2),(A1)
-                            SUB.L   #16,A1
-                        ELSE
-                            ; choose which rest time to put in
-                            LEA     rest_times_array,A2
-                            ADD.L   D2,A2
-                            SUB.L   #1,A2
-                            ; stops a note playing if it is
-                            IF.B (A1) <NE> #$FF   THEN
-                                MOVE.L  #2,D2
-                                MOVE.L  #77,D0
-                                TRAP    #15
-                            ENDI
-                            MOVE.B  (A2),(A1)
-                        ENDI
-                        MOVE.B  #75,D0
-                        TRAP    #15
-                    ENDI
-                    IF #0 <NE> D3   THEN
-                        MOVE.B  D6,D1
-                        ADD.B   D6,D1
-                        ADD.B   #1,D1
-                        BTST.L  #3,D3
-                        ADD.L   #1,A1
-                        IF  <NE>    THEN
-                            ADD.B   #16,D1
-                            SUB.B   #8,D3
-                            ; choose which rest time to put in
-                            LEA     rest_times_array,A2
-                            ADD.L   D3,A2
-                            SUB.L   #1,A2
-                            ; puts in rest time
-                            ADD.L   #16,A1
-                            ; stops a note playing if it is
-                            IF.B (A1) <NE> #$FF   THEN
-                                MOVE.L  #2,D2
-                                MOVE.L  #77,D0
-                                TRAP    #15
-                            ENDI
-                            MOVE.B  (A2),(A1)
-                            SUB.L   #16,A1
-                        ELSE
-                            ; choose which rest time to put in
-                            LEA     rest_times_array,A2
-                            ADD.L   D3,A2
-                            SUB.L   #1,A2
-                            ; stops a note playing if it is
-                            IF.B (A1) <NE> #$FF   THEN
-                                MOVE.L  #2,D2
-                                MOVE.L  #77,D0
-                                TRAP    #15
-                            ENDI
-                            MOVE.B  (A2),(A1)
-                        ENDI
-                        SUB.L   #1,A1
-                        MOVE.B  #75,D0
-                        TRAP    #15
-                    ENDI
+        CLR 	D3
+        LEA notes_times_array,A2
+        FOR D6 = #0 TO #7   DO
+            MOVE.B  (A1),D3
+            IF.L #0 <NE> D3 THEN
+                CLR     D2
+                ; splits the four bits of d2 byte into d1
+                BCLR.L  #7,D3
+                IF  <NE>    THEN
+                    ADD.B   #8,D2
                 ENDI
-                ADD.W   #1,A0
-                ADD.L   #2,A1
-            ENDF
-            ; loops over music time array
-            ; decrements times for each note
-            LEA notes_times_array,A1
-            FOR D6 = #0 TO #30  DO
-                ADD.L   D6,A1
-                IF.B    (A1) <NE> #$FF  THEN
-                    SUB.B   #1,(A1)
-                    IF.B    (A1) <EQ> #0    THEN
-                        ; stops a note playing
-                        MOVE.B  D6,D1
-                        MOVE.L  #2,D2
-                        MOVE.L  #77,D0
-                        TRAP    #15
-                        MOVE.B  #$FF,(A1)
-                    ENDI
+                BCLR.L  #6,D3
+                IF  <NE>    THEN
+                    ADD.B   #4,D2
                 ENDI
-                SUB.L   D6,A1
-            ENDF
-            BSR FRAME_DELAY
+                BCLR.L  #5,D3
+                IF  <NE>    THEN
+                    ADD.B   #2,D2
+                ENDI
+                BCLR.L  #4,D3
+                IF  <NE>    THEN
+                    ADD.B   #1,D2
+                ENDI
+                ; checks if note is played
+                IF #0 <NE> D2   THEN
+                    MOVE.B  D6,D1
+                    LSL.B   #1,D1
+                    ; checks for sharp
+                    BTST.L  #3,D2
+                    IF  <NE>    THEN
+                        ADD.B   #16,D1
+                        SUB.B   #8,D2
+                        BSR     REST_TIME_FROM_INDEX
+                        ; puts in rest time
+                        ADD.L   #16,A2
+                        BSR     STOP_NOTE_PLAYING
+                        MOVE.B  (A3),(A2)
+                        SUB.L   #16,A2
+                    ELSE
+                        BSR     REST_TIME_FROM_INDEX
+                        BSR     STOP_NOTE_PLAYING
+                        MOVE.B  (A3),(A2)
+                    ENDI
+                    ; D1 needed here
+                    MOVE.B  #75,D0
+                    TRAP    #15
+                ENDI
+                IF #0 <NE> D3   THEN
+                    MOVE.B  D6,D1
+                    LSL.B   #1,D1
+                    ADD.B   #1,D1
+                    ; checks for sharp
+                    BTST.L  #3,D3
+                    ADD.L   #1,A2
+                    IF  <NE>    THEN
+                        ADD.B   #16,D1
+                        SUB.B   #8,D3
+                        BSR     REST_TIME_FROM_INDEX
+                        ; puts in rest time
+                        ADD.L   #16,A2
+                        BSR     STOP_NOTE_PLAYING
+                        MOVE.B  (A3),(A2)
+                        SUB.L   #16,A2
+                    ELSE
+                        BSR     REST_TIME_FROM_INDEX
+                        BSR     STOP_NOTE_PLAYING
+                        MOVE.B  (A3),(A2)
+                    ENDI
+                    SUB.L   #1,A2
+                    ; D1 needed here
+                    MOVE.B  #75,D0
+                    TRAP    #15
+                ENDI
+            ENDI
+            ADD.W   #1,A1
+            ADD.L   #2,A2
         ENDF
+        SUB.W   #8,A1
 
         RTS
+
+; D2.L holds the index
+; returns value at (A3)
+; choose which rest time to put in
+REST_TIME_FROM_INDEX
+        LEA     rest_times_array,A3
+        ADD.L   D2,A3
+        SUB.L   #1,A3
         RTS
 
+; stops a note playing if it is
+STOP_NOTE_PLAYING
+        IF.B (A2) <NE> #$FF   THEN
+            MOVE.L  #2,D2
+            MOVE.L  #77,D0
+            TRAP    #15
+        ENDI
+        RTS
 
 ; shifts the lane in A0 one to the left, deleting the ojetct at index 0
 LANE_LEFT_SHIFT
@@ -521,7 +486,7 @@ HANDLE_MOVEMENT
             RTS
         ENDI
 
-        ; checks w
+        ; checks W
         BTST.L  #24,D1
         IF  <NE>    THEN
             BTST.B  #0,player_1_moving
@@ -534,7 +499,7 @@ HANDLE_MOVEMENT
         ELSE
             BCLR.B  #0,player_1_moving
         ENDI
-        ; checks s
+        ; checks S
         BTST.L  #16,D1
         IF  <NE>    THEN
             BTST.B  #1,player_1_moving
@@ -775,6 +740,28 @@ ENQUEUE_OBJECT_TO_LANE
         ADD.W   #2,(A1)
         RTS
 
+
+; loops over music time array
+; decrements times for each note
+DECREMENT_NOTES_TIMES
+        E   RROR
+        LEA notes_times_array,A1
+        FOR D6 = #0 TO #30  DO
+            ADD.L   D6,A1
+            IF.B    (A1) <NE> #$FF  THEN
+                SUB.B   #1,(A1)
+                IF.B    (A1) <EQ> #0    THEN
+                    ; stops a note playing
+                    MOVE.B  D6,D1
+                    MOVE.L  #2,D2
+                    MOVE.L  #77,D0
+                    TRAP    #15
+                    MOVE.B  #$FF,(A1)
+                ENDI
+            ENDI
+            SUB.L   D6,A1
+        ENDF
+        RTS
 
 RENDER_SCREEN
         BSR     DRAW_BACKGROUND
@@ -1088,6 +1075,7 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
 
 *~Font name~Courier New~
 *~Font size~10~
