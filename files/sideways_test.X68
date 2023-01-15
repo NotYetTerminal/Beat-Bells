@@ -33,7 +33,6 @@
 * NOTES ARE REFERENCED WRONG WHEN PUT INTO THE LANE QUEUES
 * or when left shifting
 * or something else is modify the queues
-* GO THROUGH CLR AND CHANGE THEM TO LONGS
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -601,7 +600,7 @@ CREATE_NOTE_OBJECT
 
 
 LOAD_NOTE_DATA
-        MOVE.L  #$A0000000,D7
+        MOVE.L  #$60000000,D7
         BSR     CHECK_A2_ENDING
         ; load the music data into the note object
         SUB.W   #4,A0
@@ -610,7 +609,7 @@ LOAD_NOTE_DATA
         ADD.W   #4,A0
         ADD.W   #4,A2
         MOVE.L  (A0),(A2)
-        MOVE.L  #$40000000,D7
+        MOVE.L  #$00000000,D7
         BSR     CHECK_A2_ENDING
 
         ; assign a colour based on the playing notes
@@ -624,11 +623,11 @@ LOAD_NOTE_DATA
             SUB.W   #1,A2
         ENDF
         ADD.W   #1,A2
-        MOVE.L  #$00000000,D7
+        MOVE.L  #$C0000000,D7
         BSR     CHECK_A2_ENDING
 
         BSR     PICK_NOTE_COLOUR
-        MOVE.L  #$A0000000,D7
+        MOVE.L  #$60000000,D7
         BSR     CHECK_A2_ENDING
 
         ; assign x and y position based on the path index
@@ -640,16 +639,16 @@ LOAD_NOTE_DATA
         BSR     GET_LANE_Y_POSITION
         MOVE.W  D3,(A2)
         SUB.W   #NOTE_SIZE/2,(A2)
-        MOVE.L  #$E0000000,D7
+        MOVE.L  #$A0000000,D7
         BSR     CHECK_A2_ENDING
 
         ; adds note object to the end of the lane queue
         BSR     GET_LANE_ADDRESS_FROM_INDEX
         SUB.W   #4,A2
-        MOVE.L  #$A0000000,D7
+        MOVE.L  #$60000000,D7
         BSR     CHECK_A2_ENDING
         BSR     ENQUEUE_OBJECT_TO_LANE
-        MOVE.L  #$A0000000,D7
+        MOVE.L  #$60000000,D7
         BSR     CHECK_A2_ENDING
         RTS
        
@@ -661,7 +660,7 @@ CHECK_A2_ENDING
         LSL.L   #8,D4
         LSL.L   #4,D4
         IF.L D4 <NE> D7 THEN
-            SIMHALT
+            ADD.W   #0,D7
         ENDI
         RTS
      
@@ -671,13 +670,12 @@ PICK_NOTE_COLOUR
         IF D3 <NE> #1   THEN
             BSR     GET_RANDOM_VALUE
         ELSE
-            MOVE.W  #1,D2
+            MOVE.W  #0,D2
         ENDI
         CLR.L   D3
         CLR.L   D7
         FOR D5 = #0 TO #7   DO
             IF.B (A2,D5) <NE> #0    THEN
-                SUB.B   #1,D2
                 IF.W D2 <EQ> #0 THEN
                     MOVE.B  (A2,D5),D7
                     IF D7 <GT> #15  THEN
@@ -707,6 +705,7 @@ PICK_NOTE_COLOUR
                         RTS
                     ENDI
                 ENDI
+                SUB.B   #1,D2
             ENDI
             ADD.B   #2,D3
         ENDF
