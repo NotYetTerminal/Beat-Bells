@@ -30,7 +30,9 @@
 * ISSUES
 * weird ghost notes, that play when they shouldn't
 * sometimes some notes don't render
-* song file index goes above what is required
+* NOTES ARE REFERENCED WRONG WHEN PUT INTO THE LANE QUEUES
+* or when left shifting
+* or something else is modify the queues
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -316,11 +318,11 @@ PLAY_MUSIC_ON_HIT
         FOR D6 = #0 TO #7   DO
             MOVE.B  (A1,D6),D7
             IF.B D7 <GT> #15    THEN
-                MOVE.B  #1,D3
+                ADD.B  #1,D3
             ENDI
             LSL.B   #4,D7
             IF.B D7 <GT> #15    THEN
-                MOVE.B  #1,D3
+                ADD.B  #1,D3
             ENDI
         ENDF
 
