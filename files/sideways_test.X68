@@ -315,43 +315,15 @@ PLAY_MUSIC_ON_HIT
         ADD.W   #4,A1
 
         CLR 	D3
-        FOR D6 = #0 TO #7   DO
-            MOVE.B  (A1,D6),D7
-            IF.B D7 <GT> #15    THEN
-                ADD.B  #1,D3
-            ENDI
-            LSL.B   #4,D7
-            IF.B D7 <GT> #15    THEN
-                ADD.B  #1,D3
-            ENDI
-        ENDF
-
-        IF.B D3 <GT> #1 THEN
-            CLR     D3
-        ENDI
-        
-        CLR 	D3
         LEA     notes_times_array,A2
         FOR D6 = #0 TO #7   DO
             MOVE.B  (A1,D6),D3
-            IF.L #0 <NE> D3 THEN
-                CLR     D2
+            IF.B #0 <NE> D3 THEN
                 ; splits the four bits of d3 byte into d2
-                BCLR.L  #7,D3
-                IF  <NE>    THEN
-                    ADD.B   #8,D2
-                ENDI
-                BCLR.L  #6,D3
-                IF  <NE>    THEN
-                    ADD.B   #4,D2
-                ENDI
-                BCLR.L  #5,D3
-                IF  <NE>    THEN
-                    ADD.B   #2,D2
-                ENDI
-                BCLR.L  #4,D3
-                IF  <NE>    THEN
-                    ADD.B   #1,D2
+                IF.B D3 <GT> #15    THEN
+                    MOVE.L  D3,D2
+                    LSR.B   #4,D2
+                    LSL.B   #4,D3
                 ENDI
                 ; checks if note is played
                 IF #0 <NE> D2   THEN
