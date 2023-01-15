@@ -323,10 +323,7 @@ PLAY_MUSIC_ON_HIT
                 IF.B D3 <GT> #15    THEN
                     MOVE.L  D3,D2
                     LSR.B   #4,D2
-                    LSL.B   #4,D3
-                ENDI
-                ; checks if note is played
-                IF #0 <NE> D2   THEN
+
                     MOVE.B  D6,D1
                     LSL.B   #1,D1
                     ; checks for sharp
@@ -348,6 +345,8 @@ PLAY_MUSIC_ON_HIT
                     ; D1 needed here
                     MOVE.B  #75,D0
                     TRAP    #15
+
+                    LSL.B   #4,D3
                 ENDI
                 IF #0 <NE> D3   THEN
                     MOVE.B  D3,D2
