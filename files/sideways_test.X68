@@ -9,6 +9,7 @@
 * Notes
 * drawing notes should be looped over lane objects
 * notes need to play automatically when invisible NOT TESTED YET
+* implement base track
 * 
 * Controls
 * add delay to repeted actions, but not when action is correct
@@ -28,6 +29,7 @@
 * 
 * ISSUES
 * at the big slap the note times array is incorrect
+* colour action spasms out, need to check if last up is active
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -75,8 +77,6 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
 
-        ; sets the players up/down movement to nothing
-        MOVE.B  #0,player_1_moving
         ; sets the player's position
         MOVE.W  #100,player_1_position
         MOVE.B  #2,player_1_lane_number
@@ -203,9 +203,8 @@ LOOP
             MOVE.W  #8,D0
             TRAP    #15
             SUB.L   last_beat_change_time,D1
-            IF.L #100 <LE> D1    THEN
-                MOVE.L  #WHITE,player_1_action_colour
-                MOVE.L  #0,last_beat_change_time
+            IF.L #20 <LE> D1    THEN
+                BSR     RESET_PLAYER_1_ACTION
             ENDI
         ENDI
 
@@ -213,7 +212,7 @@ LOOP
         MOVE.W  #8,D0
         TRAP    #15
         SUB.L   last_note_spawn_time,D1
-        IF.L #10 <LE> D1    THEN
+        IF.L #30 <LE> D1    THEN
             BSR     SPAWN_NEW_NOTE
             BSR     DECREMENT_NOTES_TIMES
             MOVE.W  #8,D0
@@ -275,13 +274,13 @@ CHECK_COLLISIONS
                     ; check collision with player line
                     IF.B player_1_lane_number <EQ> D5   THEN
                         MOVE.W  -(A1),D1
-                        MOVE.W  #0,D1
                         IF.W D1 <EQ> #0 THEN
                             BSR     PLAY_MUSIC_ON_HIT
                         ELSE
                             BSR     GET_COLOUR_FROM_INDEX
                             IF.L player_1_action_colour <EQ> D1 THEN
                                 BSR     PLAY_MUSIC_ON_HIT
+                                BSR     RESET_PLAYER_1_ACTION
                             ENDI
                         ENDI
                         ADD.W   #2,A1
@@ -375,8 +374,8 @@ PLAY_MUSIC_ON_HIT
             ADD.L   #2,A2
         ENDF
         SUB.W   #6,A1
-
         RTS
+
 
 ; D2.L holds the index
 ; returns value at (A3)
@@ -387,6 +386,7 @@ REST_TIME_FROM_INDEX
         SUB.L   #1,A3
         RTS
 
+
 ; stops a note playing if it is
 STOP_NOTE_PLAYING
         IF.B (A2) <NE> #$FF   THEN
@@ -395,6 +395,7 @@ STOP_NOTE_PLAYING
             TRAP    #15
         ENDI
         RTS
+
 
 ; shifts the lane in A0 one to the left, deleting the object at index 0
 LANE_LEFT_SHIFT
@@ -427,23 +428,34 @@ HANDLE_COLOUR_CHANGE
             BTST.L  #24,D1
             IF  <NE>    THEN
                 MOVE.L  #RED,player_1_action_colour
+                BSET.B  #7,player_1_action_pressed
+                put in ifs
             ENDI
             BTST.L  #16,D1
             IF  <NE>    THEN
                 MOVE.L  #ORANGE,player_1_action_colour
+                BSET.B  #6,player_1_action_pressed
             ENDI
             BTST.L  #8,D1
             IF  <NE>    THEN
                 MOVE.L  #YELLOW,player_1_action_colour
+                BSET.B  #5,player_1_action_pressed
             ENDI
             BTST.L  #0,D1
             IF  <NE>    THEN
                 MOVE.L  #LIME,player_1_action_colour
+                BSET.B  #4,player_1_action_pressed
             ENDI
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_beat_change_time
         ELSE
+            ; clears the actions pressed
+            BCLR.B  #7,player_1_action_pressed
+            BCLR.B  #6,player_1_action_pressed
+            BCLR.B  #5,player_1_action_pressed
+            BCLR.B  #4,player_1_action_pressed
+
             MOVE.W  #19,D0
             MOVE.L  player_1_colour_keymaps+4,D1
             TRAP    #15
@@ -453,21 +465,30 @@ HANDLE_COLOUR_CHANGE
                 BTST.L  #24,D1
                 IF  <NE>    THEN
                     MOVE.L  #AQUA,player_1_action_colour
+                    BSET.B  #3,player_1_action_pressed
                 ENDI
                 BTST.L  #16,D1
                 IF  <NE>    THEN
                     MOVE.L  #BLUE,player_1_action_colour
+                    BSET.B  #2,player_1_action_pressed
                 ENDI
                 BTST.L  #8,D1
                 IF  <NE>    THEN
                     MOVE.L  #PURPLE2,player_1_action_colour
+                    BSET.B  #1,player_1_action_pressed
                 ENDI
                 MOVE.W  #8,D0
                 TRAP    #15
                 MOVE.L  D1,last_beat_change_time
+            ELSE
+                ; clears the actions pressed
+                BCLR.B  #3,player_1_action_pressed
+                BCLR.B  #2,player_1_action_pressed
+                BCLR.B  #1,player_1_action_pressed
             ENDI
         ENDI
         RTS
+
 
 HANDLE_MOVEMENT
         MOVE.W  #19,D0
@@ -553,6 +574,12 @@ CHANGE_PATH_INDEX
                 SUB.B   #1,note_path_index
             ENDI
         ENDI
+        RTS
+
+
+RESET_PLAYER_1_ACTION
+        MOVE.L  #WHITE,player_1_action_colour
+        MOVE.L  #0,last_beat_change_time
         RTS
 
 
@@ -762,6 +789,7 @@ DECREMENT_NOTES_TIMES
         ENDF
         RTS
 
+
 RENDER_SCREEN
         BSR     DRAW_BACKGROUND
         BSR     DRAW_NOTES
@@ -892,9 +920,7 @@ GET_COLOUR_FROM_INDEX
                 ENDI
             ENDI
         ENDI
-        
         RTS
-
 
 
 DRAW_PLAYER_1
@@ -1006,7 +1032,8 @@ last_beat_change_time   DS.L    1       ; stores the time when beat was last che
 
 player_1_position       DS.W    2       ; stores the top right player position x,y
 player_1_lane_number    DS.B    1       ; stores the lane number
-player_1_moving         DS.B    1       ; stores whther the player is moving up or down
+player_1_moving         DC.B    0       ; stores whether the player is moving up or down
+player_1_action_pressed DC.B    0       ; stores whether any action buttons are pressed
 player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_1_action_colour  DC.L    WHITE   ; stores the player action colour
 player_1_colour_keymaps DC.L    'YHUJIKL' ; stores the keymaps for the player changing colours
