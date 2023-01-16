@@ -23,8 +23,6 @@
 * action colour chages too quickly, needs to be animated
 * GRAPHICAL TESTING
 * 
-* OPTIMISE USING THE COUNTER
-* 
 * ISSUES
 * at the big slap the note times array is incorrect
 
@@ -47,27 +45,34 @@ NOTE_OBJECT_SIZE    EQU     16
 START   ORG    $1000
 
         ; turn off input echo
-        MOVE.L  #12,D0
+        MOVEQ   #12,D0
         ; 0 in D1
         TRAP    #15
         
         ; turn on double buffering
         ; avoids flickering
-		MOVE.L  #92,D0
-        MOVE.B  #17,D1
+		MOVEQ   #92,D0
+        MOVEQ   #17,D1
 		TRAP    #15
 		
-		; store time in variables
-        MOVE.W  #8,D0
+		MOVEQ   #8,D0
         TRAP    #15
-        MOVE.L  D1,last_frame_time
-        MOVE.L  D1,last_movement_time
-        MOVE.L  D1,last_path_change_time
-        MOVE.L  D1,last_object_time
-        MOVE.L  D1,last_note_spawn_time
-        MOVE.L  D1,last_beat_change_time
         ; stores the time as starting seed
-        MOVE.L  D1,random_value
+        LEA     random_value,A0
+        MOVE.L  D1,A0
+		; store time in variables
+        ADDQ    #8,A0
+        MOVE.L  D1,A0
+        ADDQ    #8,A0
+        MOVE.L  D1,A0
+        ADDQ    #8,A0
+        MOVE.L  D1,A0
+        ADDQ    #8,A0
+        MOVE.L  D1,A0
+        ADDQ    #8,A0
+        MOVE.L  D1,A0
+        ADDQ    #8,A0
+        MOVE.L  D1,A0
 
         ; sets the screen size
         MOVE.L  #33,D0
