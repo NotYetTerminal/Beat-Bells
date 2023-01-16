@@ -7,14 +7,11 @@
 
 * TODO
 * Notes
-* notes need to play automatically when invisible NOT TESTED YET
 * implement base track
 * 
 * Gameplay
-* implement difficulty for see through notes
-* make it so that only on every full or half beat the notes are spawned
 * change psudo random path index to change after long not change
-* make it so there is a delay before ending the game
+* implement a bit of randomness to choosing notes for difficulties
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
@@ -31,6 +28,7 @@
 * Menu
 * load in song name
 * load in song difficulty
+* make it so there is a delay before ending the game and returns to menu
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -101,8 +99,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SONG
 
         ; sets the song difficulty
-        MOVE.B  #0,song_difficulty
-        MOVE.B  #0,quater_beat_count
+        MOVE.B  #8,song_difficulty
 
         JMP     LOOP
 
@@ -197,7 +194,7 @@ LOOP
         TRAP    #15
         SUB.L   last_path_change_time,D1
         IF.L #200 <LE> D1    THEN
-            ;BSR     CHANGE_PATH_INDEX
+            BSR     CHANGE_PATH_INDEX
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_path_change_time
@@ -217,7 +214,7 @@ LOOP
         MOVE.W  #8,D0
         TRAP    #15
         SUB.L   last_note_spawn_time,D1
-        IF.L #30 <LE> D1    THEN
+        IF.L #10 <LE> D1    THEN
             BSR     SPAWN_NEW_NOTE
             BSR     DECREMENT_NOTES_TIMES
             MOVE.W  #8,D0
@@ -279,20 +276,32 @@ CHECK_COLLISIONS
                     ; check collision with player line
                     IF.B player_1_lane_number <EQ> D5   THEN
                         MOVE.W  -(A1),D1
-                        IF.W D1 <EQ> #0 THEN
-                            BSR     PLAY_MUSIC_ON_HIT
+                        BSR     GET_COLOUR_FROM_INDEX
+                        ; note has been hit correctly
+                        IF.L player_1_action_colour <EQ> D1 THEN
+                            MOVE.B  #1,last_note_success
+                            ; sets the position to the left to make the note disappear when checking collision
+                            CLR.W   (A1)
+                            BSR     RESET_PLAYER_1_ACTION
                         ELSE
-                            BSR     GET_COLOUR_FROM_INDEX
-                            IF.L player_1_action_colour <EQ> D1 THEN
-                                BSR     PLAY_MUSIC_ON_HIT
-                                BSR     RESET_PLAYER_1_ACTION
+                            IF.L player_1_action_colour <NE> #WHITE THEN
+                                ADD.W   #2,A1
+                                CLR.W   (A1)
+                                SUB.W   #2,A1
                             ENDI
                         ENDI
                         ADD.W   #2,A1
                     ENDI
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
-                        SUB.W   #2,A1
+                        ; check if it was an invisible or hit note
+                        IF.W -(A1) <EQ> #0  THEN
+                            IF.B last_note_success <EQ> #1  THEN
+                                BSR     PLAY_MUSIC_ON_HIT
+                            ENDI
+                        ELSE
+                            CLR.B   last_note_success
+                        ENDI
                         MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
                     ENDI
@@ -305,10 +314,7 @@ CHECK_COLLISIONS
 
 ; must not use D5, A0, A1
 PLAY_MUSIC_ON_HIT
-        ; sets the position to the left to make the note disappear when checking collision
-        ADD.W   #2,A1
-        CLR.W   (A1)
-        ADD.W   #4,A1
+        ADD.W   #6,A1
 
         CLR.L 	D3
         LEA     notes_times_array,A2
@@ -633,7 +639,10 @@ SPAWN_NEW_NOTE
             ENDI
         ENDI
         ADD.B   #1,quater_beat_count
-        IF.B quater_beat_count <GT> #
+        MOVE.B  song_difficulty,D0
+        IF.B quater_beat_count <EQ> D0 THEN
+            CLR.B   quater_beat_count
+        ENDI
         ADD.L   #8,song_file_index
         RTS
 
@@ -674,7 +683,12 @@ LOAD_NOTE_DATA
         ENDF
         ADD.W   #1,A2
 
-        BSR     PICK_NOTE_COLOUR
+        IF.B quater_beat_count <NE> #0  THEN
+            SUB.W   #6,A2
+            CLR.W   (A2)
+        ELSE
+            BSR     PICK_NOTE_COLOUR
+        ENDI
 
         ; assign x and y position based on the path index
         ADD.W   #2,A2
@@ -924,26 +938,30 @@ DRAW_NOTES
 ; colour index needs to be in D1.W
 ; returns the colour into D1.L
 GET_COLOUR_FROM_INDEX
-        IF.W D1 <EQ> #1 THEN
-            MOVE.L  #BLUE,D1
+        IF.W D1 <EQ> #0 THEN
+            CLR.L   D1
         ELSE
-            IF.W D1 <EQ> #2 THEN
-                MOVE.L  #PURPLE2,D1
+            IF.W D1 <EQ> #1 THEN
+                MOVE.L  #BLUE,D1
             ELSE
-                IF.W D1 <EQ> #3 THEN
-                    MOVE.L  #RED,D1
+                IF.W D1 <EQ> #2 THEN
+                    MOVE.L  #PURPLE2,D1
                 ELSE
-                    IF.W D1 <EQ> #4 THEN
-                        MOVE.L  #ORANGE,D1
+                    IF.W D1 <EQ> #3 THEN
+                        MOVE.L  #RED,D1
                     ELSE
-                        IF.W D1 <EQ> #5 THEN
-                            MOVE.L  #YELLOW,D1
+                        IF.W D1 <EQ> #4 THEN
+                            MOVE.L  #ORANGE,D1
                         ELSE
-                            IF.W D1 <EQ> #6 THEN
-                                MOVE.L  #LIME,D1
+                            IF.W D1 <EQ> #5 THEN
+                                MOVE.L  #YELLOW,D1
                             ELSE
-                                IF.W D1 <EQ> #7 THEN
-                                    MOVE.L  #AQUA,D1
+                                IF.W D1 <EQ> #6 THEN
+                                    MOVE.L  #LIME,D1
+                                ELSE
+                                    IF.W D1 <EQ> #7 THEN
+                                        MOVE.L  #AQUA,D1
+                                    ENDI
                                 ENDI
                             ENDI
                         ENDI
@@ -1107,8 +1125,9 @@ FILE_CONTENTS           EQU     $10000
 BASIC_PATH              DC.B    'notes/aaa.wav',0
 ALL_NOTES_NAMES         DC.B    'a10b10c10d10e10f10g10a20b20c20d20e20f20g20a30b30a11b11c11d11e11f11g11a21b21c21d21e21f21g21a31'
 
-song_difficulty         DS.B    1       ; stores the difficulty of the song playing, 0 - easy, 1 - medium, 2 - hard
-quater_beat_count       DS.B    1       ; stores the count of quater beats played
+song_difficulty         DS.B    1       ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
+quater_beat_count       DC.B    0       ; stores the count of quater beats played
+last_note_success       DC.B    0       ; stores whether the last hit note was correct
 
 ; COLOURS
 BLACK           EQU     $00000000
@@ -1132,6 +1151,8 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
+
 
 
 
