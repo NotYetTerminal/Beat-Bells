@@ -27,6 +27,10 @@
 * 
 * ISSUES
 * at the big slap the note times array is incorrect
+* 
+* Menu
+* load in song name
+* load in song difficulty
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -95,6 +99,10 @@ START   ORG    $1000
         BSR     NOTE_SET_UP
         LEA     file_name,A1
         BSR     LOAD_IN_SONG
+
+        ; sets the song difficulty
+        MOVE.B  #0,song_difficulty
+        MOVE.B  #0,quater_beat_count
 
         JMP     LOOP
 
@@ -624,6 +632,8 @@ SPAWN_NEW_NOTE
                 BSR     LOAD_NOTE_DATA
             ENDI
         ENDI
+        ADD.B   #1,quater_beat_count
+        IF.B quater_beat_count <GT> #
         ADD.L   #8,song_file_index
         RTS
 
@@ -1073,7 +1083,6 @@ lane_3_object_addresses DS.W    16
 lane_4_object_count     DC.W    0
 lane_4_object_addresses DS.W    16
 
-
 note_objects            DS.W    NOTE_OBJECT_SIZE*8    ; stores the notes objects data
 ;   note object structure:
 ;   W   note colour index, 0 means that it is invisible
@@ -1098,6 +1107,8 @@ FILE_CONTENTS           EQU     $10000
 BASIC_PATH              DC.B    'notes/aaa.wav',0
 ALL_NOTES_NAMES         DC.B    'a10b10c10d10e10f10g10a20b20c20d20e20f20g20a30b30a11b11c11d11e11f11g11a21b21c21d21e21f21g21a31'
 
+song_difficulty         DS.B    1       ; stores the difficulty of the song playing, 0 - easy, 1 - medium, 2 - hard
+quater_beat_count       DS.B    1       ; stores the count of quater beats played
 
 ; COLOURS
 BLACK           EQU     $00000000
