@@ -7,16 +7,11 @@
 
 * TODO
 * Notes
-* drawing notes should be looped over lane objects
 * notes need to play automatically when invisible NOT TESTED YET
 * implement base track
 * 
-* Controls
-* add delay to repeted actions, but not when action is correct
-* 
 * Gameplay
 * implement difficulty for see through notes
-* change the timing of notes spawning
 * make it so that only on every full or half beat the notes are spawned
 * change psudo random path index to change after long not change
 * make it so there is a delay before ending the game
@@ -25,11 +20,11 @@
 * check if the centre of lanes is calculated correctly
 * change beat line to be only infront of player
 * change only player beat line and player model colours
+* action colour chages too quickly, needs to be animated
 * GRAPHICAL TESTING
 * 
 * ISSUES
 * at the big slap the note times array is incorrect
-* colour action spasms out, need to check if last up is active
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -427,24 +422,35 @@ HANDLE_COLOUR_CHANGE
             ; change colours
             BTST.L  #24,D1
             IF  <NE>    THEN
-                MOVE.L  #RED,player_1_action_colour
-                BSET.B  #7,player_1_action_pressed
-                put in ifs
+                BTST.B  #7,player_1_action_pressed
+                IF  <EQ>    THEN
+                    MOVE.L  #RED,player_1_action_colour
+                    BSET.B  #7,player_1_action_pressed
+                ENDI
             ENDI
             BTST.L  #16,D1
             IF  <NE>    THEN
-                MOVE.L  #ORANGE,player_1_action_colour
-                BSET.B  #6,player_1_action_pressed
+                BTST.B  #6,player_1_action_pressed
+                IF  <EQ>    THEN
+                    MOVE.L  #ORANGE,player_1_action_colour
+                    BSET.B  #6,player_1_action_pressed
+                ENDI
             ENDI
             BTST.L  #8,D1
             IF  <NE>    THEN
-                MOVE.L  #YELLOW,player_1_action_colour
-                BSET.B  #5,player_1_action_pressed
+                BTST.B  #5,player_1_action_pressed
+                IF  <EQ>    THEN
+                    MOVE.L  #YELLOW,player_1_action_colour
+                    BSET.B  #5,player_1_action_pressed
+                ENDI
             ENDI
             BTST.L  #0,D1
             IF  <NE>    THEN
-                MOVE.L  #LIME,player_1_action_colour
-                BSET.B  #4,player_1_action_pressed
+                BTST.B  #4,player_1_action_pressed
+                IF  <EQ>    THEN
+                    MOVE.L  #LIME,player_1_action_colour
+                    BSET.B  #4,player_1_action_pressed
+                ENDI
             ENDI
             MOVE.W  #8,D0
             TRAP    #15
@@ -464,18 +470,27 @@ HANDLE_COLOUR_CHANGE
                 ; change colours electric boogaloo
                 BTST.L  #24,D1
                 IF  <NE>    THEN
-                    MOVE.L  #AQUA,player_1_action_colour
-                    BSET.B  #3,player_1_action_pressed
+                    BTST.B  #3,player_1_action_pressed
+                    IF  <EQ>    THEN
+                        MOVE.L  #AQUA,player_1_action_colour
+                        BSET.B  #3,player_1_action_pressed
+                    ENDI
                 ENDI
                 BTST.L  #16,D1
                 IF  <NE>    THEN
-                    MOVE.L  #BLUE,player_1_action_colour
-                    BSET.B  #2,player_1_action_pressed
+                    BTST.B  #2,player_1_action_pressed
+                    IF  <EQ>    THEN
+                        MOVE.L  #BLUE,player_1_action_colour
+                        BSET.B  #2,player_1_action_pressed
+                    ENDI
                 ENDI
                 BTST.L  #8,D1
                 IF  <NE>    THEN
-                    MOVE.L  #PURPLE2,player_1_action_colour
-                    BSET.B  #1,player_1_action_pressed
+                    BTST.B  #1,player_1_action_pressed
+                    IF  <EQ>    THEN
+                        MOVE.L  #PURPLE2,player_1_action_colour
+                        BSET.B  #1,player_1_action_pressed
+                    ENDI
                 ENDI
                 MOVE.W  #8,D0
                 TRAP    #15
@@ -865,28 +880,32 @@ DRAW_NOTES
         MOVE.B  #3,D1
         TRAP    #15
 
-        LEA     note_objects,A0
-        FOR D5 = #0 TO #15  DO
-            ; sets pen and fill colour to white
-            MOVE.W  (A0),D1
-            IF.W D1 <NE> #0 THEN
-                IF.W D1 <NE> #$FFFF THEN
-                    MOVE.B  #80,D0
-                    BSR     GET_COLOUR_FROM_INDEX
-                    TRAP    #15
-                    MOVE.W  #81,D0
-                    TRAP    #15
-                    ADD.W   #2,A0
+        LEA     lane_0_object_addresses,A1
+        ; loops through the five lanes
+        FOR D5 = #0 TO #4   DO
+            MOVE.L  A1,A2
+            ; loops until encounters an empty position
+            IF.W (A2) <NE> #$FFFF   THEN
+                DBLOOP D6 = #15
+                    MOVE.W  (A2),A0
+                    IF.W (A0) <NE> #0 AND.W (A0) <NE> #$FFFF    THEN
+                        MOVE.B  #80,D0
+                        MOVE.W  (A0),D1
+                        BSR     GET_COLOUR_FROM_INDEX
+                        TRAP    #15
+                        MOVE.W  #81,D0
+                        TRAP    #15
+                        ADD.W   #2,A0
 
-                    MOVE.W  #NOTE_SIZE,D3
-                    MOVE.W  #NOTE_SIZE,D4
-                    BSR     DRAW_SQUARE
-                    SUB.W   #4,A0
-                ENDI
+                        MOVE.W  #NOTE_SIZE,D3
+                        MOVE.W  #NOTE_SIZE,D4
+                        BSR     DRAW_SQUARE
+                    ENDI
+                    ADD.W   #2,A2
+                UNLESS.W (A2) <NE> #$FFFF
             ENDI
-            ADD.W   #NOTE_OBJECT_SIZE,A0
+            ADD.W   #34,A1
         ENDF
-        
         RTS
 
 
