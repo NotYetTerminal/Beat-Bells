@@ -11,13 +11,13 @@
 * 
 * Gameplay
 * change psudo random path index to change after long not change
-* implement a bit of randomness to choosing notes for difficulties
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
 * change beat line to be only infront of player
 * change only player beat line and player model colours
 * action colour chages too quickly, needs to be animated
+* render letters on notes
 * GRAPHICAL TESTING
 * 
 * OPTIMISE USING THE COUNTER
@@ -26,6 +26,7 @@
 * at the big slap the note times array is incorrect
 * 
 * Menu
+* tutorial menu
 * load in song name
 * load in song difficulty
 * make it so there is a delay before ending the game and returns to menu
@@ -99,7 +100,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SONG
 
         ; sets the song difficulty
-        MOVE.B  #8,song_difficulty
+        MOVE.B  #4,song_difficulty
 
         JMP     LOOP
 
@@ -906,10 +907,10 @@ DRAW_NOTES
         MOVE.B  #3,D1
         TRAP    #15
 
-        LEA     lane_0_object_addresses,A1
+        LEA     lane_0_object_addresses,A3
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
-            MOVE.L  A1,A2
+            MOVE.L  A3,A2
             ; loops until encounters an empty position
             IF.W (A2) <NE> #$FFFF   THEN
                 DBLOOP D6 = #15
@@ -926,11 +927,27 @@ DRAW_NOTES
                         MOVE.W  #NOTE_SIZE,D3
                         MOVE.W  #NOTE_SIZE,D4
                         BSR     DRAW_SQUARE
+                        MOVE.W  D1,D7
+
+                        ; draw letters on notes
+                        MOVE.B  #80,D0
+                        CLR.L   D1
+                        TRAP    #15
+                        MOVE.B  #81,D0
+                        TRAP    #15
+                        MOVE.B  #95,D0
+                        LEA     letters_for_graphics,A1
+                        SUB.W   #4,A0
+                        ADD.W   (A0),A1
+                        ADD.W   (A0),A1
+                        MOVE.W  D7,D1
+                        TRAP    #15
+                        ADD.W   #4,A0
                     ENDI
                     ADD.W   #2,A2
                 UNLESS.W (A2) <NE> #$FFFF
             ENDI
-            ADD.W   #34,A1
+            ADD.W   #34,A3
         ENDF
         RTS
 
@@ -1129,6 +1146,8 @@ song_difficulty         DS.B    1       ; stores the difficulty of the song play
 quater_beat_count       DC.B    0       ; stores the count of quater beats played
 last_note_success       DC.B    0       ; stores whether the last hit note was correct
 
+letters_for_graphics    DC.B    ' ',0,'K',0,'L',0,'Y',0,'H',0,'U',0,'J',0,'I',0
+
 ; COLOURS
 BLACK           EQU     $00000000
 MAROON          EQU     $00000080
@@ -1151,6 +1170,7 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
 
 
 
