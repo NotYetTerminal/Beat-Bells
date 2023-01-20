@@ -30,6 +30,12 @@
 * load in song name
 * load in song difficulty
 * make it so there is a delay before ending the game and returns to menu
+* 
+* Varibles
+* song difficulty
+* song temp
+* notes speed
+* song file name
 
 ; set constants
 SCREEN_WIDTH        EQU     1280
@@ -907,10 +913,10 @@ DRAW_NOTES
         MOVE.B  #3,D1
         TRAP    #15
 
-        LEA     lane_0_object_addresses,A3
+        LEA     lane_0_object_addresses,A1
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
-            MOVE.L  A3,A2
+            MOVE.L  A1,A2
             ; loops until encounters an empty position
             IF.W (A2) <NE> #$FFFF   THEN
                 DBLOOP D6 = #15
@@ -927,27 +933,11 @@ DRAW_NOTES
                         MOVE.W  #NOTE_SIZE,D3
                         MOVE.W  #NOTE_SIZE,D4
                         BSR     DRAW_SQUARE
-                        MOVE.W  D1,D7
-
-                        ; draw letters on notes
-                        MOVE.B  #80,D0
-                        CLR.L   D1
-                        TRAP    #15
-                        MOVE.B  #81,D0
-                        TRAP    #15
-                        MOVE.B  #95,D0
-                        LEA     letters_for_graphics,A1
-                        SUB.W   #4,A0
-                        ADD.W   (A0),A1
-                        ADD.W   (A0),A1
-                        MOVE.W  D7,D1
-                        TRAP    #15
-                        ADD.W   #4,A0
                     ENDI
                     ADD.W   #2,A2
                 UNLESS.W (A2) <NE> #$FFFF
             ENDI
-            ADD.W   #34,A3
+            ADD.W   #34,A1
         ENDF
         RTS
 
