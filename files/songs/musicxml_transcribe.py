@@ -79,11 +79,11 @@ for bar in music_data:
     
     treble_line.append(treble_bar_list)
     bass_line.append(bass_bar_list)
-    for thing in treble_line[0]:
-        print(thing)
-    print()
-    for thing in bass_line[0]:
-        print(thing)
+    # for thing in treble_line[0]:
+    #     print(thing)
+    # print()
+    # for thing in bass_line[0]:
+    #     print(thing)
     break
 
 
@@ -108,11 +108,11 @@ def convert_duration_amount(dur_in: str) -> str:
 
 def export_music_data(file_name: str, music_data: list):
     exported_music_data: str = ''
-    bar_string: str = ''
     note_string: str = ''
+    previous_beat_count: int = -1
 
     for bar in music_data:
-        bar_string = ''
+        #bar_string = ''
         for note in bar:
             if note['step'] != '':
                 note_string = convert_duration_amount(note['duration']) + note['step'].lower() + str(note['octave'])
@@ -122,14 +122,25 @@ def export_music_data(file_name: str, music_data: list):
                     print('Error')
                     print(note)
                     input()
-            else:
-                for index in range(int(note['duration'])):
-                    bar_string += '0,'
+                if previous_beat_count == note['beat_count']:
+                    exported_music_data += ' ' + note_string
+                else:
+                    if len(exported_music_data) != 0 and exported_music_data[-1] != ',':
+                        exported_music_data += ','
+                    for _ in range(note['beat_count'] - previous_beat_count - 1):
+                        exported_music_data += '0,'
+                    
+                    exported_music_data += note_string
+                    previous_beat_count = note['beat_count']
 
-        bar_string += '\n'
+        #bar_string += '\n'
+    
+    print(exported_music_data)
+
+    #with open(file_name + '.txt', 'w') as f:
+    #    f.write()
 
 
-
-    with open(file_name + '.txt', 'w') as f:
-        f.write()
+export_music_data('b', treble_line)
+export_music_data('b', bass_line)
 
