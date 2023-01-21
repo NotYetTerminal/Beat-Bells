@@ -1,7 +1,6 @@
 import xml.etree.ElementTree as ET
 
 file: str = 'songs/Mantis Lords'
-#tree = ET.parse(input('File name: ') + '.musicxml')
 tree = ET.parse(file + '.musicxml')
 music_data = tree.getroot()[0]
 
@@ -41,32 +40,21 @@ for bar in music_data:
                     note_data_dict[data.tag] = data.text
                 
                 if data.tag == 'staff':
+                    if len(item.attrib.keys()) != 0 and item.attrib['default-x'] != previous_note_x_data and (previous_note_x_data == '' or abs(float(item.attrib['default-x']) - float(previous_note_x_data)) > 12):
+                        beat_count += previous_beat_duration
+                        previous_beat_duration = int(note_data_dict['duration'])
+                        previous_note_x_data = item.attrib['default-x']
+                    elif len(item.attrib.keys()) == 0:
+                        beat_count += previous_beat_duration
+                        previous_beat_duration = int(note_data_dict['duration'])
+                        previous_note_x_data = ''
+
+                    note_data_dict['beat_count'] = beat_count
+
                     if data.text == '1':
-                        if len(item.attrib.keys()) != 0 and previous_note_x_data != item.attrib['default-x']:
-                            beat_count += previous_beat_duration
-                            previous_beat_duration = int(note_data_dict['duration'])
-                            previous_note_x_data = item.attrib['default-x']
-                        elif len(item.attrib.keys()) == 0:
-                            beat_count += previous_beat_duration
-                            previous_beat_duration = int(note_data_dict['duration'])
-                            previous_note_x_data = ''
-
-                        note_data_dict['beat_count'] = beat_count
                         treble_bar_list.append(note_data_dict)
-                    
                     elif data.text == '2':
-                        if len(item.attrib.keys()) != 0 and previous_note_x_data != item.attrib['default-x']:
-                            beat_count += previous_beat_duration
-                            previous_beat_duration = int(note_data_dict['duration'])
-                            previous_note_x_data = item.attrib['default-x']
-                        elif len(item.attrib.keys()) == 0:
-                            beat_count += previous_beat_duration
-                            previous_beat_duration = int(note_data_dict['duration'])
-                            previous_note_x_data = ''
-
-                        note_data_dict['beat_count'] = beat_count
                         bass_bar_list.append(note_data_dict)
-
                     else:
                         print('Error')
                         print(data.text)
@@ -88,29 +76,20 @@ for bar in music_data:
 
 
 def convert_duration_amount(dur_in: str) -> str:
-    duration_dict: dict = {'1': '1',
-                           '2': '2',
-                           '3': '3',
-                           '4': '3',
-                           '6': '4',
-                           '8': '5',
-                           '12': '6',
-                           '16': '7'
-                           }
-    dur_out: str = ''
-
-    if dur_in not in duration_dict.keys():
-        print('Key error')
+    dur_in = int(dur_in)
+    if dur_in > 16 or dur_in < 1:
+        print('Time error')
         print(dur_in)
         input()
-    else:
-        dur_out = duration_dict[dur_in]
+    
+    return chr(dur_in + 64)
 
-    return dur_out
-
-
+# music note in txt is made up as following
+# first character is a letter from A to P representing the number of quater beats to play, 1 - 16
+# second is the note frequency number from 0 to 8
+# third is the note frequency character from a to g
+# lastly is whether it is a neutral or sharp, n/s
 def export_music_data(file_name: str, music_data: list):
-    #exported_music_data: str = ''
     exported_music_data: list = []
     note_string: str = ''
     previous_beat_count: int = -1
@@ -118,31 +97,32 @@ def export_music_data(file_name: str, music_data: list):
     for bar in music_data:
         for note in bar:
             if note['step'] != '':
-                note_string = convert_duration_amount(note['duration']) + note['step'].lower() + str(note['octave'])
+                note_string = convert_duration_amount(note['duration']) + str(note['octave']) + note['step'].lower()
                 if note['alter'] == '1':
-                    note_string += '1'
+                    note_string += 's'
                 elif note['alter'] == '-1':
                     note['step'] = chr(ord(note['step']) - 1)
                     if note['step'] == '@':
                         note['step'] = 'G'
-                    note_string = convert_duration_amount(note['duration']) + note['step'].lower() + str(note['octave'])
+                    note_string = convert_duration_amount(note['duration']) + str(note['octave']) + note['step'].lower()
                     if note['step'] != 'B' and note['step'] != 'E':
-                        note_string += '1'
+                        note_string += 's'
+                    else:
+                        note_string += 'n'
                 elif note['alter'] != '0':
                     print('Error')
                     print(note)
                     input()
+                else:
+                    note_string += 'n'
                 if previous_beat_count == note['beat_count']:
                     exported_music_data[-1] += ' ' + note_string
                 else:
-                    #if len(exported_music_data) != 0 and exported_music_data[-1] != ',':
-                    #    exported_music_data += ','
                     for _ in range(note['beat_count'] - previous_beat_count - 1):
                         exported_music_data.append('0')
                     
                     exported_music_data.append(note_string)
                     previous_beat_count = note['beat_count']
-    
 
     for _ in range(16 - (len(exported_music_data) % 16)):
         exported_music_data.append('0')
