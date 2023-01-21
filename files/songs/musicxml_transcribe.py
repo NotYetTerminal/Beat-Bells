@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
 
-
+file: str = 'songs/Mantis Lords'
 #tree = ET.parse(input('File name: ') + '.musicxml')
-tree = ET.parse('songs/Mantis Lords.musicxml')
+tree = ET.parse(file + '.musicxml')
 music_data = tree.getroot()[0]
 
 if music_data.tag != 'part':
@@ -84,7 +84,7 @@ for bar in music_data:
     # print()
     # for thing in bass_line[0]:
     #     print(thing)
-    break
+    #break
 
 
 def convert_duration_amount(dur_in: str) -> str:
@@ -92,7 +92,10 @@ def convert_duration_amount(dur_in: str) -> str:
                            '2': '2',
                            '3': '3',
                            '4': '3',
-                           '6': '4'
+                           '6': '4',
+                           '8': '5',
+                           '12': '6',
+                           '16': '7'
                            }
     dur_out: str = ''
 
@@ -107,40 +110,54 @@ def convert_duration_amount(dur_in: str) -> str:
 
 
 def export_music_data(file_name: str, music_data: list):
-    exported_music_data: str = ''
+    #exported_music_data: str = ''
+    exported_music_data: list = []
     note_string: str = ''
     previous_beat_count: int = -1
 
     for bar in music_data:
-        #bar_string = ''
         for note in bar:
             if note['step'] != '':
                 note_string = convert_duration_amount(note['duration']) + note['step'].lower() + str(note['octave'])
-                if note['alter'] == '-1':
+                if note['alter'] == '1':
                     note_string += '1'
+                elif note['alter'] == '-1':
+                    note['step'] = chr(ord(note['step']) - 1)
+                    if note['step'] == '@':
+                        note['step'] = 'G'
+                    note_string = convert_duration_amount(note['duration']) + note['step'].lower() + str(note['octave'])
+                    if note['step'] != 'B' and note['step'] != 'E':
+                        note_string += '1'
                 elif note['alter'] != '0':
                     print('Error')
                     print(note)
                     input()
                 if previous_beat_count == note['beat_count']:
-                    exported_music_data += ' ' + note_string
+                    exported_music_data[-1] += ' ' + note_string
                 else:
-                    if len(exported_music_data) != 0 and exported_music_data[-1] != ',':
-                        exported_music_data += ','
+                    #if len(exported_music_data) != 0 and exported_music_data[-1] != ',':
+                    #    exported_music_data += ','
                     for _ in range(note['beat_count'] - previous_beat_count - 1):
-                        exported_music_data += '0,'
+                        exported_music_data.append('0')
                     
-                    exported_music_data += note_string
+                    exported_music_data.append(note_string)
                     previous_beat_count = note['beat_count']
-
-        #bar_string += '\n'
     
-    print(exported_music_data)
 
-    #with open(file_name + '.txt', 'w') as f:
-    #    f.write()
+    for _ in range(16 - (len(exported_music_data) % 16)):
+        exported_music_data.append('0')
 
+    with open(file_name + '.txt', 'w') as f:
+        end_index: int = 4
+        for start_index in range(0, len(exported_music_data), 4):
+            f.write(','.join(exported_music_data[start_index:end_index]) + ',\n')
+            if end_index % 16 == 0:
+                f.write('\n')
+            end_index += 4
+        f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n\n')
+        f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0')
+        
 
-export_music_data('b', treble_line)
-export_music_data('b', bass_line)
+export_music_data(file + ' T', treble_line)
+export_music_data(file + ' B', bass_line)
 
