@@ -8,6 +8,7 @@
 * TODO
 * Notes
 * implement base track
+* implement txt file reading
 * 
 * Gameplay
 * change psudo random path index to change after long not change

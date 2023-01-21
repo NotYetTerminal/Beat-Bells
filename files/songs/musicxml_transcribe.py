@@ -154,7 +154,6 @@ def export_music_data(file_name: str, music_data: list):
             if end_index % 16 == 0:
                 f.write('\n')
             end_index += 4
-        f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n\n')
         f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0')
         
 
