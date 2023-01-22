@@ -48,6 +48,9 @@ for bar in music_data:
                         beat_count += previous_beat_duration
                         previous_beat_duration = int(note_data_dict['duration'])
                         previous_note_x_data = ''
+                    else:
+                        if abs(float(item.attrib['default-x']) - float(previous_note_x_data)) < 12 and abs(float(item.attrib['default-x']) - float(previous_note_x_data)) > 1:
+                            print('Double note on line:', float(previous_note_x_data), float(item.attrib['default-x']))
 
                     note_data_dict['beat_count'] = beat_count
 
