@@ -116,7 +116,7 @@ def export_music_data(file_name: str, music_data: list):
                 else:
                     note_string += 'n'
                 if previous_beat_count == note['beat_count']:
-                    exported_music_data[-1] += ' ' + note_string
+                    exported_music_data[-1] += note_string
                 else:
                     for _ in range(note['beat_count'] - previous_beat_count - 1):
                         exported_music_data.append('0')

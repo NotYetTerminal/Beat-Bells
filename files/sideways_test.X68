@@ -39,18 +39,17 @@
 * song file name
 
 ; set constants
-SCREEN_WIDTH        EQU     1280
-SCREEN_HEIGHT       EQU     720
+SCREEN_WIDTH            EQU     1280
+SCREEN_HEIGHT           EQU     720
 
-BORDER_SIZE         EQU     20
-LANE_SIZE           EQU     (SCREEN_HEIGHT-BORDER_SIZE-BORDER_SIZE)/5
-BEAT_LINE_X         EQU     200
+BORDER_SIZE             EQU     20
+LANE_SIZE               EQU     (SCREEN_HEIGHT-BORDER_SIZE-BORDER_SIZE)/5
+BEAT_LINE_X             EQU     200
 
-PLAYER_SIZE         EQU     20
-NOTE_SIZE           EQU     40
+PLAYER_SIZE             EQU     20
+NOTE_SIZE               EQU     40
 
-; should be 14 but put it up for debug purposes
-NOTE_OBJECT_SIZE    EQU     16
+NOTE_OBJECT_SIZE        EQU     48
 
 
 ; program start
@@ -112,21 +111,11 @@ START   ORG    $1000
         JMP     LOOP
 
 
+; loads in all notes into DirectX memory
 NOTE_SET_UP
-        ; loads in note rest times
-        * LEA     rest_times_array,A1
-        * MOVE.B  #2,(A1)+
-        * MOVE.B  #3,(A1)+
-        * MOVE.B  #5,(A1)+
-        * MOVE.B  #7,(A1)+
-        * MOVE.B  #9,(A1)+
-        * MOVE.B  #13,(A1)+
-        * MOVE.B  #17,(A1)
-
-        ; loads in all notes into DirectX memory
         LEA     BASIC_PATH,A1
-        LEA     ALL_NOTES_NAMES,A2
-        FOR D1 = #0 TO #87  DO
+        LEA     NOTES_NAMES_0,A2
+        FOR D1 = #0 TO #101  DO
             FOR D2 = #0 TO #2   DO
                 MOVE.L  A1,A3
                 ADD.W   #6,A3
@@ -298,14 +287,15 @@ CHECK_COLLISIONS
                     ENDI
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
+                        BSR     PLAY_MUSIC_ON_HIT
                         ; check if it was an invisible or hit note
-                        IF.W -(A1) <EQ> #0  THEN
-                            IF.B last_note_success <EQ> #1  THEN
-                                ;BSR     PLAY_MUSIC_ON_HIT
-                            ENDI
-                        ELSE
-                            CLR.B   last_note_success
-                        ENDI
+                        * IF.W -(A1) <EQ> #0  THEN
+                        *     IF.B last_note_success <EQ> #1  THEN
+                        *         BSR     PLAY_MUSIC_ON_HIT
+                        *     ENDI
+                        * ELSE
+                        *     CLR.B   last_note_success
+                        * ENDI
                         MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
                     ENDI
@@ -317,99 +307,72 @@ CHECK_COLLISIONS
 
 
 ; must not use D5, A0, A1
-* PLAY_MUSIC_ON_HIT
-*         ADD.W   #6,A1
+; A1 contains the address to the start of the note object, ie it's colour
+PLAY_MUSIC_ON_HIT
+        ADD.W   #6,A1
+        ; A1 now contains the address to actual note data
 
-*         CLR.L 	D3
-*         LEA     notes_times_array,A2
-*         FOR D6 = #0 TO #7   DO
-*             MOVE.B  (A1,D6),D3
-*             IF #0 <NE> D3   THEN
-*                 IF D3 <GT> #15  THEN
-*                     ; splits the upper four bits of D3.B into D2.B
-*                     MOVE.L  D3,D2
-*                     LSR.B   #4,D2
-*                     LSL.B   #4,D2
-*                     SUB.B   D2,D3
-*                     LSR.B   #4,D2
+        CLR.L 	D3
+        CLR.L 	D4
+        LEA     notes_times_array,A2
+        FOR D6 = #0 TO #NOTE_OBJECT_SIZE-9 DO
+            ; D3 contains the number of beats to play the note for
+            MOVE.B  (A1,D6),D3
+            ; #48 is the ascii value for 0 character
+            IF #48 <NE> D3   THEN
+                ADD.B   #1,D6
+                MOVE.B  (A1,D6),D4
+                LEA     NOTES_NAMES_0,A3
 
-*                     MOVE.B  D6,D1
-*                     LSL.B   #1,D1
-*                     ; checks for sharp
-*                     BTST.L  #3,D2
-*                     IF  <NE>    THEN
-*                         ADD.B   #16,D1
-*                         SUB.B   #8,D2
-*                         BSR     REST_TIME_FROM_INDEX
-*                         ; puts in rest time
-*                         ADD.L   #16,A2
-*                         BSR     STOP_NOTE_PLAYING
-*                         MOVE.B  (A3),(A2)
-*                         SUB.L   #16,A2
-*                     ELSE
-*                         BSR     REST_TIME_FROM_INDEX
-*                         BSR     STOP_NOTE_PLAYING
-*                         MOVE.B  (A3),(A2)
-*                     ENDI
-*                     ; D1 needed here
-*                     MOVE.B  #75,D0
-*                     TRAP    #15
+                ; if not 0
+                IF #48 <NE> D4  THEN
+                    ; if 8
+                    IF #56 <EQ> D4  THEN
+                        MOVE.B  #101,D1
+                        ADD.B   #2,D6
+                    ELSE
+                        SUB.B   #49,D4
+                        MULU    #14,D4
+                        ADD.B   #3,D4
 
-*                     LSL.B   #4,D3
-*                 ENDI
-*                 IF #0 <NE> D3   THEN
-*                     MOVE.L  D3,D2
+                        ADD.B   #1,D6
+                        MOVE.B  (A1,D6),D1
+                        SUB.B   #97,D1
+                        ADD.B   #1,D6
+                        IF.B (A1,D6) <EQ> #115  THEN
+                            ADD.B   #1,D1
+                        ENDI
+                        ADD.B   D4,D1
+                    ENDI
+                ELSE
+                    ADD.B   #1,D6
+                    MOVE.B  (A1,D6),D1
+                    SUB.B   #97,D1
+                    ADD.B   #1,D6
+                    IF.B (A1,D6) <EQ> #115  THEN
+                        ADD.B   #2,D1
+                    ENDI
+                ENDI
+                ; D1 now contains the index number of the note both for DirectX and rest times
+                
+                ; stops a note playing if it is
+                IF.B (A2,D1) <NE> #$FF   THEN
+                    MOVE.L  #77,D0
+                    MOVE.L  #2,D2
+                    TRAP    #15
+                ENDI
 
-*                     MOVE.B  D6,D1
-*                     LSL.B   #1,D1
-*                     ADD.B   #1,D1
-*                     ADD.L   #1,A2
-*                     ; checks for sharp
-*                     BTST.L  #3,D2
-*                     IF  <NE>    THEN
-*                         ADD.B   #16,D1
-*                         SUB.B   #8,D2
-*                         BSR     REST_TIME_FROM_INDEX
-*                         ; puts in rest time
-*                         ADD.L   #16,A2
-*                         BSR     STOP_NOTE_PLAYING
-*                         MOVE.B  (A3),(A2)
-*                         SUB.L   #16,A2
-*                     ELSE
-*                         BSR     REST_TIME_FROM_INDEX
-*                         BSR     STOP_NOTE_PLAYING
-*                         MOVE.B  (A3),(A2)
-*                     ENDI
-*                     SUB.L   #1,A2
-*                     ; D1 needed here
-*                     MOVE.B  #75,D0
-*                     TRAP    #15
-*                 ENDI
-*             ENDI
-*             ADD.L   #2,A2
-*         ENDF
-*         SUB.W   #6,A1
-*         RTS
+                ; puts in the rest time
+                SUB.B   #64,D3
+                MOVE.B  D3,(A2,D1)
 
-
-* ; D2.L holds the index
-* ; returns value at (A3)
-* ; choose which rest time to put in
-* * REST_TIME_FROM_INDEX
-* *         LEA     rest_times_array,A3
-* *         ADD.L   D2,A3
-* *         SUB.L   #1,A3
-* *         RTS
-
-
-* ; stops a note playing if it is
-* STOP_NOTE_PLAYING
-*         IF.B (A2) <NE> #$FF   THEN
-*             MOVE.L  #2,D2
-*             MOVE.L  #77,D0
-*             TRAP    #15
-*         ENDI
-*         RTS
+                ; D1 needed here
+                MOVE.B  #75,D0
+                TRAP    #15
+            ENDI
+        ENDF
+        SUB.W   #6,A1
+        RTS
 
 
 ; shifts the lane in A0 one to the left, deleting the object at index 0
@@ -620,34 +583,30 @@ RESET_PLAYER_1_ACTION
 
 SPAWN_NEW_NOTE
         MOVE.L  song_file_index,A0
+
         ; song has ended
         IF.L (A0) <EQ> #$FFFFFFFF   THEN
             BSR     EXIT_PROGRAM
         ENDI
-        ; two longs are checked if there are any notes being played
-        IF.L #0 <NE> (A0) THEN
-            ADD.W   #4,A0
+
+        ; first byte is checked if there are any notes being played
+        IF.B #0 <NE> (A0) THEN
             BSR     CREATE_NOTE_OBJECT
             IF A2 <EQ> #$0  THEN
                 RTS
             ENDI
             BSR     LOAD_NOTE_DATA
         ELSE
-            ADD.W   #4,A0
-            IF.L #0 <NE> (A0)   THEN
-                BSR     CREATE_NOTE_OBJECT
-                IF A2 <EQ> #$0  THEN
-                    RTS
-                ENDI
-                BSR     LOAD_NOTE_DATA
-            ENDI
+            ADD.L   #2,song_file_index
         ENDI
+
         ADD.B   #1,quater_beat_count
         MOVE.B  song_difficulty,D0
         IF.B quater_beat_count <EQ> D0 THEN
             CLR.B   quater_beat_count
         ENDI
-        ADD.L   #8,song_file_index
+        ;ADD.L   #8,song_file_index
+        CHANGE THIS
         RTS
 
 
@@ -666,14 +625,19 @@ CREATE_NOTE_OBJECT
         RTS
 
 
+; A0 contains the address to the current song data beat note
+; A2 contains the address to the start of music note object
 LOAD_NOTE_DATA
+        idsa
         ; load the music data into the note object
-        SUB.W   #4,A0
-        ADD.W   #6,A2
-        MOVE.L  (A0),(A2)
-        ADD.W   #4,A0
-        ADD.W   #4,A2
-        MOVE.L  (A0),(A2)
+        WHILE.B (A0) <NE> #44   DO
+            MOVE.B  (A0),(A2)
+            ADD.W   #1,A2
+            ADD.W   #1,A0
+        ENDW
+        MOVE.B  #0,(A2)
+        ADD.W   #1,A0
+        MOVE.L  A0,song_file_index
 
         ; assign a colour based on the playing notes
         ; and the difficulty
@@ -1110,13 +1074,12 @@ note_objects            DS.W    NOTE_OBJECT_SIZE*8    ; stores the notes objects
 ;   W   note colour index, 0 means that it is invisible
 ;   W   x position
 ;   W   y position
-;   L   music notes data, same as in the file
-;   L   music notes data
+;   W   useless
+;   L*10   music notes data, same as in the file
 note_path_index         DS.B    1       ; stores the lane index of the note path
 song_file_index         DS.L    1       ; stores the byte index that the song is at
 
-notes_times_array       DS.B    88      ; contains the times for each note that needs to be hold
-;rest_times_array        DS.B    7       ; contains the number of quater beats needed for each note
+notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
 file_size               DS.L    1       ; stores the size of the song file in bytes
 file_name               DC.B    'songs/number_one',0
@@ -1127,8 +1090,16 @@ FILE_CONTENTS           EQU     $10000
 
 ; notes names
 BASIC_PATH              DC.B    'notes/aaa.wav',0
-ALL_NOTES_NAMES         DC.B    '0an0as0bn1an1as1bn1cn1cs1dn1ds1en1fn1fs1gn1gs2an2as2bn2cn2cs2dn2ds2en2fn2fs2gn2gs3an3as3bn3cn3cs3dn3ds3en3fn3fs3gn3gs'
-ALL_NOTES_NAMES_2       DC.B    '4an4as4bn4cn4cs4dn4ds4en4fn4fs4gn4gs5an5as5bn5cn5cs5dn5ds5en5fn5fs5gn5gs6an6as6bn6cn6cs6dn6ds6en6fn6fs6gn6gs7an7as7bn7cn7cs7dn7ds7en7fn7fs7gn7gs8cn'
+NOTES_NAMES_0           DC.B    '0an0bn0as'
+NOTES_NAMES_1           DC.B    '1an1bn1cn1dn1en1fn1gn1as1bs1cs1ds1es1fs1gs'
+NOTES_NAMES_2           DC.B    '2an2bn2cn2dn2en2fn2gn2as2bs2cs2ds2es2fs2gs'
+NOTES_NAMES_3           DC.B    '3an3bn3cn3dn3en3fn3gn3as3bs3cs3ds3es3fs3gs'
+NOTES_NAMES_4           DC.B    '4an4bn4cn4dn4en4fn4gn4as4bs4cs4ds4es4fs4gs'
+NOTES_NAMES_5           DC.B    '5an5bn5cn5dn5en5fn5gn5as5bs5cs5ds5es5fs5gs'
+NOTES_NAMES_6           DC.B    '6an6bn6cn6dn6en6fn6gn6as6bs6cs6ds6es6fs6gs'
+NOTES_NAMES_7           DC.B    '7an7bn7cn7dn7en7fn7gn7as7bs7cs7ds7es7fs7gs'
+NOTES_NAMES_8           DC.B    '8cn'
+
 
 song_difficulty         DS.B    1       ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
 quater_beat_count       DC.B    0       ; stores the count of quater beats played
@@ -1157,12 +1128,6 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
-
-
-
-
-
-
 
 *~Font name~Courier New~
 *~Font size~10~
