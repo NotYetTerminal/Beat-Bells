@@ -131,9 +131,8 @@ def export_music_data(file_name: str, music_data: list):
         end_index: int = 4
         for start_index in range(0, len(exported_music_data), 4):
             f.write(','.join(exported_music_data[start_index:end_index]) + ',\n')
-            if end_index % 16 == 0:
-                f.write('\n')
             end_index += 4
+        f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n')
         f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0')
         
 

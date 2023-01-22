@@ -25,7 +25,7 @@
 * 
 * ISSUES
 * at the big slap the note times array is incorrect
-* COLOURS ARE INCORRECT
+* some notes flicker
 * 
 * Menu
 * tutorial menu
@@ -249,6 +249,7 @@ MOVE_OBJECTS
                 DBLOOP D6 = #15
                     MOVE.W  (A1),A2
                     ADD.W   #2,A2
+                    ; moves the notes by 8
                     SUB.W   #8,(A2)
                     ADD.W   #2,A1
                 UNLESS.W (A1) <NE> #$FFFF
@@ -297,7 +298,7 @@ CHECK_COLLISIONS
                         * ELSE
                         *     CLR.B   last_note_success
                         * ENDI
-                        MOVE.W  #$FFFF,(A1)
+                        MOVE.W  #$FFFF,-(A1)
                         BSR     LANE_LEFT_SHIFT
                     ENDI
                 ENDI
@@ -319,8 +320,7 @@ PLAY_MUSIC_ON_HIT
         FOR D6 = #0 TO #NOTE_OBJECT_SIZE-9 DO
             ; D3 contains the number of beats to play the note for
             MOVE.B  (A1,D6),D3
-            ; #48 is the ascii value for 0 character
-            IF #48 <NE> D3   THEN
+            IF #0 <NE> D3   THEN
                 ADD.B   #1,D6
                 MOVE.B  (A1,D6),D4
                 LEA     NOTES_NAMES_0,A3
@@ -341,7 +341,7 @@ PLAY_MUSIC_ON_HIT
                         SUB.B   #97,D1
                         ADD.B   #1,D6
                         IF.B (A1,D6) <EQ> #115  THEN
-                            ADD.B   #1,D1
+                            ADD.B   #7,D1
                         ENDI
                         ADD.B   D4,D1
                     ENDI
@@ -370,6 +370,9 @@ PLAY_MUSIC_ON_HIT
                 ; D1 needed here
                 MOVE.B  #75,D0
                 TRAP    #15
+            ELSE
+                SUB.W   #6,A1
+                RTS
             ENDI
         ENDF
         SUB.W   #6,A1
@@ -590,6 +593,12 @@ SPAWN_NEW_NOTE
             BSR     EXIT_PROGRAM
         ENDI
 
+        ; check for carraige return and line feed
+        IF.B (A0) <EQ> #13  THEN
+            ADD.L   #2,song_file_index
+            ADD.L   #2,A0
+        ENDI
+
         ; first byte is checked if there are any notes being played
         IF.B #48 <NE> (A0) THEN
             BSR     CREATE_NOTE_OBJECT
@@ -620,7 +629,7 @@ CREATE_NOTE_OBJECT
             ADD.W   #NOTE_OBJECT_SIZE,A2
         ENDF
         MOVE.L  #0,A2
-        ILLEGAL
+        ;ILLEGAL
         RTS
 
 
@@ -675,35 +684,11 @@ PICK_NOTE_COLOUR
         ELSE
             MOVE.W  #0,D2
         ENDI
-        MOVE.W  D2,D3
-        ADD.W   #10,D3
-        CLR.L   D7
-        MOVE.B  (A2,D3),D3
-        SUB.B   #96,D3
-        MOVE.W  D3,(A2)
-        RTS
-
-
-CHOOSE_RANDOM_AND_PICK
-        BSR     RANDOM_2
-        IF  <NE>    THEN
-            ADD.B   #1,D3
-        ENDI
-        BSR     ASSIGN_COLOUR_INDEX
-        RTS
-
-
-ASSIGN_COLOUR_INDEX
-        SUB.W   #6,A2
-        ; modulo 7
-        IF D3 <GE> #7   THEN
-            SUB.B   #7,D3
-            IF D3 <GE> #7   THEN
-                SUB.B   #7,D3
-            ENDI
-        ENDI
-        ADD.W   #1,D3
-        MOVE.W  D3,(A2)
+        MULU    #4,D2
+        ADD.W   #10,D2
+        MOVE.B  (A2,D2),D2
+        SUB.B   #96,D2
+        MOVE.W  D2,(A2)
         RTS
 
 
