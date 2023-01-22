@@ -25,6 +25,7 @@
 * 
 * ISSUES
 * at the big slap the note times array is incorrect
+* COLOURS ARE INCORRECT
 * 
 * Menu
 * tutorial menu
@@ -106,7 +107,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SONG
 
         ; sets the song difficulty
-        MOVE.B  #4,song_difficulty
+        MOVE.B  #1,song_difficulty
 
         JMP     LOOP
 
@@ -585,12 +586,12 @@ SPAWN_NEW_NOTE
         MOVE.L  song_file_index,A0
 
         ; song has ended
-        IF.L (A0) <EQ> #$FFFFFFFF   THEN
+        IF.B (A0) <EQ> #$FF THEN
             BSR     EXIT_PROGRAM
         ENDI
 
         ; first byte is checked if there are any notes being played
-        IF.B #0 <NE> (A0) THEN
+        IF.B #48 <NE> (A0) THEN
             BSR     CREATE_NOTE_OBJECT
             IF A2 <EQ> #$0  THEN
                 RTS
@@ -605,8 +606,6 @@ SPAWN_NEW_NOTE
         IF.B quater_beat_count <EQ> D0 THEN
             CLR.B   quater_beat_count
         ENDI
-        ;ADD.L   #8,song_file_index
-        CHANGE THIS
         RTS
 
 
@@ -628,31 +627,24 @@ CREATE_NOTE_OBJECT
 ; A0 contains the address to the current song data beat note
 ; A2 contains the address to the start of music note object
 LOAD_NOTE_DATA
-        idsa
         ; load the music data into the note object
-        WHILE.B (A0) <NE> #44   DO
-            MOVE.B  (A0),(A2)
-            ADD.W   #1,A2
-            ADD.W   #1,A0
+        MOVE.L  #8,D3
+        SUB.L   #8,A0
+        WHILE.B (A0,D3) <NE> #44   DO
+            MOVE.B  (A0,D3),(A2,D3)
+            ADD.W   #1,D3
         ENDW
-        MOVE.B  #0,(A2)
-        ADD.W   #1,A0
-        MOVE.L  A0,song_file_index
+        MOVE.B  #0,(A2,D3)
+        SUB.L   #8,D3
+        ADD.L   D3,song_file_index
+        ADD.L   #1,song_file_index
+
+        ; gets the number of notes playing on the same beat
+        DIVU    #4,D3
 
         ; assign a colour based on the playing notes
         ; and the difficulty
-        CLR.L   D3
-        ADD.W   #3,A2
-        FOR D5 = #0 TO #7  DO
-            IF.B (A2) <NE> #0   THEN
-                ADD.B   #1,D3
-            ENDI
-            SUB.W   #1,A2
-        ENDF
-        ADD.W   #1,A2
-
         IF.B quater_beat_count <NE> #0  THEN
-            SUB.W   #6,A2
             CLR.W   (A2)
         ELSE
             BSR     PICK_NOTE_COLOUR
@@ -675,6 +667,7 @@ LOAD_NOTE_DATA
         RTS
 
 
+; needs to have the number of notes in D3
 ; choose a random frequency to pick as the visible colour
 PICK_NOTE_COLOUR
         IF D3 <NE> #1   THEN
@@ -682,43 +675,12 @@ PICK_NOTE_COLOUR
         ELSE
             MOVE.W  #0,D2
         ENDI
-        CLR.L   D3
+        MOVE.W  D2,D3
+        ADD.W   #10,D3
         CLR.L   D7
-        FOR D5 = #0 TO #7   DO
-            IF.B (A2,D5) <NE> #0    THEN
-                IF.W D2 <EQ> #0 THEN
-                    MOVE.B  (A2,D5),D7
-                    IF D7 <GT> #15  THEN
-                        ; checks if the right side has any bits
-                        BTST    #0,D7
-                        IF  <NE>    THEN
-                            BSR     CHOOSE_RANDOM_AND_PICK
-                            RTS
-                        ENDI
-                        BTST    #1,D7
-                        IF  <NE>    THEN
-                            BSR     CHOOSE_RANDOM_AND_PICK
-                            RTS
-                        ENDI
-                        BTST    #2,D7
-                        IF  <NE>    THEN
-                            BSR     CHOOSE_RANDOM_AND_PICK
-                            RTS
-                        ENDI
-                        ; only left side has bits
-                        BSR     ASSIGN_COLOUR_INDEX
-                        RTS
-                    ELSE
-                        ; second half of byte
-                        ADD.B   #1,D3
-                        BSR     ASSIGN_COLOUR_INDEX
-                        RTS
-                    ENDI
-                ENDI
-                SUB.B   #1,D2
-            ENDI
-            ADD.B   #2,D3
-        ENDF
+        MOVE.B  (A2,D3),D3
+        SUB.B   #96,D3
+        MOVE.W  D3,(A2)
         RTS
 
 
@@ -1082,7 +1044,7 @@ song_file_index         DS.L    1       ; stores the byte index that the song is
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
 file_size               DS.L    1       ; stores the size of the song file in bytes
-file_name               DC.B    'songs/number_one',0
+file_name               DC.B    'songs/Mantis Lords T.txt',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
 ; IT IS ILLEGAL AND RAISES AN ERROR
@@ -1128,6 +1090,7 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
 
 *~Font name~Courier New~
 *~Font size~10~
