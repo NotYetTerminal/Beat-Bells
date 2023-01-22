@@ -114,20 +114,19 @@ START   ORG    $1000
 
 NOTE_SET_UP
         ; loads in note rest times
-        LEA     rest_times_array,A1
-        MOVE.B  #2,(A1)+
-        MOVE.B  #3,(A1)+
-        MOVE.B  #5,(A1)+
-        MOVE.B  #7,(A1)+
-        MOVE.B  #9,(A1)+
-        MOVE.B  #13,(A1)+
-        MOVE.B  #17,(A1)
+        * LEA     rest_times_array,A1
+        * MOVE.B  #2,(A1)+
+        * MOVE.B  #3,(A1)+
+        * MOVE.B  #5,(A1)+
+        * MOVE.B  #7,(A1)+
+        * MOVE.B  #9,(A1)+
+        * MOVE.B  #13,(A1)+
+        * MOVE.B  #17,(A1)
 
         ; loads in all notes into DirectX memory
-        ; some note files do not exist and will cause warnings
         LEA     BASIC_PATH,A1
         LEA     ALL_NOTES_NAMES,A2
-        FOR D1 = #0 TO #30  DO
+        FOR D1 = #0 TO #87  DO
             FOR D2 = #0 TO #2   DO
                 MOVE.L  A1,A3
                 ADD.W   #6,A3
@@ -193,9 +192,6 @@ LOOP
             TRAP    #15
             MOVE.L  D1,last_movement_time
         ENDI
-
-        ; collision check
-*        BSR     CHECK_OBJECT_COLLISIONS
 
         ; new path index
         MOVE.W  #8,D0
@@ -305,7 +301,7 @@ CHECK_COLLISIONS
                         ; check if it was an invisible or hit note
                         IF.W -(A1) <EQ> #0  THEN
                             IF.B last_note_success <EQ> #1  THEN
-                                BSR     PLAY_MUSIC_ON_HIT
+                                ;BSR     PLAY_MUSIC_ON_HIT
                             ENDI
                         ELSE
                             CLR.B   last_note_success
@@ -321,99 +317,99 @@ CHECK_COLLISIONS
 
 
 ; must not use D5, A0, A1
-PLAY_MUSIC_ON_HIT
-        ADD.W   #6,A1
+* PLAY_MUSIC_ON_HIT
+*         ADD.W   #6,A1
 
-        CLR.L 	D3
-        LEA     notes_times_array,A2
-        FOR D6 = #0 TO #7   DO
-            MOVE.B  (A1,D6),D3
-            IF #0 <NE> D3   THEN
-                IF D3 <GT> #15  THEN
-                    ; splits the upper four bits of D3.B into D2.B
-                    MOVE.L  D3,D2
-                    LSR.B   #4,D2
-                    LSL.B   #4,D2
-                    SUB.B   D2,D3
-                    LSR.B   #4,D2
+*         CLR.L 	D3
+*         LEA     notes_times_array,A2
+*         FOR D6 = #0 TO #7   DO
+*             MOVE.B  (A1,D6),D3
+*             IF #0 <NE> D3   THEN
+*                 IF D3 <GT> #15  THEN
+*                     ; splits the upper four bits of D3.B into D2.B
+*                     MOVE.L  D3,D2
+*                     LSR.B   #4,D2
+*                     LSL.B   #4,D2
+*                     SUB.B   D2,D3
+*                     LSR.B   #4,D2
 
-                    MOVE.B  D6,D1
-                    LSL.B   #1,D1
-                    ; checks for sharp
-                    BTST.L  #3,D2
-                    IF  <NE>    THEN
-                        ADD.B   #16,D1
-                        SUB.B   #8,D2
-                        BSR     REST_TIME_FROM_INDEX
-                        ; puts in rest time
-                        ADD.L   #16,A2
-                        BSR     STOP_NOTE_PLAYING
-                        MOVE.B  (A3),(A2)
-                        SUB.L   #16,A2
-                    ELSE
-                        BSR     REST_TIME_FROM_INDEX
-                        BSR     STOP_NOTE_PLAYING
-                        MOVE.B  (A3),(A2)
-                    ENDI
-                    ; D1 needed here
-                    MOVE.B  #75,D0
-                    TRAP    #15
+*                     MOVE.B  D6,D1
+*                     LSL.B   #1,D1
+*                     ; checks for sharp
+*                     BTST.L  #3,D2
+*                     IF  <NE>    THEN
+*                         ADD.B   #16,D1
+*                         SUB.B   #8,D2
+*                         BSR     REST_TIME_FROM_INDEX
+*                         ; puts in rest time
+*                         ADD.L   #16,A2
+*                         BSR     STOP_NOTE_PLAYING
+*                         MOVE.B  (A3),(A2)
+*                         SUB.L   #16,A2
+*                     ELSE
+*                         BSR     REST_TIME_FROM_INDEX
+*                         BSR     STOP_NOTE_PLAYING
+*                         MOVE.B  (A3),(A2)
+*                     ENDI
+*                     ; D1 needed here
+*                     MOVE.B  #75,D0
+*                     TRAP    #15
 
-                    LSL.B   #4,D3
-                ENDI
-                IF #0 <NE> D3   THEN
-                    MOVE.L  D3,D2
+*                     LSL.B   #4,D3
+*                 ENDI
+*                 IF #0 <NE> D3   THEN
+*                     MOVE.L  D3,D2
 
-                    MOVE.B  D6,D1
-                    LSL.B   #1,D1
-                    ADD.B   #1,D1
-                    ADD.L   #1,A2
-                    ; checks for sharp
-                    BTST.L  #3,D2
-                    IF  <NE>    THEN
-                        ADD.B   #16,D1
-                        SUB.B   #8,D2
-                        BSR     REST_TIME_FROM_INDEX
-                        ; puts in rest time
-                        ADD.L   #16,A2
-                        BSR     STOP_NOTE_PLAYING
-                        MOVE.B  (A3),(A2)
-                        SUB.L   #16,A2
-                    ELSE
-                        BSR     REST_TIME_FROM_INDEX
-                        BSR     STOP_NOTE_PLAYING
-                        MOVE.B  (A3),(A2)
-                    ENDI
-                    SUB.L   #1,A2
-                    ; D1 needed here
-                    MOVE.B  #75,D0
-                    TRAP    #15
-                ENDI
-            ENDI
-            ADD.L   #2,A2
-        ENDF
-        SUB.W   #6,A1
-        RTS
-
-
-; D2.L holds the index
-; returns value at (A3)
-; choose which rest time to put in
-REST_TIME_FROM_INDEX
-        LEA     rest_times_array,A3
-        ADD.L   D2,A3
-        SUB.L   #1,A3
-        RTS
+*                     MOVE.B  D6,D1
+*                     LSL.B   #1,D1
+*                     ADD.B   #1,D1
+*                     ADD.L   #1,A2
+*                     ; checks for sharp
+*                     BTST.L  #3,D2
+*                     IF  <NE>    THEN
+*                         ADD.B   #16,D1
+*                         SUB.B   #8,D2
+*                         BSR     REST_TIME_FROM_INDEX
+*                         ; puts in rest time
+*                         ADD.L   #16,A2
+*                         BSR     STOP_NOTE_PLAYING
+*                         MOVE.B  (A3),(A2)
+*                         SUB.L   #16,A2
+*                     ELSE
+*                         BSR     REST_TIME_FROM_INDEX
+*                         BSR     STOP_NOTE_PLAYING
+*                         MOVE.B  (A3),(A2)
+*                     ENDI
+*                     SUB.L   #1,A2
+*                     ; D1 needed here
+*                     MOVE.B  #75,D0
+*                     TRAP    #15
+*                 ENDI
+*             ENDI
+*             ADD.L   #2,A2
+*         ENDF
+*         SUB.W   #6,A1
+*         RTS
 
 
-; stops a note playing if it is
-STOP_NOTE_PLAYING
-        IF.B (A2) <NE> #$FF   THEN
-            MOVE.L  #2,D2
-            MOVE.L  #77,D0
-            TRAP    #15
-        ENDI
-        RTS
+* ; D2.L holds the index
+* ; returns value at (A3)
+* ; choose which rest time to put in
+* * REST_TIME_FROM_INDEX
+* *         LEA     rest_times_array,A3
+* *         ADD.L   D2,A3
+* *         SUB.L   #1,A3
+* *         RTS
+
+
+* ; stops a note playing if it is
+* STOP_NOTE_PLAYING
+*         IF.B (A2) <NE> #$FF   THEN
+*             MOVE.L  #2,D2
+*             MOVE.L  #77,D0
+*             TRAP    #15
+*         ENDI
+*         RTS
 
 
 ; shifts the lane in A0 one to the left, deleting the object at index 0
@@ -1119,10 +1115,10 @@ note_objects            DS.W    NOTE_OBJECT_SIZE*8    ; stores the notes objects
 note_path_index         DS.B    1       ; stores the lane index of the note path
 song_file_index         DS.L    1       ; stores the byte index that the song is at
 
-notes_times_array       DS.B    31      ; contains the times for each note that needs to be hold
-rest_times_array        DS.B    7       ; contains the number of quater beats needed for each note
+notes_times_array       DS.B    88      ; contains the times for each note that needs to be hold
+;rest_times_array        DS.B    7       ; contains the number of quater beats needed for each note
 
-file_size               DS.L    1      ; stores the size of the song file in bytes
+file_size               DS.L    1       ; stores the size of the song file in bytes
 file_name               DC.B    'songs/number_one',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
@@ -1131,13 +1127,13 @@ FILE_CONTENTS           EQU     $10000
 
 ; notes names
 BASIC_PATH              DC.B    'notes/aaa.wav',0
-ALL_NOTES_NAMES         DC.B    'a10b10c10d10e10f10g10a20b20c20d20e20f20g20a30b30a11b11c11d11e11f11g11a21b21c21d21e21f21g21a31'
+ALL_NOTES_NAMES         DC.B    '0an0as0bn1an1as1bn1cn1cs1dn1ds1en1fn1fs1gn1gs2an2as2bn2cn2cs2dn2ds2en2fn2fs2gn2gs3an3as3bn3cn3cs3dn3ds3en3fn3fs3gn3gs'
+ALL_NOTES_NAMES_2       DC.B    '4an4as4bn4cn4cs4dn4ds4en4fn4fs4gn4gs5an5as5bn5cn5cs5dn5ds5en5fn5fs5gn5gs6an6as6bn6cn6cs6dn6ds6en6fn6fs6gn6gs7an7as7bn7cn7cs7dn7ds7en7fn7fs7gn7gs8cn'
 
 song_difficulty         DS.B    1       ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
 quater_beat_count       DC.B    0       ; stores the count of quater beats played
 last_note_success       DC.B    0       ; stores whether the last hit note was correct
 
-letters_for_graphics    DC.B    ' ',0,'K',0,'L',0,'Y',0,'H',0,'U',0,'J',0,'I',0
 
 ; COLOURS
 BLACK           EQU     $00000000
