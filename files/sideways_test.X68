@@ -289,16 +289,15 @@ CHECK_COLLISIONS
                     ENDI
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
-                        BSR     PLAY_MUSIC_ON_HIT
                         ; check if it was an invisible or hit note
-                        * IF.W -(A1) <EQ> #0  THEN
-                        *     IF.B last_note_success <EQ> #1  THEN
-                        *         BSR     PLAY_MUSIC_ON_HIT
-                        *     ENDI
-                        * ELSE
-                        *     CLR.B   last_note_success
-                        * ENDI
-                        MOVE.W  #$FFFF,-(A1)
+                        IF.W -(A1) <EQ> #0  THEN
+                            IF.B last_note_success <EQ> #1  THEN
+                                BSR     PLAY_MUSIC_ON_HIT
+                            ENDI
+                        ELSE
+                            CLR.B   last_note_success
+                        ENDI
+                        MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
                     ENDI
                 ENDI
@@ -311,7 +310,7 @@ CHECK_COLLISIONS
 ; must not use D5, A0, A1
 ; A1 contains the address to the start of the note object, ie it's colour
 PLAY_MUSIC_ON_HIT
-        ADD.W   #6,A1
+        ADD.W   #8,A1
         ; A1 now contains the address to actual note data
 
         CLR.L 	D3
@@ -371,11 +370,11 @@ PLAY_MUSIC_ON_HIT
                 MOVE.B  #75,D0
                 TRAP    #15
             ELSE
-                SUB.W   #6,A1
+                SUB.W   #8,A1
                 RTS
             ENDI
         ENDF
-        SUB.W   #6,A1
+        SUB.W   #8,A1
         RTS
 
 
@@ -1029,7 +1028,7 @@ song_file_index         DS.L    1       ; stores the byte index that the song is
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
 file_size               DS.L    1       ; stores the size of the song file in bytes
-file_name               DC.B    'songs/Mantis Lords T.txt',0
+file_name               DC.B    'songs/Troupe Master Grimm T.txt',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
 ; IT IS ILLEGAL AND RAISES AN ERROR
@@ -1075,6 +1074,9 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
+
+
 
 
 *~Font name~Courier New~
