@@ -25,7 +25,9 @@
 * 
 * ISSUES
 * at the big slap the note times array is incorrect
-* some notes flicker
+* mantis lords and grimm some notes flicker
+* grimm and running note just jump down the window ie the y axis moved up
+* running just runs out of notes in the rows
 * 
 * Menu
 * tutorial menu
@@ -290,13 +292,15 @@ CHECK_COLLISIONS
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
-                        IF.W -(A1) <EQ> #0  THEN
-                            IF.B last_note_success <EQ> #1  THEN
-                                BSR     PLAY_MUSIC_ON_HIT
-                            ENDI
-                        ELSE
-                            CLR.B   last_note_success
-                        ENDI
+                        SUB.W   #2,A1
+                        BSR     PLAY_MUSIC_ON_HIT
+                        ;IF.W -(A1) <EQ> #0  THEN
+                        ;    IF.B last_note_success <EQ> #1  THEN
+                        ;        BSR     PLAY_MUSIC_ON_HIT
+                        ;    ENDI
+                        ;ELSE
+                        ;    CLR.B   last_note_success
+                        ;ENDI
                         MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
                     ENDI
@@ -1028,7 +1032,7 @@ song_file_index         DS.L    1       ; stores the byte index that the song is
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
 file_size               DS.L    1       ; stores the size of the song file in bytes
-file_name               DC.B    'songs/Troupe Master Grimm T.txt',0
+file_name               DC.B    'songs/Running_in_the_90s T.txt',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
 ; IT IS ILLEGAL AND RAISES AN ERROR
@@ -1074,6 +1078,8 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
+
 
 
 

@@ -1,12 +1,16 @@
 import xml.etree.ElementTree as ET
 
-file: str = 'songs/Troupe Master Grimm'
+file: str = 'songs/Running_in_the_90s'
 tree = ET.parse(file + '.musicxml')
-music_data = tree.getroot()[0]
+music_data = ''
 
-if music_data.tag != 'part':
-    for element in tree.getroot():
-        print(element.tag, element.attrib)
+for element in tree.getroot():
+    if element.tag == 'part':
+        music_data = element
+    print(element.tag, element.attrib)
+
+if music_data == '':
+    print('Not Found')
     quit()
 
 treble_line: list = []
@@ -54,12 +58,19 @@ for index in range(len(types)):
 print(lowest_duration)
 print(temp_dict)
 
-duration_dict: dict = {'2': 1,
-                       '3': 2,
-                       '4': 3,
-                       '6': 4,
-                       '12':8,
-                       '24':16}
+# duration_dict: dict = {'2': 1,
+#                        '3': 2,
+#                        '4': 3,
+#                        '6': 4,
+#                        '12': 8,
+#                        '24': 16}
+
+duration_dict: dict = {'1': 1,
+                       '2': 2,
+                       '4': 4,
+                       '6': 6,
+                       '8': 8,
+                       '16': 16}
 
 beat_count: int = 0
 for bar in music_data:
