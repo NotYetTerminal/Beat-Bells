@@ -2403,7 +2403,7 @@
           <staff-distance>61.32</staff-distance>
           </staff-layout>
         </print>
-      <note default-x="90.60" default-y="-25.00" dynamics="141.11">
+      <note default-x="104.51" default-y="-25.00" dynamics="141.11">
         <pitch>
           <step>A</step>
           <alter>-1</alter>

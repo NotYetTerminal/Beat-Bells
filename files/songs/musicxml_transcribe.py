@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 
-file: str = 'songs/Running_in_the_90s'
+file: str = 'songs/Troupe Master Grimm'
 tree = ET.parse(file + '.musicxml')
 music_data = ''
 
@@ -58,24 +58,27 @@ for index in range(len(types)):
 print(lowest_duration)
 print(temp_dict)
 
-# duration_dict: dict = {'2': 1,
-#                        '3': 2,
-#                        '4': 3,
-#                        '6': 4,
-#                        '12': 8,
-#                        '24': 16}
+duration_dict: dict = {'2': 1,
+                       '3': 2,
+                       '4': 3,
+                       '6': 4,
+                       '12': 8,
+                       '24': 16}
 
-duration_dict: dict = {'1': 1,
-                       '2': 2,
-                       '4': 4,
-                       '6': 6,
-                       '8': 8,
-                       '16': 16}
+# duration_dict: dict = {'1': 1,
+#                        '2': 2,
+#                        '4': 4,
+#                        '6': 6,
+#                        '8': 8,
+#                        '16': 16}
 
+beat_bar_sum: int = 0
 beat_count: int = 0
 for bar in music_data:
     treble_bar_list = []
     bass_bar_list = []
+    beat_bar_sum = 0
+    print('Start of bar:', (beat_count + 2))
     for item in bar:
         if item.tag == 'note':
             note_data_dict = {'step': '',
@@ -95,12 +98,17 @@ for bar in music_data:
                     note_data_dict[data.tag] = duration_dict[data.text]
                 
                 if data.tag == 'staff':
+                    if beat_count >= 174:
+                        print(previous_beat_duration)
+                        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah!
                     if len(item.attrib.keys()) != 0 and item.attrib['default-x'] != previous_note_x_data and (previous_note_x_data == '' or abs(float(item.attrib['default-x']) - float(previous_note_x_data)) > 12):
                         beat_count += previous_beat_duration
+                        beat_bar_sum += previous_beat_duration
                         previous_beat_duration = note_data_dict['duration']
                         previous_note_x_data = item.attrib['default-x']
                     elif len(item.attrib.keys()) == 0:
                         beat_count += previous_beat_duration
+                        beat_bar_sum += previous_beat_duration
                         previous_beat_duration = note_data_dict['duration']
                         previous_note_x_data = ''
                     else:
@@ -129,9 +137,15 @@ for bar in music_data:
     
     treble_line.append(treble_bar_list)
     bass_line.append(bass_bar_list)
+    print('Sum of bar:', beat_bar_sum)
+
 
 def convert_duration_amount(dur_in: int) -> str:
+    #if dur_in == 16:
+    #    print(dur_in)
+    #    print(chr(dur_in + 64))
     return chr(dur_in + 64)
+
 
 # music note in txt is made up as following
 # first character is a letter from A to P representing the number of quater beats to play, 1 - 16
@@ -146,6 +160,7 @@ def export_music_data(file_name: str, music_data: list):
     for bar in music_data:
         for note in bar:
             if note['step'] != '':
+                #print(note)
                 note_string = convert_duration_amount(note['duration']) + str(note['octave']) + note['step'].lower()
                 if note['alter'] == '1':
                     note_string += 's'
@@ -187,6 +202,10 @@ def export_music_data(file_name: str, music_data: list):
         for start_index in range(0, len(exported_music_data), 4):
             f.write(','.join(exported_music_data[start_index:end_index]) + ',\n')
             end_index += 4
+        
+            if end_index % 16 == 4:
+                f.write('\n')
+            
         f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n')
         f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0')
 

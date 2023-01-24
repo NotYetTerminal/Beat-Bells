@@ -22,12 +22,14 @@
 * GRAPHICAL TESTING
 * 
 * OPTIMISE USING THE COUNTER
+* rendering is wasteful it uses a for loop instead of stopping
 * 
 * ISSUES
 * at the big slap the note times array is incorrect
 * mantis lords and grimm some notes flicker
 * grimm and running note just jump down the window ie the y axis moved up
 * running just runs out of notes in the rows
+* does not hold notes instead it double plays
 * 
 * Menu
 * tutorial menu
@@ -53,6 +55,7 @@ PLAYER_SIZE             EQU     20
 NOTE_SIZE               EQU     40
 
 NOTE_OBJECT_SIZE        EQU     48
+LANE_ADDRESSES_SIZE      EQU    23
 
 
 ; program start
@@ -248,7 +251,8 @@ MOVE_OBJECTS
             MOVE.L  A0,A1
             ; loops until encounters an empty position
             IF.W (A1) <NE> #$FFFF   THEN
-                DBLOOP D6 = #15
+                ; LANE_ADDRESSES_SIZE
+                DBLOOP D6 = #22
                     MOVE.W  (A1),A2
                     ADD.W   #2,A2
                     ; moves the notes by 8
@@ -256,7 +260,7 @@ MOVE_OBJECTS
                     ADD.W   #2,A1
                 UNLESS.W (A1) <NE> #$FFFF
             ENDI
-            ADD.W   #34,A0
+            ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A0
         ENDF
         RTS
 
@@ -306,7 +310,7 @@ CHECK_COLLISIONS
                     ENDI
                 ENDI
             ENDI
-            ADD.W   #34,A0
+            ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A0
         ENDF
         RTS
 
@@ -389,6 +393,10 @@ LANE_LEFT_SHIFT
         SUB.W   #2,(A2)
         MOVE.L  #2,D7
         FOR.W D6 = #0 TO (A2) BY #2 DO
+            IF.W D6 <EQ> (A2)   THEN
+                MOVE.W  #$FFFF,(A0,D6)
+                ADD.B   #2,D7
+            ENDI
             MOVE.W  (A0,D7),(A0,D6)
             ADD.B   #2,D7
         ENDF
@@ -625,7 +633,7 @@ SPAWN_NEW_NOTE
 ; 0 in A2 means that the array is full
 CREATE_NOTE_OBJECT
         LEA     note_objects,A2
-        FOR D5 = #0 TO #15  DO
+        FOR D5 = #0 TO #LANE_ADDRESSES_SIZE-1  DO
             IF.W (A2) <EQ> #$FFFF   THEN
                 RTS
             ENDI
@@ -830,7 +838,8 @@ DRAW_NOTES
             MOVE.L  A1,A2
             ; loops until encounters an empty position
             IF.W (A2) <NE> #$FFFF   THEN
-                DBLOOP D6 = #15
+                ; LANE_ADDRESSES_SIZE
+                DBLOOP D6 = #22
                     MOVE.W  (A2),A0
                     IF.W (A0) <NE> #0 AND.W (A0) <NE> #$FFFF    THEN
                         MOVE.B  #80,D0
@@ -848,7 +857,7 @@ DRAW_NOTES
                     ADD.W   #2,A2
                 UNLESS.W (A2) <NE> #$FFFF
             ENDI
-            ADD.W   #34,A1
+            ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A1
         ENDF
         RTS
 
@@ -1009,15 +1018,15 @@ player_1_colour_keymaps DC.L    'YHUJIKL' ; stores the keymaps for the player ch
 lane_0_object_count     DC.W    0
 ; stores the addresses of objects in the rows
 ; these are queues
-lane_0_object_addresses DS.W    16
+lane_0_object_addresses DS.W    LANE_ADDRESSES_SIZE
 lane_1_object_count     DC.W    0
-lane_1_object_addresses DS.W    16
+lane_1_object_addresses DS.W    LANE_ADDRESSES_SIZE
 lane_2_object_count     DC.W    0
-lane_2_object_addresses DS.W    16
+lane_2_object_addresses DS.W    LANE_ADDRESSES_SIZE
 lane_3_object_count     DC.W    0
-lane_3_object_addresses DS.W    16
+lane_3_object_addresses DS.W    LANE_ADDRESSES_SIZE
 lane_4_object_count     DC.W    0
-lane_4_object_addresses DS.W    16
+lane_4_object_addresses DS.W    LANE_ADDRESSES_SIZE
 
 note_objects            DS.W    NOTE_OBJECT_SIZE*8    ; stores the notes objects data
 ;   note object structure:
@@ -1032,7 +1041,7 @@ song_file_index         DS.L    1       ; stores the byte index that the song is
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
 file_size               DS.L    1       ; stores the size of the song file in bytes
-file_name               DC.B    'songs/Running_in_the_90s T.txt',0
+file_name               DC.B    'songs/Troupe Master Grimm T.txt',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
 ; IT IS ILLEGAL AND RAISES AN ERROR
@@ -1078,6 +1087,8 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
+
 
 
 
