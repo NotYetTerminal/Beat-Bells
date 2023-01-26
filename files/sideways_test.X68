@@ -14,18 +14,21 @@
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
-* change beat line to be only infront of player
 * change only player beat line and player model colours
-* action colour chages too quickly, needs to be animated
-* render letters on notes
 * GRAPHICAL TESTING
 * 
 * OPTIMISE USING THE COUNTER
 * rendering is wasteful it uses a for loop instead of stopping
 * 
 * ISSUES
-*  we are number one at the big slap the note times array is incorrect
+* we are number one at the big slap the note times array is incorrect
 * note times array sometimes dosent work
+*
+* Warnings
+* if in the piano sheet there is a held note with lines then it won't play the full thing
+* this is an issue of the transcriber and not the assembly code
+* when reading in the sound files the program won't find any B or E sharps, the warnings
+* can be ignored these don't exist
 * 
 * Menu
 * tutorial menu
@@ -76,7 +79,7 @@ START   ORG    $1000
         MOVE.L  D1,last_path_change_time
         MOVE.L  D1,last_object_time
         MOVE.L  D1,last_note_spawn_time
-        MOVE.L  D1,last_beat_change_time
+        ;MOVE.L  D1,last_beat_change_time
         ; stores the time as starting seed
         MOVE.L  D1,random_value
 
@@ -108,7 +111,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SONG
 
         ; sets the song difficulty
-        MOVE.B  #1,song_difficulty
+        MOVE.B  #8,song_difficulty
 
         JMP     LOOP
 
@@ -196,14 +199,14 @@ LOOP
         ENDI
 
         ; checks for cooldown time
-        IF.L last_beat_change_time <NE> #0  THEN
-            MOVE.W  #8,D0
-            TRAP    #15
-            SUB.L   last_beat_change_time,D1
-            IF.L #20 <LE> D1    THEN
-                BSR     RESET_PLAYER_1_ACTION
-            ENDI
-        ENDI
+        * IF.L last_beat_change_time <NE> #0  THEN
+        *     MOVE.W  #8,D0
+        *     TRAP    #15
+        *     SUB.L   last_beat_change_time,D1
+        *     IF.L #20 <LE> D1    THEN
+        *         BSR     RESET_PLAYER_1_ACTION
+        *     ENDI
+        * ENDI
 
         ; spawn new notes
         MOVE.W  #8,D0
@@ -279,28 +282,28 @@ CHECK_COLLISIONS
                             MOVE.B  #1,last_note_success
                             ; sets the position to the left to make the note disappear when checking collision
                             CLR.W   (A1)
-                            BSR     RESET_PLAYER_1_ACTION
+                            ;BSR     RESET_PLAYER_1_ACTION
                         ELSE
-                            IF.L player_1_action_colour <NE> #WHITE THEN
-                                ADD.W   #2,A1
-                                CLR.W   (A1)
-                                SUB.W   #2,A1
-                            ENDI
+                            ;IF.L player_1_action_colour <NE> #WHITE THEN
+                            ADD.W   #2,A1
+                            CLR.W   (A1)
+                            SUB.W   #2,A1
+                            ;ENDI
                         ENDI
                         ADD.W   #2,A1
                     ENDI
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
-                        SUB.W   #2,A1
-                        BSR     PLAY_MUSIC_ON_HIT
-                        ;IF.W -(A1) <EQ> #0  THEN
-                        ;    IF.B last_note_success <EQ> #1  THEN
-                        ;        BSR     PLAY_MUSIC_ON_HIT
-                        ;    ENDI
-                        ;ELSE
-                        ;    CLR.B   last_note_success
-                        ;ENDI
+                        ;SUB.W   #2,A1
+                        ;BSR     PLAY_MUSIC_ON_HIT
+                        IF.W -(A1) <EQ> #0  THEN
+                            IF.B last_note_success <EQ> #1  THEN
+                                BSR     PLAY_MUSIC_ON_HIT
+                            ENDI
+                        ELSE
+                            CLR.B   last_note_success
+                        ENDI
                         MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
                     ENDI
@@ -367,7 +370,7 @@ PLAY_MUSIC_ON_HIT
                 ENDI
 
                 ; puts in the rest time
-                SUB.B   #64,D3
+                SUB.B   #63,D3
                 MOVE.B  D3,(A2,D1)
 
                 ; D1 needed here
@@ -400,9 +403,9 @@ LANE_LEFT_SHIFT
 
 
 HANDLE_INPUT
-        IF last_beat_change_time <EQ> #0    THEN
-            BSR     HANDLE_COLOUR_CHANGE
-        ENDI
+        ;IF last_beat_change_time <EQ> #0    THEN
+        BSR     HANDLE_COLOUR_CHANGE
+        ;ENDI
         BSR     HANDLE_MOVEMENT
         RTS
 
@@ -448,7 +451,7 @@ HANDLE_COLOUR_CHANGE
             ENDI
             MOVE.W  #8,D0
             TRAP    #15
-            MOVE.L  D1,last_beat_change_time
+            ;MOVE.L  D1,last_beat_change_time
         ELSE
             ; clears the actions pressed
             BCLR.B  #7,player_1_action_pressed
@@ -488,7 +491,7 @@ HANDLE_COLOUR_CHANGE
                 ENDI
                 MOVE.W  #8,D0
                 TRAP    #15
-                MOVE.L  D1,last_beat_change_time
+                ;MOVE.L  D1,last_beat_change_time
             ELSE
                 ; clears the actions pressed
                 BCLR.B  #3,player_1_action_pressed
@@ -586,10 +589,10 @@ CHANGE_PATH_INDEX
         RTS
 
 
-RESET_PLAYER_1_ACTION
-        MOVE.L  #WHITE,player_1_action_colour
-        MOVE.L  #0,last_beat_change_time
-        RTS
+* RESET_PLAYER_1_ACTION
+*         MOVE.L  #WHITE,player_1_action_colour
+*         MOVE.L  #0,last_beat_change_time
+*         RTS
 
 
 SPAWN_NEW_NOTE
@@ -617,11 +620,7 @@ SPAWN_NEW_NOTE
             ADD.L   #2,song_file_index
         ENDI
 
-        ADD.B   #1,quater_beat_count
-        MOVE.B  song_difficulty,D0
-        IF.B quater_beat_count <EQ> D0 THEN
-            CLR.B   quater_beat_count
-        ENDI
+        ADD.W   #1,quater_beat_count
         RTS
 
 
@@ -660,10 +659,12 @@ LOAD_NOTE_DATA
 
         ; assign a colour based on the playing notes
         ; and the difficulty
-        IF.B quater_beat_count <NE> #0  THEN
+        MOVE.B  song_difficulty,D0
+        IF.W quater_beat_count <LT> D0 THEN
             CLR.W   (A2)
         ELSE
             BSR     PICK_NOTE_COLOUR
+            CLR.W   quater_beat_count
         ENDI
 
         ; assign x and y position based on the path index
@@ -1000,7 +1001,7 @@ last_movement_time      DS.L    1       ; stores the time when last accepted inp
 last_path_change_time   DS.L    1       ; stores the time when path index last changed
 last_object_time        DS.L    1       ; stores the time when the notes where moved
 last_note_spawn_time    DS.L    1       ; stores the time when note was last spawned
-last_beat_change_time   DS.L    1       ; stores the time when beat was last checked and put back into white
+;last_beat_change_time   DS.L    1       ; stores the time when beat was last checked and put back into white
 
 player_1_position       DS.W    2       ; stores the top right player position x,y
 player_1_lane_number    DS.B    1       ; stores the lane number
@@ -1037,7 +1038,7 @@ song_file_index         DS.L    1       ; stores the byte index that the song is
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
 file_size               DS.L    1       ; stores the size of the song file in bytes
-file_name               DC.B    'songs/Mantis Lords T.txt',0
+file_name               DC.B    'songs/Rasputin_-_Boney_M_ T.txt',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
 ; IT IS ILLEGAL AND RAISES AN ERROR
@@ -1057,7 +1058,7 @@ NOTES_NAMES_8           DC.B    '8cn'
 
 
 song_difficulty         DS.B    1       ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
-quater_beat_count       DC.B    0       ; stores the count of quater beats played
+quater_beat_count       DC.W    32      ; stores the count of quater beats played
 last_note_success       DC.B    0       ; stores whether the last hit note was correct
 
 
@@ -1083,6 +1084,10 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
+
+
+
 
 
 

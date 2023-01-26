@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
+import math
 
-file: str = 'songs/Mantis Lords'
+file: str = 'songs/Rasputin_–_Boney_M_'
 tree = ET.parse(file + '.musicxml')
 music_data = ''
 
@@ -46,13 +47,16 @@ full_music_data: list = []
 #                        '12': 8,
 #                        '24': 16}
                        
-duration_dict: dict = {'1': 1,
-                       '2': 2,
-                       '4': 4,
-                       '6': 6,
-                       '8': 8,
-                       '12': 12,
-                       '16': 16}
+# duration_dict: dict = {'1': 1,
+#                        '2': 2,
+#                        '4': 4,
+#                        '6': 6,
+#                        '8': 8,
+#                        '12': 12,
+#                        '16': 16}
+
+note_duration: int = 0
+multiplier: float = 80.0
 
 for bar1 in music_data:
     for item in bar1:
@@ -70,32 +74,35 @@ for bar1 in music_data:
                 if data.tag == 'pitch':
                     for data2 in data:
                         note_data_dict[data2.tag] = data2.text
-                if data.tag == 'duration':
-                    if data.text not in duration_dict.keys():
-                        print('Key Error')
-                        print(data.text)
-                        input()
-                    note_data_dict[data.tag] = duration_dict[data.text]
+                elif data.tag == 'duration':
+                    note_duration = math.ceil(float(data.text) / (480.0 / multiplier))
+
+                    #if data.text in duration_dict.keys():
+                    note_data_dict[data.tag] = note_duration#duration_dict[data.text]
+                    # else:
+                    #     print('Key Error')
+                    #     print(data.text)
 
                     # durations stuff
-                    if int(data.text) < lowest_duration:
-                        lowest_duration = int(data.text)
-                        print(item[1].text)
-                        print(item[3].text)
+                    if note_duration < lowest_duration:
+                        lowest_duration = note_duration
+                        #print(item[1].text)
+                        #print(item[3].text)
                     for data2 in item:
                         if data2.tag == 'type':
                             types.append(data2.text)
-                            durations.append(data.text)
+                            durations.append(float(data.text) / (480.0 / multiplier))
                             break
-                if data.tag == 'staff':
+                elif data.tag == 'staff':
                     note_data_dict['staff'] = data.text
-                if data.tag == 'notations' and data[0].attrib['type'] == 'stop' and note_data_dict['duration'] != 1:
-                    print(note_data_dict)
+                elif data.tag == 'notations' and len(data[0].attrib) != 0 and data[0].attrib['type'] == 'stop' and note_data_dict['duration'] != 1:
+                    #print(note_data_dict)
                     note_data_dict['step'] = 'R'
                     note_data_dict['octave'] = '-1'
                     note_data_dict['alter'] = '0'
             
-            full_music_data.append(note_data_dict)
+            if note_data_dict['duration'] != 0:
+                full_music_data.append(note_data_dict)
 
         
         # elif item.tag == 'backup':
@@ -111,6 +118,7 @@ full_music_data.append(nothing_note_data_dict)
 temp_dict: dict = {}
 print(len(durations))
 print(len(types))
+print(len(full_music_data))
 for index in range(len(types)):
     if types[index] not in temp_dict:
         temp_dict[types[index]] = []
@@ -119,6 +127,7 @@ for index in range(len(types)):
 
 print(lowest_duration)
 print(temp_dict)
+input('Continue?')
 
 treble_index: int = 0
 beat_count: int = 0
