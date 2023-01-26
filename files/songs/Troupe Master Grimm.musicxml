@@ -3295,7 +3295,7 @@
         </note>
       </measure>
     <measure number="18" width="240.04">
-      <note default-x="27.12" default-y="-25.00" dynamics="124.44">
+      <note default-x="41.04" default-y="-25.00" dynamics="124.44">
         <pitch>
           <step>A</step>
           <alter>-1</alter>
@@ -4245,7 +4245,7 @@
         <type>whole</type>
         <staff>1</staff>
         </note>
-      <note default-x="30.42" default-y="10.00" dynamics="124.44">
+      <note default-x="44.34" default-y="10.00" dynamics="124.44">
         <chord/>
         <pitch>
           <step>A</step>
@@ -5147,7 +5147,7 @@
         </note>
       </measure>
     <measure number="26" width="249.30">
-      <note default-x="30.04" default-y="-5.00" dynamics="124.44">
+      <note default-x="43.96" default-y="-5.00" dynamics="124.44">
         <pitch>
           <step>E</step>
           <alter>-1</alter>
@@ -5545,7 +5545,7 @@
         <accidental>flat</accidental>
         <staff>1</staff>
         </note>
-      <note default-x="103.55" default-y="-20.00" dynamics="124.44">
+      <note default-x="89.63" default-y="-20.00" dynamics="124.44">
         <chord/>
         <pitch>
           <step>B</step>
@@ -6202,7 +6202,7 @@
         </note>
       </measure>
     <measure number="31" width="237.17">
-      <note default-x="19.72" default-y="-20.00" dynamics="124.44">
+      <note default-x="33.64" default-y="-20.00" dynamics="124.44">
         <pitch>
           <step>B</step>
           <alter>-1</alter>
@@ -6934,7 +6934,7 @@
         </note>
       </measure>
     <measure number="35" width="263.57">
-      <note default-x="19.72" default-y="-20.00" dynamics="124.44">
+      <note default-x="33.64" default-y="-20.00" dynamics="124.44">
         <pitch>
           <step>B</step>
           <alter>-1</alter>
@@ -12693,7 +12693,7 @@
         </note>
       </measure>
     <measure number="64" width="252.06">
-      <note default-x="30.04" default-y="-5.00" dynamics="124.44">
+      <note default-x="43.96" default-y="-5.00" dynamics="124.44">
         <pitch>
           <step>E</step>
           <alter>-1</alter>
@@ -13748,7 +13748,7 @@
         </note>
       </measure>
     <measure number="69" width="236.78">
-      <note default-x="19.72" default-y="-20.00" dynamics="124.44">
+      <note default-x="33.64" default-y="-20.00" dynamics="124.44">
         <pitch>
           <step>B</step>
           <alter>-1</alter>
@@ -14480,7 +14480,7 @@
         </note>
       </measure>
     <measure number="73" width="260.76">
-      <note default-x="19.72" default-y="-20.00" dynamics="124.44">
+      <note default-x="33.64" default-y="-20.00" dynamics="124.44">
         <pitch>
           <step>B</step>
           <alter>-1</alter>
