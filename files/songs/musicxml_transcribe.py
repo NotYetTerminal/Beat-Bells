@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 import math
 
-file: str = 'songs/Rasputin_–_Boney_M_'
+file: str = 'songs/We_Are_Number_One_but_it&#039;s_a_piano_transcript'
 tree = ET.parse(file + '.musicxml')
 music_data = ''
 
@@ -56,7 +56,7 @@ full_music_data: list = []
 #                        '16': 16}
 
 note_duration: int = 0
-multiplier: float = 80.0
+multiplier: float = 160.0
 
 for bar1 in music_data:
     for item in bar1:
@@ -223,14 +223,16 @@ def export_music_data(file_name: str, in_music_data: list):
     for note in in_music_data:
         if index < 50:
             print(note, index)
-        note_string = convert_duration_amount(note['duration']) + str(note['octave']) + note['step'].lower()
+        note_string = convert_duration_amount(note['duration']) + note['octave'] + note['step'].lower()
         if note['alter'] == '1':
             note_string += 's'
         elif note['alter'] == '-1':
             note['step'] = chr(ord(note['step']) - 1)
             if note['step'] == '@':
                 note['step'] = 'G'
-            note_string = convert_duration_amount(note['duration']) + str(note['octave']) + note['step'].lower()
+            if note['step'] == 'B':
+                note['octave'] = str(int(note['octave']) - 1)
+            note_string = convert_duration_amount(note['duration']) + note['octave'] + note['step'].lower()
             if note['step'] != 'B' and note['step'] != 'E':
                 note_string += 's'
             else:

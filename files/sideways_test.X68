@@ -39,7 +39,6 @@
 * Varibles
 * song difficulty
 * song temp
-* notes speed
 * song file name
 
 ; set constants
@@ -1038,7 +1037,7 @@ song_file_index         DS.L    1       ; stores the byte index that the song is
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
 file_size               DS.L    1       ; stores the size of the song file in bytes
-file_name               DC.B    'songs/Rasputin_-_Boney_M_ T.txt',0
+file_name               DC.B    'songs/We_Are_Number_One_but_it&#039;s_a_piano_transcript T.txt',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
 ; IT IS ILLEGAL AND RAISES AN ERROR
