@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 import math
 
-file: str = 'songs/We_Are_Number_One_but_it&#039;s_a_piano_transcript'
+file: str = 'songs/Spring_(La_primavera)(only_Allegro!)_-_Antonio_Vivaldi'
 tree = ET.parse(file + '.musicxml')
 music_data = ''
 
@@ -56,7 +56,7 @@ full_music_data: list = []
 #                        '16': 16}
 
 note_duration: int = 0
-multiplier: float = 160.0
+multiplier: float = 4
 
 for bar1 in music_data:
     for item in bar1:
