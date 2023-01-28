@@ -21,7 +21,6 @@
 * rendering is wasteful it uses a for loop instead of stopping
 * 
 * ISSUES
-* we are number one at the big slap the note times array is incorrect
 * note times array sometimes dosent work
 *
 * Warnings
@@ -98,19 +97,19 @@ START   ORG    $1000
         MOVE.B  D2,note_path_index
 
         ; sets the index to the start
-        MOVE.L  #FILE_CONTENTS,song_file_index
-        
+        MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
+        MOVE.L  #BASS_FILE_CONTENTS,bass_song_file_index
+
         ; sets up notes and music
         ; checks if $10000 has been accidentally used
-        IF.L FILE_CONTENTS <NE> #$FFFFFFFF  THEN
+        IF.L TREBLE_FILE_CONTENTS <NE> #$FFFFFFFF  THEN
             ILLEGAL
         ENDI
         BSR     NOTE_SET_UP
-        LEA     file_name,A1
         BSR     LOAD_IN_SONG
 
         ; sets the song difficulty
-        MOVE.B  #8,song_difficulty
+        MOVE.B  #1,song_difficulty
 
         JMP     LOOP
 
@@ -133,28 +132,37 @@ NOTE_SET_UP
         RTS
 
 
-; loads in a song binary file
-; file name address needs to be in A1
-; loads the file into $10000
+; loads in a two song files
+; loads the treble file into $10000
+; and the bass file into $20000
 LOAD_IN_SONG
         MOVE.B  #51,D0
+        LEA     song_name,A1
+        ADD     #10,A1
+        MOVE.B  #84,(A1)
+        SUB     #10,A1
         TRAP    #15
 
         MOVE.B  #53,D0
-        LEA     FILE_CONTENTS,A1
+        LEA     TREBLE_FILE_CONTENTS,A1
+        MOVE.L  #$FFFFF,D2
+        TRAP    #15
+
+        MOVE.B  #51,D0
+        LEA     song_name,A1
+        ADD     #10,A1
+        MOVE.B  #66,(A1)
+        SUB     #10,A1
+        TRAP    #15
+
+        MOVE.B  #53,D0
+        LEA     BASS_FILE_CONTENTS,A1
         MOVE.L  #$FFFFF,D2
         TRAP    #15
 
         MOVE.B  #50,D0
         TRAP    #15
 
-        BSR     SAVE_FILE_SIZE
-        RTS
-
-
-; saves the file size
-SAVE_FILE_SIZE
-        MOVE.L  D2,file_size
         RTS
 
 
@@ -294,15 +302,15 @@ CHECK_COLLISIONS
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
-                        ;SUB.W   #2,A1
-                        ;BSR     PLAY_MUSIC_ON_HIT
-                        IF.W -(A1) <EQ> #0  THEN
-                            IF.B last_note_success <EQ> #1  THEN
-                                BSR     PLAY_MUSIC_ON_HIT
-                            ENDI
-                        ELSE
-                            CLR.B   last_note_success
-                        ENDI
+                        SUB.W   #2,A1
+                        BSR     PLAY_MUSIC_ON_HIT
+                        * IF.W -(A1) <EQ> #0  THEN
+                        *     IF.B last_note_success <EQ> #1  THEN
+                        *         BSR     PLAY_MUSIC_ON_HIT
+                        *     ENDI
+                        * ELSE
+                        *     CLR.B   last_note_success
+                        * ENDI
                         MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
                     ENDI
@@ -595,28 +603,46 @@ CHANGE_PATH_INDEX
 
 
 SPAWN_NEW_NOTE
-        MOVE.L  song_file_index,A0
+        MOVE.L  treble_song_file_index,A0
 
         ; song has ended
         IF.B (A0) <EQ> #$FF THEN
-            BSR     EXIT_PROGRAM
-        ENDI
-
-        ; check for carraige return and line feed
-        IF.B (A0) <EQ> #13  THEN
-            ADD.L   #2,song_file_index
-            ADD.L   #2,A0
-        ENDI
-
-        ; first byte is checked if there are any notes being played
-        IF.B #48 <NE> (A0) THEN
-            BSR     CREATE_NOTE_OBJECT
-            IF A2 <EQ> #$0  THEN
-                RTS
+            MOVE.L  bass_song_file_index,A0
+            IF.B (A0) <EQ> #$FF THEN
+                BSR     EXIT_PROGRAM
             ENDI
-            BSR     LOAD_NOTE_DATA
         ELSE
-            ADD.L   #2,song_file_index
+            ; check for carraige return and line feed
+            IF.B (A0) <EQ> #13  THEN
+                ADD.L   #2,treble_song_file_index
+                ADD.L   #2,A0
+            ENDI
+
+            ; first byte is checked if there are any notes being played
+            IF.B #48 <NE> (A0) THEN
+                BSR     CREATE_NOTE_OBJECT
+                LEA     treble_song_file_index,A1
+                BSR     LOAD_NOTE_DATA
+            ELSE
+                ADD.L   #2,treble_song_file_index
+            ENDI
+        ENDI
+
+        ; checks the bass file as well
+        MOVE.L  bass_song_file_index,A0
+        IF.B (A0) <NE> #$FF THEN
+            IF.B (A0) <EQ> #13  THEN
+                ADD.L   #2,bass_song_file_index
+                ADD.L   #2,A0
+            ENDI
+
+            IF.B #48 <NE> (A0) THEN
+                BSR     CREATE_NOTE_OBJECT
+                LEA     bass_song_file_index,A1
+                BSR     LOAD_NOTE_DATA
+            ELSE
+                ADD.L   #2,bass_song_file_index
+            ENDI
         ENDI
 
         ADD.W   #1,quater_beat_count
@@ -633,12 +659,12 @@ CREATE_NOTE_OBJECT
             ENDI
             ADD.W   #NOTE_OBJECT_SIZE,A2
         ENDF
-        MOVE.L  #0,A2
-        ;ILLEGAL
+        ILLEGAL
         RTS
 
 
 ; A0 contains the address to the current song data beat note
+; A1 contains the address to the song file indexes
 ; A2 contains the address to the start of music note object
 LOAD_NOTE_DATA
         ; load the music data into the note object
@@ -650,8 +676,8 @@ LOAD_NOTE_DATA
         ENDW
         MOVE.B  #0,(A2,D3)
         SUB.L   #8,D3
-        ADD.L   D3,song_file_index
-        ADD.L   #1,song_file_index
+        ADD.L   D3,(A1)
+        ADD.L   #1,(A1)
 
         ; gets the number of notes playing on the same beat
         DIVU    #4,D3
@@ -1032,16 +1058,17 @@ note_objects            DS.W    NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2    ; stor
 ;   W   useless
 ;   L*10   music notes data, same as in the file
 note_path_index         DS.B    1       ; stores the lane index of the note path
-song_file_index         DS.L    1       ; stores the byte index that the song is at
+treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
+bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
-file_size               DS.L    1       ; stores the size of the song file in bytes
-file_name               DC.B    'songs/Spring_(La_primavera)(only_Allegro!)_-_Antonio_Vivaldi T.txt',0
+song_name               DC.B    'songs/RIT9T.txt',0
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
 ; IT IS ILLEGAL AND RAISES AN ERROR
-FILE_CONTENTS           EQU     $10000
+TREBLE_FILE_CONTENTS    EQU     $10000
+BASS_FILE_CONTENTS      EQU     $20000
 
 ; notes names
 BASIC_PATH              DC.B    'notes/aaa.wav',0
@@ -1056,7 +1083,7 @@ NOTES_NAMES_7           DC.B    '7an7bn7cn7dn7en7fn7gn7as7bs7cs7ds7es7fs7gs'
 NOTES_NAMES_8           DC.B    '8cn'
 
 
-song_difficulty         DS.B    1       ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
+song_difficulty         DS.B    16      ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
 quater_beat_count       DC.W    32      ; stores the count of quater beats played
 last_note_success       DC.B    0       ; stores whether the last hit note was correct
 
@@ -1083,6 +1110,8 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
+
 
 
 

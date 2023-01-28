@@ -6597,44 +6597,12 @@
         <stem>up</stem>
         <staff>1</staff>
         </note>
-      <note default-x="96.50" default-y="-35.00" dynamics="88.89">
-        <pitch>
-          <step>F</step>
-          <octave>4</octave>
-          </pitch>
-        <duration>2</duration>
-        <tie type="start"/>
-        <voice>1</voice>
-        <type>eighth</type>
-        <stem>up</stem>
-        <staff>1</staff>
-        <notations>
-          <tied type="start"/>
-          </notations>
-        </note>
-      <note default-x="96.50" default-y="-25.00" dynamics="88.89">
-        <chord/>
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-          </pitch>
-        <duration>2</duration>
-        <tie type="start"/>
-        <voice>1</voice>
-        <type>eighth</type>
-        <stem>up</stem>
-        <staff>1</staff>
-        <notations>
-          <tied type="start"/>
-          </notations>
-        </note>
       <note default-x="125.50" default-y="-35.00" dynamics="88.89">
         <pitch>
           <step>F</step>
           <octave>4</octave>
           </pitch>
         <duration>6</duration>
-        <tie type="stop"/>
         <tie type="start"/>
         <voice>1</voice>
         <type>quarter</type>
@@ -6642,7 +6610,6 @@
         <stem>up</stem>
         <staff>1</staff>
         <notations>
-          <tied type="stop"/>
           <tied type="start"/>
           </notations>
         </note>
@@ -6653,7 +6620,6 @@
           <octave>4</octave>
           </pitch>
         <duration>6</duration>
-        <tie type="stop"/>
         <tie type="start"/>
         <voice>1</voice>
         <type>quarter</type>
@@ -6661,7 +6627,6 @@
         <stem>up</stem>
         <staff>1</staff>
         <notations>
-          <tied type="stop"/>
           <tied type="start"/>
           </notations>
         </note>
@@ -6670,7 +6635,7 @@
           <step>F</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>2</duration>
         <tie type="stop"/>
         <voice>1</voice>
         <type>16th</type>
@@ -6686,7 +6651,7 @@
           <step>A</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>2</duration>
         <tie type="stop"/>
         <voice>1</voice>
         <type>16th</type>
@@ -6698,7 +6663,7 @@
         </note>
       <note default-x="236.04" default-y="-20.00">
         <rest/>
-        <duration>1</duration>
+        <duration>2</duration>
         <voice>1</voice>
         <type>16th</type>
         <staff>1</staff>
@@ -7418,7 +7383,7 @@
           <step>F</step>
           <octave>4</octave>
           </pitch>
-        <duration>2</duration>
+        <duration>3</duration>
         <tie type="start"/>
         <voice>1</voice>
         <type>eighth</type>
@@ -7434,7 +7399,7 @@
           <step>B</step>
           <octave>4</octave>
           </pitch>
-        <duration>2</duration>
+        <duration>3</duration>
         <tie type="start"/>
         <voice>1</voice>
         <type>eighth</type>
@@ -7450,7 +7415,7 @@
           <step>D</step>
           <octave>5</octave>
           </pitch>
-        <duration>2</duration>
+        <duration>3</duration>
         <tie type="start"/>
         <voice>1</voice>
         <type>eighth</type>
@@ -7561,37 +7526,6 @@
         </note>
       </measure>
     <measure number="31" width="268.10">
-      <note default-x="13.00" default-y="-35.00" dynamics="88.89">
-        <pitch>
-          <step>F</step>
-          <octave>4</octave>
-          </pitch>
-        <duration>2</duration>
-        <tie type="stop"/>
-        <voice>1</voice>
-        <type>eighth</type>
-        <stem>up</stem>
-        <staff>1</staff>
-        <notations>
-          <tied type="stop"/>
-          </notations>
-        </note>
-      <note default-x="13.00" default-y="-20.00" dynamics="88.89">
-        <chord/>
-        <pitch>
-          <step>B</step>
-          <octave>4</octave>
-          </pitch>
-        <duration>2</duration>
-        <tie type="stop"/>
-        <voice>1</voice>
-        <type>eighth</type>
-        <stem>up</stem>
-        <staff>1</staff>
-        <notations>
-          <tied type="stop"/>
-          </notations>
-        </note>
       <note default-x="13.00" default-y="-10.00" dynamics="88.89">
         <chord/>
         <pitch>
