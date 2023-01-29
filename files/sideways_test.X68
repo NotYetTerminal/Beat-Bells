@@ -6,11 +6,10 @@
 *-----------------------------------------------------------
 
 * TODO
-* Notes
-* implement base track
 * 
 * Gameplay
 * change psudo random path index to change after long not change
+* implement player 2
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
@@ -20,9 +19,10 @@
 * OPTIMISE USING THE COUNTER
 * rendering is wasteful it uses a for loop instead of stopping
 * 
-* ISSUES
-* note times array sometimes dosent work
-*
+* INPUT
+* change so only 3 keys are used and shift
+* change so purple is a teleport with seperate key
+* 
 * Warnings
 * if in the piano sheet there is a held note with lines then it won't play the full thing
 * this is an issue of the transcriber and not the assembly code
@@ -35,10 +35,10 @@
 * load in song difficulty
 * make it so there is a delay before ending the game and returns to menu
 * 
-* Varibles
+* Variables
 * song difficulty
-* song temp
 * song file name
+* one or two player
 
 ; set constants
 SCREEN_WIDTH            EQU     1280
@@ -52,7 +52,7 @@ PLAYER_SIZE             EQU     20
 NOTE_SIZE               EQU     40
 
 NOTE_OBJECT_SIZE        EQU     48
-LANE_ADDRESSES_SIZE      EQU    39
+LANE_ADDRESSES_SIZE     EQU     39
 
 
 ; program start
@@ -86,15 +86,23 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
 
-        ; sets the player's position
-        MOVE.W  #100,player_1_position
-        MOVE.B  #2,player_1_lane_number
-        BSR     CHANGE_PLAYER_1_POSITION
+        ; sets lane for the note paths
+        MOVE.B  two_player,D1
+        SUB.B   D1,treble_note_path_index
+        ADD.B   D1,bass_note_path_index
 
-        ; sets a random starting lane for the note path
-        MOVE.W  #5,D3
-        BSR     GET_RANDOM_VALUE
-        MOVE.B  D2,note_path_index
+        ; sets the players' positions
+        MOVE.W  #100,player_1_position
+        MOVE.W  #100,player_2_position
+        MOVE.B  treble_note_path_index,player_1_lane_number
+        MOVE.B  bass_note_path_index,player_2_lane_number
+
+        LEA     player_1_position,A0
+        LEA     player_1_lane_number,A1
+        BSR     CHANGE_PLAYER_Y_POSITION
+        LEA     player_2_position,A0
+        LEA     player_2_lane_number,A1
+        BSR     CHANGE_PLAYER_Y_POSITION
 
         ; sets the index to the start
         MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
@@ -199,6 +207,8 @@ LOOP
         TRAP    #15
         SUB.L   last_path_change_time,D1
         IF.L #200 <LE> D1    THEN
+            LEA     treble_note_path_index,A0
+            LEA     bass_note_path_index,A1
             BSR     CHANGE_PATH_INDEX
             MOVE.W  #8,D0
             TRAP    #15
@@ -548,15 +558,21 @@ HANDLE_MOVEMENT
             BCLR.B  #1,player_1_moving
         ENDI
 
-        BSR     CHANGE_PLAYER_1_POSITION
+        LEA     player_1_position,A0
+        LEA     player_1_lane_number,A1
+        BSR     CHANGE_PLAYER_Y_POSITION
         RTS
 
 
-CHANGE_PLAYER_1_POSITION
+; changes the players' Y position depending on the lane index
+; player position needs to be in A0
+; player lane number needs to be in A1
+CHANGE_PLAYER_Y_POSITION
         CLR.L   D2
-        MOVE.B  player_1_lane_number,D2
+        MOVE.B  (A1),D2
         BSR     GET_LANE_Y_POSITION
-        MOVE.W  D3,player_1_position+2
+        ADD     #2,A0
+        MOVE.W  D3,(A0)
         RTS
 
 
@@ -573,28 +589,99 @@ GET_LANE_Y_POSITION
 
 
 ; changes the path node index
+; treble path node index needs to be in A0
+; bass path node index needs to be in A1
+; uses A2
 CHANGE_PATH_INDEX
         ; if at the top or bottom only call random 2 as it can't go outside the map
-        IF.B note_path_index <EQ> #0    THEN
-            BSR     RANDOM_2
-            IF  <NE>    THEN
-                ADD.B   #1,note_path_index
+        IF.B (A0) <EQ> #0    THEN
+            IF.B (A1) <NE> #1   THEN
+                MOVE    A0,A2
+                BSR     DOUBLE_RANDOM_ADD
             ENDI
         ELSE
-            IF.B note_path_index <EQ> #4    THEN
-                BSR     RANDOM_2
-                IF  <NE>    THEN
-                    SUB.B   #1,note_path_index
+            IF.B (A0) <EQ> #4   THEN
+                IF.B (A1) <NE> #3   THEN
+                    MOVE    A0,A2
+                    BSR     DOUBLE_RANDOM_SUB
                 ENDI
             ELSE
-                MOVE.W  #3,D3
-                BSR     GET_RANDOM_VALUE
-                ADD.B   D2,note_path_index
-                SUB.B   #1,note_path_index
+                CLR.L   D1
+                MOVE.B  (A0),D1
+                ADD     #1,D1
+                IF.B D1 <EQ> (A1)   THEN
+                    MOVE    A0,A2
+                    BSR     DOUBLE_RANDOM_SUB
+                ELSE
+                    CLR.L   D1
+                    MOVE.B  (A0),D1
+                    SUB     #1,D1
+                    IF.B D1 <EQ> (A1)   THEN
+                        MOVE    A0,A2
+                        BSR     DOUBLE_RANDOM_ADD
+                    ELSE
+                        MOVE    A0,A2
+                        BSR     TRIPLE_RANDOM
+                    ENDI
+                ENDI
+            ENDI
+        ENDI
+        IF.B (A1) <EQ> #0    THEN
+            IF.B (A0) <NE> #1   THEN
+                MOVE    A1,A2
+                BSR     DOUBLE_RANDOM_ADD
+            ENDI
+        ELSE
+            IF.B (A1) <EQ> #4   THEN
+                IF.B (A0) <NE> #3   THEN
+                    MOVE    A1,A2
+                    BSR     DOUBLE_RANDOM_SUB
+                ENDI
+            ELSE
+                CLR.L   D1
+                MOVE.B  (A1),D1
+                ADD     #1,D1
+                IF.B D1 <EQ> (A0)   THEN
+                    MOVE    A1,A2
+                    BSR     DOUBLE_RANDOM_SUB
+                ELSE
+                    CLR.L   D1
+                    MOVE.B  (A1),D1
+                    SUB     #1,D1
+                    IF.B D1 <EQ> (A0)   THEN
+                        MOVE    A1,A2
+                        BSR     DOUBLE_RANDOM_ADD
+                    ELSE
+                        MOVE    A1,A2
+                        BSR     TRIPLE_RANDOM
+                    ENDI
+                ENDI
             ENDI
         ENDI
         RTS
 
+; these all use the note path index in A2
+TRIPLE_RANDOM
+        MOVE.W  #3,D3
+        BSR     GET_RANDOM_VALUE
+        ADD.B   D2,(A2)
+        SUB.B   #1,(A2)
+        RTS
+
+DOUBLE_RANDOM_ADD
+        BSR     RANDOM_2
+        IF  <NE>    THEN
+            ADD.B   #1,(A2)
+        ENDI
+        RTS
+
+DOUBLE_RANDOM_SUB
+        BSR     RANDOM_2
+        IF  <NE>    THEN
+            SUB.B   #1,(A2)
+        ENDI
+        RTS
+        RTS
 
 * RESET_PLAYER_1_ACTION
 *         MOVE.L  #WHITE,player_1_action_colour
@@ -622,6 +709,7 @@ SPAWN_NEW_NOTE
             IF.B #48 <NE> (A0) THEN
                 BSR     CREATE_NOTE_OBJECT
                 LEA     treble_song_file_index,A1
+                LEA     treble_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
             ELSE
                 ADD.L   #2,treble_song_file_index
@@ -639,13 +727,24 @@ SPAWN_NEW_NOTE
             IF.B #48 <NE> (A0) THEN
                 BSR     CREATE_NOTE_OBJECT
                 LEA     bass_song_file_index,A1
+                LEA     bass_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
+                IF.B two_player <EQ> #0     THEN
+                    CLR.W   (A2)
+                ENDI
+                ;MOVE.W  #10,(A2)
             ELSE
                 ADD.L   #2,bass_song_file_index
             ENDI
         ENDI
 
-        ADD.W   #1,quater_beat_count
+        CLR.L   D0
+        MOVE.B  song_difficulty,D0
+        IF.W quater_beat_count <LT> D0 THEN
+            MOVE.W   #1,quater_beat_count
+        ELSE
+            ADD.W   #1,quater_beat_count
+        ENDI
         RTS
 
 
@@ -666,6 +765,7 @@ CREATE_NOTE_OBJECT
 ; A0 contains the address to the current song data beat note
 ; A1 contains the address to the song file indexes
 ; A2 contains the address to the start of music note object
+; A3 contains the address to the note path index
 LOAD_NOTE_DATA
         ; load the music data into the note object
         MOVE.L  #8,D3
@@ -684,12 +784,12 @@ LOAD_NOTE_DATA
 
         ; assign a colour based on the playing notes
         ; and the difficulty
+        CLR.L   D0
         MOVE.B  song_difficulty,D0
         IF.W quater_beat_count <LT> D0 THEN
             CLR.W   (A2)
         ELSE
             BSR     PICK_NOTE_COLOUR
-            CLR.W   quater_beat_count
         ENDI
 
         ; assign x and y position based on the path index
@@ -697,13 +797,17 @@ LOAD_NOTE_DATA
         MOVE.W  #SCREEN_WIDTH,(A2)
         ADD.W   #2,A2
         CLR.L   D2
-        MOVE.B  note_path_index,D2
+        MOVE.B  (A3),D2
         BSR     GET_LANE_Y_POSITION
         MOVE.W  D3,(A2)
         SUB.W   #NOTE_SIZE/2,(A2)
 
         ; adds note object to the end of the lane queue
-        BSR     GET_LANE_ADDRESS_FROM_INDEX
+        CLR.L   D1
+        MOVE.B  (A3),D1
+        MULU    #(LANE_ADDRESSES_SIZE*2)+2,D1
+        LEA     lane_0_object_addresses,A0
+        ADD     D1,A0
         SUB.W   #4,A2
         BSR     ENQUEUE_OBJECT_TO_LANE
         RTS
@@ -722,28 +826,6 @@ PICK_NOTE_COLOUR
         MOVE.B  (A2,D2),D2
         SUB.B   #96,D2
         MOVE.W  D2,(A2)
-        RTS
-
-
-; returns the lane address in A0
-GET_LANE_ADDRESS_FROM_INDEX
-        IF.B note_path_index <EQ> #0    THEN
-            LEA     lane_0_object_addresses,A0
-        ELSE
-            IF.B note_path_index <EQ> #1    THEN
-                LEA     lane_1_object_addresses,A0
-            ELSE
-                IF.B note_path_index <EQ> #2    THEN
-                    LEA     lane_2_object_addresses,A0
-                ELSE
-                    IF.B note_path_index <EQ> #3    THEN
-                        LEA     lane_3_object_addresses,A0
-                    ELSE
-                        LEA     lane_4_object_addresses,A0
-                    ENDI
-                ENDI
-            ENDI
-        ENDI
         RTS
 
 
@@ -910,6 +992,8 @@ GET_COLOUR_FROM_INDEX
                                 ELSE
                                     IF.W D1 <EQ> #7 THEN
                                         MOVE.L  #AQUA,D1
+                                    ELSE
+                                        MOVE.L  #WHITE,D1
                                     ENDI
                                 ENDI
                             ENDI
@@ -1036,6 +1120,14 @@ player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_1_action_colour  DC.L    WHITE   ; stores the player action colour
 player_1_colour_keymaps DC.L    'YHUJIKL' ; stores the keymaps for the player changing colours
 
+player_2_position       DS.W    2       ; stores the top right player position x,y
+player_2_lane_number    DS.B    1       ; stores the lane number
+player_2_moving         DC.B    0       ; stores whether the player is moving up or down
+player_2_action_pressed DC.B    0       ; stores whether any action buttons are pressed
+player_2_keymaps        DC.L    'WS'    ; stores the movement keys of player
+player_2_action_colour  DC.L    WHITE   ; stores the player action colour
+player_2_colour_keymaps DC.L    'YHUJIKL' ; stores the keymaps for the player changing colours
+
 ; stores the number of objects in the arrays
 lane_0_object_count     DC.W    0
 ; stores the addresses of objects in the rows
@@ -1057,9 +1149,13 @@ note_objects            DS.W    NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2    ; stor
 ;   W   y position
 ;   W   useless
 ;   L*10   music notes data, same as in the file
-note_path_index         DS.B    1       ; stores the lane index of the note path
+
+treble_note_path_index  DC.B    2       ; stores the lane index of the note path
+bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
+
+two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -1110,21 +1206,6 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
