@@ -84,7 +84,7 @@ for bar1 in music_data:
     bass_bar_container = []
     for item in bar1:
         if item.tag == 'note':
-            note_data_dict = {'step': 'R',
+            note_data_dict = {'step': 'Z',
                               'octave': '',
                               'alter': '0',
                               'duration': 0,
@@ -120,7 +120,7 @@ for bar1 in music_data:
                     note_data_dict['staff'] = data.text
                 # elif data.tag == 'notations' and len(data[0].attrib) != 0 and data[0].attrib['type'] == 'stop' and note_data_dict['duration'] != 1:
                 #     #print(note_data_dict)
-                #     note_data_dict['step'] = 'R'
+                #     note_data_dict['step'] = 'Z'
                 #     note_data_dict['octave'] = '-1'
                 #     note_data_dict['alter'] = '0'
             
@@ -167,18 +167,35 @@ print(lowest_duration)
 print(temp_dict)
 input('Continue?')
 
-treble_index: int = 0
-beat_count: int = 0
+treble_note_conversion_dict: dict = {'A': 'A',
+                                     'B': 'B',
+                                     'C': 'C',
+                                     'D': 'Q',
+                                     'E': 'R',
+                                     'F': 'S',
+                                     'G': 'G',
+                                     'Z': 'Z'}
+
+bass_note_conversion_dict: dict = {'A': 'D',
+                                   'B': 'E',
+                                   'C': 'F',
+                                   'D': 'T',
+                                   'E': 'U',
+                                   'F': 'V',
+                                   'G': 'G',
+                                   'Z': 'Z'}
+
 for note_index in range(len(full_music_data) - 1):
     note = full_music_data[note_index]
     if note['staff'] == '1':
         if full_music_data[note_index + 1]['staff'] == '1' and abs(float(full_music_data[note_index + 1]['default-x']) - float(note['default-x'])) <= 15:
             note['default-x'] = 0
+        note['step'] = treble_note_conversion_dict[note['step']]
         treble_line.append(note)
-        treble_index += 1
     elif note['staff'] == '2':
         if full_music_data[note_index + 1]['staff'] == '2' and abs(float(full_music_data[note_index + 1]['default-x']) - float(note['default-x'])) <= 15:
             note['default-x'] = 0
+        note['step'] = bass_note_conversion_dict[note['step']]
         bass_line.append(note)
 
 
@@ -222,7 +239,7 @@ def export_music_data(file_name: str, in_music_data: list):
         #if index < 50:
         #    print(note_string)
         if note['step'] != '':
-            if note['step'] != 'R':
+            if note['step'] != 'Z':
                 if note['default-x'] == 0:
                     if len(exported_music_data) == 0 or in_music_data[index - 1]['default-x'] != 0:
                         exported_music_data.append(note_string)
@@ -246,7 +263,8 @@ def export_music_data(file_name: str, in_music_data: list):
         for _ in range(16 - (len(exported_music_data) % 16)):
             exported_music_data.append('0')
 
-    with open(file_name + '.txt', 'w') as f:
+    print(file_name)
+    with open(input('New name: ') + '.txt', 'w') as f:
         end_index: int = 4
         for start_index in range(0, len(exported_music_data), 4):
             f.write(','.join(exported_music_data[start_index:end_index]) + ',\n')

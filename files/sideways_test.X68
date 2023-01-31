@@ -77,7 +77,7 @@ START   ORG    $1000
         MOVE.L  D1,last_path_change_time
         MOVE.L  D1,last_object_time
         MOVE.L  D1,last_note_spawn_time
-        ;MOVE.L  D1,last_beat_change_time
+        MOVE.L  D1,last_beat_change_time
         ; stores the time as starting seed
         MOVE.L  D1,random_value
 
@@ -216,14 +216,14 @@ LOOP
         ENDI
 
         ; checks for cooldown time
-        * IF.L last_beat_change_time <NE> #0  THEN
-        *     MOVE.W  #8,D0
-        *     TRAP    #15
-        *     SUB.L   last_beat_change_time,D1
-        *     IF.L #20 <LE> D1    THEN
-        *         BSR     RESET_PLAYER_1_ACTION
-        *     ENDI
-        * ENDI
+        IF.L last_beat_change_time <NE> #0  THEN
+            MOVE.W  #8,D0
+            TRAP    #15
+            SUB.L   last_beat_change_time,D1
+            IF.L #20 <LE> D1    THEN
+                BSR     RESET_PLAYER_1_ACTION
+            ENDI
+        ENDI
 
         ; spawn new notes
         MOVE.W  #8,D0
@@ -290,25 +290,37 @@ CHECK_COLLISIONS
                 ADD.W   #2,A1
                 ; check if the note is close to beat line
                 IF.W (A1) <LT> #BEAT_LINE_X THEN
-                    ; check collision with player line
-                    IF.B player_1_lane_number <EQ> D5   THEN
-                        MOVE.W  -(A1),D1
-                        BSR     GET_COLOUR_FROM_INDEX
-                        ; note has been hit correctly
-                        IF.L player_1_action_colour <EQ> D1 THEN
-                            MOVE.B  #1,last_note_success
-                            ; sets the position to the left to make the note disappear when checking collision
-                            CLR.W   (A1)
-                            ;BSR     RESET_PLAYER_1_ACTION
-                        ELSE
-                            ;IF.L player_1_action_colour <NE> #WHITE THEN
-                            ADD.W   #2,A1
-                            CLR.W   (A1)
-                            SUB.W   #2,A1
-                            ;ENDI
-                        ENDI
+                    ; check if the note is invisible
+                    IF.W -(A1) <EQ> #0  THEN
                         ADD.W   #2,A1
+                        CLR.W   (A1)
+                    ELSE
+                        ADD.W   #2,A1
+                        ; check collision with player line
+                        IF.B player_1_lane_number <EQ> D5   THEN
+                            MOVE.W  -(A1),D1
+                            BCLR.L  #4,D1
+                            IF  <NE>    THEN
+                                IF SHIFT IS PRESSED
+                            ENDI
+                            BSR     GET_COLOUR_FROM_INDEX
+                            ; note has been hit correctly
+                            IF.L player_1_action_colour <EQ> D1 THEN
+                                MOVE.B  #1,last_note_success
+                                ; sets the position to the left to make the note disappear when checking collision
+                                CLR.W   (A1)+
+                                CLR.W   (A1)
+                            ELSE
+                                ; check if the note colour was hit incorrectly
+                                IF.L player_1_action_colour <NE> #WHITE THEN
+                                    CLR.W   2(A1)
+                                ENDI
+                                ADD.W   #2,A1
+                            ENDI
+                        ENDI
                     ENDI
+                    
+
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
@@ -361,6 +373,17 @@ PLAY_MUSIC_ON_HIT
 
                         ADD.B   #1,D6
                         MOVE.B  (A1,D6),D1
+                        IF.B (A1,D6) <NE> #103  THEN
+                            IF.B (A1,D6) <GE> #100  THEN
+                                SUB.B   #3,D1
+                                IF.B (A1,D6) <GE> #113  THEN
+                                    SUB.B   #10,D1
+                                    IF.B (A1,D6) <GE> #116  THEN
+                                        SUB.B   #3,D1
+                                    ENDI
+                                ENDI
+                            ENDI
+                        ENDI
                         SUB.B   #97,D1
                         ADD.B   #1,D6
                         IF.B (A1,D6) <EQ> #115  THEN
@@ -420,9 +443,7 @@ LANE_LEFT_SHIFT
 
 
 HANDLE_INPUT
-        ;IF last_beat_change_time <EQ> #0    THEN
         BSR     HANDLE_COLOUR_CHANGE
-        ;ENDI
         BSR     HANDLE_MOVEMENT
         RTS
 
@@ -438,17 +459,21 @@ HANDLE_COLOUR_CHANGE
             IF  <NE>    THEN
                 BTST.B  #7,player_1_action_pressed
                 IF  <EQ>    THEN
-                    MOVE.L  #RED,player_1_action_colour
+                    MOVE.L  #BLUE,player_1_action_colour
                     BSET.B  #7,player_1_action_pressed
                 ENDI
+            ELSE
+                BCLR.B  #7,player_1_action_pressed
             ENDI
             BTST.L  #16,D1
             IF  <NE>    THEN
                 BTST.B  #6,player_1_action_pressed
                 IF  <EQ>    THEN
-                    MOVE.L  #ORANGE,player_1_action_colour
+                    MOVE.L  #RED,player_1_action_colour
                     BSET.B  #6,player_1_action_pressed
                 ENDI
+            ELSE
+                BCLR.B  #6,player_1_action_pressed
             ENDI
             BTST.L  #8,D1
             IF  <NE>    THEN
@@ -457,64 +482,12 @@ HANDLE_COLOUR_CHANGE
                     MOVE.L  #YELLOW,player_1_action_colour
                     BSET.B  #5,player_1_action_pressed
                 ENDI
-            ENDI
-            BTST.L  #0,D1
-            IF  <NE>    THEN
-                BTST.B  #4,player_1_action_pressed
-                IF  <EQ>    THEN
-                    MOVE.L  #LIME,player_1_action_colour
-                    BSET.B  #4,player_1_action_pressed
-                ENDI
+            ELSE
+                BCLR.B  #5,player_1_action_pressed
             ENDI
             MOVE.W  #8,D0
             TRAP    #15
-            ;MOVE.L  D1,last_beat_change_time
-        ELSE
-            ; clears the actions pressed
-            BCLR.B  #7,player_1_action_pressed
-            BCLR.B  #6,player_1_action_pressed
-            BCLR.B  #5,player_1_action_pressed
-            BCLR.B  #4,player_1_action_pressed
-
-            MOVE.W  #19,D0
-            MOVE.L  player_1_colour_keymaps+4,D1
-            TRAP    #15
-
-            IF.L #0 <NE> D1 THEN
-                ; change colours electric boogaloo
-                BTST.L  #24,D1
-                IF  <NE>    THEN
-                    BTST.B  #3,player_1_action_pressed
-                    IF  <EQ>    THEN
-                        MOVE.L  #AQUA,player_1_action_colour
-                        BSET.B  #3,player_1_action_pressed
-                    ENDI
-                ENDI
-                BTST.L  #16,D1
-                IF  <NE>    THEN
-                    BTST.B  #2,player_1_action_pressed
-                    IF  <EQ>    THEN
-                        MOVE.L  #BLUE,player_1_action_colour
-                        BSET.B  #2,player_1_action_pressed
-                    ENDI
-                ENDI
-                BTST.L  #8,D1
-                IF  <NE>    THEN
-                    BTST.B  #1,player_1_action_pressed
-                    IF  <EQ>    THEN
-                        MOVE.L  #PURPLE2,player_1_action_colour
-                        BSET.B  #1,player_1_action_pressed
-                    ENDI
-                ENDI
-                MOVE.W  #8,D0
-                TRAP    #15
-                ;MOVE.L  D1,last_beat_change_time
-            ELSE
-                ; clears the actions pressed
-                BCLR.B  #3,player_1_action_pressed
-                BCLR.B  #2,player_1_action_pressed
-                BCLR.B  #1,player_1_action_pressed
-            ENDI
+            MOVE.L  D1,last_beat_change_time
         ENDI
         RTS
 
@@ -683,10 +656,11 @@ DOUBLE_RANDOM_SUB
         RTS
         RTS
 
-* RESET_PLAYER_1_ACTION
-*         MOVE.L  #WHITE,player_1_action_colour
-*         MOVE.L  #0,last_beat_change_time
-*         RTS
+
+RESET_PLAYER_1_ACTION
+        MOVE.L  #WHITE,player_1_action_colour
+        MOVE.L  #0,last_beat_change_time
+        RTS
 
 
 SPAWN_NEW_NOTE
@@ -948,15 +922,28 @@ DRAW_NOTES
                     IF.W (A0) <NE> #0 AND.W (A0) <NE> #$FFFF    THEN
                         MOVE.B  #80,D0
                         MOVE.W  (A0),D1
-                        BSR     GET_COLOUR_FROM_INDEX
-                        TRAP    #15
-                        MOVE.W  #81,D0
-                        TRAP    #15
-                        ADD.W   #2,A0
+                        BCLR.L  #4,D1
+                        IF  <EQ>    THEN
+                            BSR     GET_COLOUR_FROM_INDEX
+                            TRAP    #15
+                            MOVE.W  #81,D0
+                            TRAP    #15
+                            ADD.W   #2,A0
 
-                        MOVE.W  #NOTE_SIZE,D3
-                        MOVE.W  #NOTE_SIZE,D4
-                        BSR     DRAW_SQUARE
+                            MOVE.W  #NOTE_SIZE,D3
+                            MOVE.W  #NOTE_SIZE,D4
+                            BSR     DRAW_SQUARE
+                        ELSE
+                            BSR     GET_COLOUR_FROM_INDEX
+                            TRAP    #15
+                            MOVE.W  #81,D0
+                            TRAP    #15
+                            ADD.W   #2,A0
+
+                            MOVE.W  #NOTE_SIZE,D3
+                            MOVE.W  #NOTE_SIZE,D4
+                            BSR     DRAW_UNFILLED_SQUARE
+                        ENDI
                     ENDI
                     ADD.W   #2,A2
                 UNLESS.W (A2) <NE> #$FFFF
@@ -976,22 +963,22 @@ GET_COLOUR_FROM_INDEX
                 MOVE.L  #BLUE,D1
             ELSE
                 IF.W D1 <EQ> #2 THEN
-                    MOVE.L  #PURPLE2,D1
+                    MOVE.L  #RED,D1
                 ELSE
                     IF.W D1 <EQ> #3 THEN
-                        MOVE.L  #RED,D1
+                        MOVE.L  #YELLOW,D1
                     ELSE
                         IF.W D1 <EQ> #4 THEN
-                            MOVE.L  #ORANGE,D1
+                            MOVE.L  #AQUA,D1
                         ELSE
                             IF.W D1 <EQ> #5 THEN
-                                MOVE.L  #YELLOW,D1
+                                MOVE.L  #ORANGE,D1
                             ELSE
                                 IF.W D1 <EQ> #6 THEN
                                     MOVE.L  #LIME,D1
                                 ELSE
                                     IF.W D1 <EQ> #7 THEN
-                                        MOVE.L  #AQUA,D1
+                                        MOVE.L  #PURPLE2,D1
                                     ELSE
                                         MOVE.L  #WHITE,D1
                                     ENDI
@@ -1002,6 +989,7 @@ GET_COLOUR_FROM_INDEX
                 ENDI
             ENDI
         ENDI
+        
         RTS
 
 
@@ -1043,6 +1031,18 @@ DRAW_SQUARE
         ADD.W   D2,D4
 
         MOVE.W  #87,D0
+        TRAP    #15
+        RTS
+
+; draws an unfilled square at A0 plus size in D3,D4
+DRAW_UNFILLED_SQUARE
+        ; set bounds of square to draw
+        MOVE.W  (A0)+,D1
+        MOVE.W  (A0),D2
+        ADD.W   D1,D3
+        ADD.W   D2,D4
+
+        MOVE.W  #90,D0
         TRAP    #15
         RTS
 
@@ -1110,7 +1110,7 @@ last_movement_time      DS.L    1       ; stores the time when last accepted inp
 last_path_change_time   DS.L    1       ; stores the time when path index last changed
 last_object_time        DS.L    1       ; stores the time when the notes where moved
 last_note_spawn_time    DS.L    1       ; stores the time when note was last spawned
-;last_beat_change_time   DS.L    1       ; stores the time when beat was last checked and put back into white
+last_beat_change_time   DS.L    1       ; stores the time when beat was last checked and put back into white
 
 player_1_position       DS.W    2       ; stores the top right player position x,y
 player_1_lane_number    DS.B    1       ; stores the lane number
@@ -1118,7 +1118,8 @@ player_1_moving         DC.B    0       ; stores whether the player is moving up
 player_1_action_pressed DC.B    0       ; stores whether any action buttons are pressed
 player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_1_action_colour  DC.L    WHITE   ; stores the player action colour
-player_1_colour_keymaps DC.L    'YHUJIKL' ; stores the keymaps for the player changing colours
+player_1_colour_keymaps DC.L    'HUK' ; stores the keymaps for the player changing colours
+player_1_shift_pressed  DC.B    0       ; stores whether the shift is pressed down
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
 player_2_lane_number    DS.B    1       ; stores the lane number
@@ -1127,6 +1128,7 @@ player_2_action_pressed DC.B    0       ; stores whether any action buttons are 
 player_2_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_2_action_colour  DC.L    WHITE   ; stores the player action colour
 player_2_colour_keymaps DC.L    'YHUJIKL' ; stores the keymaps for the player changing colours
+player_2_shift_pressed  DC.B    0       ; stores whether the control is pressed down
 
 ; stores the number of objects in the arrays
 lane_0_object_count     DC.W    0
@@ -1185,6 +1187,9 @@ last_note_success       DC.B    0       ; stores whether the last hit note was c
 
 
 ; COLOURS
+; the treble notes are going to be red, yellow and blue
+; the bass notes are going to be aqua, lime, and orange
+; teleport is goin to be purple2
 BLACK           EQU     $00000000
 MAROON          EQU     $00000080
 GREEN           EQU     $00008000
@@ -1193,13 +1198,13 @@ NAVY            EQU     $00800000
 PURPLE          EQU     $00800080
 TEAL            EQU     $00808000
 GREY            EQU     $00808080
-BLUE            EQU     $00FF0000       ; A
-PURPLE2         EQU     $00FF0080       ; B
-RED             EQU     $000000FF       ; C
-ORANGE          EQU     $000080FF       ; D
-YELLOW          EQU     $0000FFFF       ; E
-LIME            EQU     $0000FF00       ; F
-AQUA            EQU     $00FFFF00       ; G
+BLUE            EQU     $00FF0000       ; Treble A, D
+RED             EQU     $000000FF       ; Treble B, E
+YELLOW          EQU     $0000FFFF       ; Treble C, F
+AQUA            EQU     $00FFFF00       ; Bass A, D
+ORANGE          EQU     $000080FF       ; Bass B, E
+LIME            EQU     $0000FF00       ; Bass C, F
+PURPLE2         EQU     $00FF0080       ; Teleport
 MAGENTA         EQU     $00FF00FF
 LITEGREY        EQU     $00C0C0C0
 WHITE           EQU     $00FFFFFF
