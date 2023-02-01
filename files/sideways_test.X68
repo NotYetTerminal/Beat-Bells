@@ -829,9 +829,9 @@ SPAWN_NEW_NOTE
             ENDI
         ELSE
             ; check for carraige return and line feed
-            IF.B (A0) <EQ> #13  THEN
-                ADD.L   #2,treble_song_file_index
-                ADD.L   #2,A0
+            IF.B (A0) <EQ> #10  THEN
+                ADD.L   #1,treble_song_file_index
+                ADD.L   #1,A0
             ENDI
 
             LEA	    treble_quater_beat_count,A4
@@ -857,9 +857,9 @@ SPAWN_NEW_NOTE
         ; checks the bass file as well
         MOVE.L  bass_song_file_index,A0
         IF.B (A0) <NE> #$FF THEN
-            IF.B (A0) <EQ> #13  THEN
-                ADD.L   #2,bass_song_file_index
-                ADD.L   #2,A0
+            IF.B (A0) <EQ> #10  THEN
+                ADD.L   #1,bass_song_file_index
+                ADD.L   #1,A0
             ENDI
 
             LEA	    bass_quater_beat_count,A4
@@ -1421,6 +1421,7 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
 
 
 
