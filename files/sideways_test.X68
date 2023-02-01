@@ -50,7 +50,7 @@ PLAYER_SIZE             EQU     20
 NOTE_SIZE               EQU     40
 
 NOTE_OBJECT_SIZE        EQU     48
-LANE_ADDRESSES_SIZE     EQU     39
+LANE_ADDRESSES_SIZE     EQU     55
 
 
 ; program start
@@ -1421,6 +1421,7 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
 
 
 
