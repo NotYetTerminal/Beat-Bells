@@ -9,7 +9,6 @@
 * 
 * Gameplay
 * change psudo random path index to change after long not change
-* implement player 2
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
@@ -21,7 +20,6 @@
 * 
 * INPUT
 * change so purple is a teleport with seperate key
-* 
 * 
 * Music
 * make it so the invisible notes are played when they are center over beat line
@@ -1198,7 +1196,7 @@ DRAW_PLAYER_2
         LEA     player_2_position,A0
         MOVE.W  #PLAYER_SIZE,D3
         MOVE.W  #PLAYER_SIZE,D4
-        BSR     DRAW_SQUARE
+        BSR     DRAW_UNFILLED_SQUARE
         
         ; draws the square bounding box
         SUB.W   #40,D1
@@ -1346,7 +1344,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -1401,6 +1399,7 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
 
 
 
