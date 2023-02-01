@@ -80,7 +80,8 @@ START   ORG    $1000
         MOVE.L  D1,last_path_change_time
         MOVE.L  D1,last_object_time
         MOVE.L  D1,last_note_spawn_time
-        MOVE.L  D1,last_beat_change_time
+        MOVE.L  D1,player_1_last_beat_change_time
+        MOVE.L  D1,player_2_last_beat_change_time
         ; stores the time as starting seed
         MOVE.L  D1,random_value
 
@@ -109,7 +110,13 @@ START   ORG    $1000
 
         ; sets up the player keymaps
         LEA     player_1_colour_keymaps,A0
+        ; shiift
         MOVE.B  #$10,3(A0)
+
+        ; up and down arrow keys
+        MOVE.L  #$26280000,player_2_keymaps
+        ; keypad 1, 5, 3 and control
+        MOVE.L  #$230C2211,player_2_colour_keymaps
 
         ; sets the index to the start
         MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
@@ -203,7 +210,7 @@ LOOP
         SUB.L   last_movement_time,D1
         IF.L #8 <LE> D1    THEN
             BSR     HANDLE_INPUT
-            BSR     CHECK_COLLISIONS
+            BSR     CHECK_BOTH_PLAYER_COLLISIONS
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_movement_time
@@ -223,12 +230,21 @@ LOOP
         ENDI
 
         ; checks for cooldown time
-        IF.L last_beat_change_time <NE> #0  THEN
+        IF.L player_1_last_beat_change_time <NE> #0  THEN
             MOVE.W  #8,D0
             TRAP    #15
-            SUB.L   last_beat_change_time,D1
+            SUB.L   player_1_last_beat_change_time,D1
             IF.L #20 <LE> D1    THEN
                 BSR     RESET_PLAYER_1_ACTION
+            ENDI
+        ENDI
+
+        IF.L player_2_last_beat_change_time <NE> #0  THEN
+            MOVE.W  #8,D0
+            TRAP    #15
+            SUB.L   player_2_last_beat_change_time,D1
+            IF.L #20 <LE> D1    THEN
+                BSR     RESET_PLAYER_2_ACTION
             ENDI
         ENDI
 
@@ -288,6 +304,23 @@ MOVE_OBJECTS
         RTS
 
 
+CHECK_BOTH_PLAYER_COLLISIONS
+        LEA     player_1_lane_number,A4
+        LEA     player_1_action_colour,A5
+        LEA     player_1_shift_pressed,A6
+        BSR     CHECK_COLLISIONS
+
+        IF.B two_player <EQ> #1 THEN
+            LEA     player_2_lane_number,A4
+            LEA     player_2_action_colour,A5
+            LEA     player_2_shift_pressed,A6
+            BSR     CHECK_COLLISIONS
+        ENDI
+        RTS
+
+; A4 must contain the player lane_number
+; A5 must contain the player action colour
+; A6 must contain the player shift/control pressed
 CHECK_COLLISIONS
         LEA     lane_0_object_addresses,A0
         ; loops through the five lanes
@@ -304,7 +337,7 @@ CHECK_COLLISIONS
                     ELSE
                         ADD.W   #2,A1
                         ; check collision with player line
-                        IF.B player_1_lane_number <EQ> D5   THEN
+                        IF.B (A4) <EQ> D5   THEN
                             MOVE.W  -(A1),D1
                             BCLR.L  #4,D1
                             IF  <NE>    THEN
@@ -314,8 +347,8 @@ CHECK_COLLISIONS
                             ENDI
                             BSR     GET_COLOUR_FROM_INDEX
                             ; note has been hit correctly
-                            IF.L player_1_action_colour <EQ> D1 THEN
-                                IF.B D7 <EQ> player_1_shift_pressed THEN
+                            IF.L (A5) <EQ> D1 THEN
+                                IF.B D7 <EQ> (A6) THEN
                                     IF.B 6(A1) <EQ> #0  THEN
                                         MOVE.B  #1,treble_last_note_success
                                     ELSE
@@ -332,7 +365,7 @@ CHECK_COLLISIONS
                                 ENDI
                             ELSE
                                 ; check if the note colour was hit incorrectly
-                                IF.L player_1_action_colour <NE> #WHITE THEN
+                                IF.L (A5) <NE> #WHITE THEN
                                     CLR.W   2(A1)
                                 ENDI
                                 ADD.W   #2,A1
@@ -344,8 +377,6 @@ CHECK_COLLISIONS
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
-                        ;SUB.W   #2,A1
-                        ;BSR     PLAY_MUSIC_ON_HIT
                         IF.W -(A1) <EQ> #0  THEN
                             IF.B 6(A1) <EQ> #0  THEN
                                 IF.B treble_last_note_success <EQ> #1  THEN
@@ -377,6 +408,7 @@ CHECK_COLLISIONS
 
 ; must not use D5, A0, A1
 ; A1 contains the address to the start of the note object, ie it's colour
+; uses D0, D1, D2, D3, D4, D6, A2, A3
 PLAY_MUSIC_ON_HIT
         ADD.W   #8,A1
         ; A1 now contains the address to actual note data
@@ -475,118 +507,160 @@ LANE_LEFT_SHIFT
 
 
 HANDLE_INPUT
-        BSR     HANDLE_COLOUR_CHANGE
-        BSR     HANDLE_MOVEMENT
-        RTS
-
-
-HANDLE_COLOUR_CHANGE
-        MOVE.W  #19,D0
+        LEA     player_1_last_beat_change_time,A0
+        LEA     player_1_action_pressed,A1
+        LEA     player_1_action_colour,A2
+        LEA     player_1_shift_pressed,A3
         MOVE.L  player_1_colour_keymaps,D1
-        TRAP    #15
+        BSR     HANDLE_COLOUR_CHANGE
 
-        IF.L #0 <NE> D1 THEN
-            MOVE.L  D1,D2
-            MOVE.L  last_beat_change_time,D1
-            ; change colours
-            BTST.L  #24,D2
-            IF  <NE>    THEN
-                BTST.B  #7,player_1_action_pressed
-                IF  <EQ>    THEN
-                    MOVE.L  #BLUE,player_1_action_colour
-                    BSET.B  #7,player_1_action_pressed
-                    MOVE.W  #8,D0
-                    TRAP    #15
-                ENDI
+        LEA     player_1_position,A0
+        LEA     player_1_lane_number,A1
+        LEA     player_1_moving,A2
+        MOVE.L  player_1_keymaps,D1
+        BSR     HANDLE_MOVEMENT
+
+        IF.B two_player <EQ> #1 THEN
+            LEA     player_2_last_beat_change_time,A0
+            LEA     player_2_action_pressed,A1
+            LEA     player_2_action_colour,A2
+            LEA     player_2_shift_pressed,A3
+            MOVE.L  player_2_colour_keymaps,D1
+            BSR     HANDLE_COLOUR_CHANGE
+
+            IF.L #BLUE <EQ> (A2)    THEN
+                MOVE.L  #AQUA,(A2)
             ELSE
-                BCLR.B  #7,player_1_action_pressed
-            ENDI
-            BTST.L  #16,D2
-            IF  <NE>    THEN
-                BTST.B  #6,player_1_action_pressed
-                IF  <EQ>    THEN
-                    MOVE.L  #RED,player_1_action_colour
-                    BSET.B  #6,player_1_action_pressed
-                    MOVE.W  #8,D0
-                    TRAP    #15
+                IF.L #RED <EQ> (A2) THEN
+                    MOVE.L  #ORANGE,(A2)
+                ELSE
+                    IF.L #YELLOW <EQ> (A2)  THEN
+                        MOVE.L  #LIME,(A2)
+                    ENDI
                 ENDI
-            ELSE
-                BCLR.B  #6,player_1_action_pressed
             ENDI
-            BTST.L  #8,D2
-            IF  <NE>    THEN
-                BTST.B  #5,player_1_action_pressed
-                IF  <EQ>    THEN
-                    MOVE.L  #YELLOW,player_1_action_colour
-                    BSET.B  #5,player_1_action_pressed
-                    MOVE.W  #8,D0
-                    TRAP    #15
-                ENDI
-            ELSE
-                BCLR.B  #5,player_1_action_pressed
-            ENDI
-            ; check for shift pressed
-            BTST.L  #0,D2
-            IF  <NE>    THEN
-                IF.B player_1_shift_pressed <EQ> #0 THEN
-                    MOVE.W  #8,D0
-                    TRAP    #15
-                ENDI
-                MOVE.B  #1,player_1_shift_pressed
-            ELSE
-                MOVE.B  #0,player_1_shift_pressed
-            ENDI
-            MOVE.L  D1,last_beat_change_time
-        ELSE
-            BCLR.B  #7,player_1_action_pressed
-            BCLR.B  #6,player_1_action_pressed
-            BCLR.B  #5,player_1_action_pressed
-            MOVE.B  #1,player_1_shift_pressed
+
+            LEA     player_2_position,A0
+            LEA     player_2_lane_number,A1
+            LEA     player_2_moving,A2
+            MOVE.L  player_2_keymaps,D1
+            BSR     HANDLE_MOVEMENT
         ENDI
         RTS
 
 
-HANDLE_MOVEMENT
+; A0 must contain player last beat change time
+; A1 must contain player action pressed
+; A2 must contain player action colour
+; A3 must contain player shift/control pressed
+; D1 must contain player colour keymaps
+HANDLE_COLOUR_CHANGE
         MOVE.W  #19,D0
-        ; check for these keys
-        MOVE.L  player_1_keymaps,D1
+        TRAP    #15
+
+        IF.L #0 <NE> D1 THEN
+            MOVE.L  D1,D2
+            MOVE.L  (A0),D1
+            ; change colours
+            BTST.L  #24,D2
+            IF  <NE>    THEN
+                BTST.B  #7,(A1)
+                IF  <EQ>    THEN
+                    MOVE.L  #BLUE,(A2)
+                    BSET.B  #7,(A1)
+                    MOVE.W  #8,D0
+                    TRAP    #15
+                ENDI
+            ELSE
+                BCLR.B  #7,(A1)
+            ENDI
+            BTST.L  #16,D2
+            IF  <NE>    THEN
+                BTST.B  #6,(A1)
+                IF  <EQ>    THEN
+                    MOVE.L  #RED,(A2)
+                    BSET.B  #6,(A1)
+                    MOVE.W  #8,D0
+                    TRAP    #15
+                ENDI
+            ELSE
+                BCLR.B  #6,(A1)
+            ENDI
+            BTST.L  #8,D2
+            IF  <NE>    THEN
+                BTST.B  #5,(A1)
+                IF  <EQ>    THEN
+                    MOVE.L  #YELLOW,(A2)
+                    BSET.B  #5,(A1)
+                    MOVE.W  #8,D0
+                    TRAP    #15
+                ENDI
+            ELSE
+                BCLR.B  #5,(A1)
+            ENDI
+            ; check for shift pressed
+            BTST.L  #0,D2
+            IF  <NE>    THEN
+                IF.B (A3) <EQ> #0 THEN
+                    MOVE.W  #8,D0
+                    TRAP    #15
+                ENDI
+                MOVE.B  #1,(A3)
+            ELSE
+                MOVE.B  #0,(A3)
+            ENDI
+            MOVE.L  D1,(A0)
+        ELSE
+            BCLR.B  #7,(A1)
+            BCLR.B  #6,(A1)
+            BCLR.B  #5,(A1)
+            MOVE.B  #1,(A3)
+        ENDI
+        RTS
+
+
+; A0 must conatin player position
+; A1 must contain player lane number
+; A2 must contain player moving
+; D1 must contain player keymaps
+HANDLE_MOVEMENT
+        ; check for keys
+        MOVE.W  #19,D0
         TRAP    #15
 
         ; checks if any key is pressed
         IF.L #0 <EQ> D1 THEN
-            CLR.B   player_1_moving
+            CLR.B   (A2)
             RTS
         ENDI
 
         ; checks W
         BTST.L  #24,D1
         IF  <NE>    THEN
-            BTST.B  #0,player_1_moving
+            BTST.B  #0,(A2)
             IF  <EQ>    THEN
-                IF.B player_1_lane_number <NE> #0 THEN
-                    SUB.B   #1,player_1_lane_number
-                    BSET.B  #0,player_1_moving
+                IF.B (A1) <NE> #0   THEN
+                    SUB.B   #1,(A1)
+                    BSET.B  #0,(A2)
                 ENDI
             ENDI
         ELSE
-            BCLR.B  #0,player_1_moving
+            BCLR.B  #0,(A2)
         ENDI
         ; checks S
         BTST.L  #16,D1
         IF  <NE>    THEN
-            BTST.B  #1,player_1_moving
+            BTST.B  #1,(A2)
             IF  <EQ>    THEN
-                IF.B player_1_lane_number <NE> #4 THEN
-                    ADD.B   #1,player_1_lane_number
-                    BSET.B  #1,player_1_moving
+                IF.B (A1) <NE> #4   THEN
+                    ADD.B   #1,(A1)
+                    BSET.B  #1,(A2)
                 ENDI
             ENDI
         ELSE
-            BCLR.B  #1,player_1_moving
+            BCLR.B  #1,(A2)
         ENDI
 
-        LEA     player_1_position,A0
-        LEA     player_1_lane_number,A1
         BSR     CHANGE_PLAYER_Y_POSITION
         RTS
 
@@ -713,11 +787,18 @@ DOUBLE_RANDOM_SUB
 
 RESET_PLAYER_1_ACTION
         MOVE.L  #WHITE,player_1_action_colour
-        MOVE.L  #0,last_beat_change_time
+        MOVE.L  #0,player_1_last_beat_change_time
+        RTS
+
+
+RESET_PLAYER_2_ACTION
+        MOVE.L  #WHITE,player_2_action_colour
+        MOVE.L  #0,player_2_last_beat_change_time
         RTS
 
 
 SPAWN_NEW_NOTE
+        ;invisibleS WRONG AGAIN
         MOVE.L  treble_song_file_index,A0
 
         ; song has ended
@@ -733,6 +814,7 @@ SPAWN_NEW_NOTE
                 ADD.L   #2,A0
             ENDI
 
+            LEA	    treble_quater_beat_count,A4
             ; first byte is checked if there are any notes being played
             IF.B #48 <NE> (A0) THEN
                 BSR     CREATE_NOTE_OBJECT
@@ -740,9 +822,16 @@ SPAWN_NEW_NOTE
                 LEA     treble_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
                 MOVE.B  #0,6(A2)
+
+                CLR.L   D0
+                MOVE.B  song_difficulty,D0
+                IF.B (A4) <GE> D0 THEN
+                    MOVE.B   #1,(A4)
+                ENDI
             ELSE
                 ADD.L   #2,treble_song_file_index
             ENDI
+            ADD.B   #1,(A4)
         ENDI
 
         ; checks the bass file as well
@@ -753,28 +842,28 @@ SPAWN_NEW_NOTE
                 ADD.L   #2,A0
             ENDI
 
+            LEA	    bass_quater_beat_count,A4
             IF.B #48 <NE> (A0) THEN
                 BSR     CREATE_NOTE_OBJECT
                 LEA     bass_song_file_index,A1
                 LEA     bass_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
-                THIS IS INVISIBLE
                 IF.B two_player <EQ> #0     THEN
                     CLR.W   (A2)
                 ENDI
                 MOVE.B  two_player,6(A2)
+
+                CLR.L   D0
+                MOVE.B  song_difficulty,D0
+                IF.B (A4) <GE> D0 THEN
+                    MOVE.B   #1,(A4)
+                ENDI
             ELSE
                 ADD.L   #2,bass_song_file_index
             ENDI
+            ADD.B   #1,(A4)
         ENDI
 
-        CLR.L   D0
-        MOVE.B  song_difficulty,D0
-        IF.B quater_beat_count <GE> D0 THEN
-            MOVE.B   #1,quater_beat_count
-        ELSE
-            ADD.B   #1,quater_beat_count
-        ENDI
         RTS
 
 
@@ -796,6 +885,7 @@ CREATE_NOTE_OBJECT
 ; A1 contains the address to the song file indexes
 ; A2 contains the address to the start of music note object
 ; A3 contains the address to the note path index
+; A4 contains the address to the whatever quarter beat count
 LOAD_NOTE_DATA
         ; load the music data into the note object
         MOVE.L  #8,D3
@@ -816,7 +906,7 @@ LOAD_NOTE_DATA
         ; and the difficulty
         CLR.L   D0
         MOVE.B  song_difficulty,D0
-        IF.B quater_beat_count <LT> D0 THEN
+        IF.B (A4) <LT> D0 THEN
             CLR.W   (A2)
         ELSE
             BSR     PICK_NOTE_COLOUR
@@ -870,6 +960,17 @@ ENQUEUE_OBJECT_TO_LANE
         ADD.W   #2,(A1)
         RTS
 
+
+; A4 contains the address to the whatever quarter beat count
+CHECK_QUARTER_BEAT_COUNT
+        CLR.L   D0
+        MOVE.B  song_difficulty,D0
+        IF.B (A4) <GE> D0 THEN
+            MOVE.B   #1,(A4)
+        ELSE
+            ADD.B   #1,(A4)
+        ENDI
+        RTS
 
 ; loops over music time array
 ; decrements times for each note
@@ -1197,7 +1298,8 @@ last_movement_time      DS.L    1       ; stores the time when last accepted inp
 last_path_change_time   DS.L    1       ; stores the time when path index last changed
 last_object_time        DS.L    1       ; stores the time when the notes where moved
 last_note_spawn_time    DS.L    1       ; stores the time when note was last spawned
-last_beat_change_time   DS.L    1       ; stores the time when beat was last checked and put back into white
+player_1_last_beat_change_time  DS.L    1       ; stores the time when beat was last checked and put back into white
+player_2_last_beat_change_time  DS.L    1       ; stores the time when beat was last checked and put back into white
 
 player_1_position       DS.W    2       ; stores the top right player position x,y
 player_1_lane_number    DS.B    1       ; stores the lane number
@@ -1209,12 +1311,12 @@ player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player chan
 player_1_shift_pressed  DC.B    0       ; stores whether the shift is pressed down
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
-player_2_lane_number    DS.B    1       ; stores the lane number
+player_2_lane_number    DS.B    3       ; stores the lane number
 player_2_moving         DC.B    0       ; stores whether the player is moving up or down
 player_2_action_pressed DC.B    0       ; stores whether any action buttons are pressed
-player_2_keymaps        DC.L    'WS'    ; stores the movement keys of player
+player_2_keymaps        DC.L    'AA'    ; stores the movement keys of player
 player_2_action_colour  DC.L    WHITE   ; stores the player action colour
-player_2_colour_keymaps DC.L    'YHUJIKL' ; stores the keymaps for the player changing colours
+player_2_colour_keymaps DC.L    'AAAA' ; stores the keymaps for the player changing colours
 player_2_shift_pressed  DC.B    0       ; stores whether the control is pressed down
 
 ; stores the number of objects in the arrays
@@ -1269,7 +1371,8 @@ NOTES_NAMES_8           DC.B    '8cn'
 
 
 song_difficulty         DC.B    16      ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
-quater_beat_count       DC.B    32      ; stores the count of quater beats played
+treble_quater_beat_count    DC.B    32      ; stores the count of quarter beats played
+bass_quater_beat_count  DC.B    32      ; stores the count of quarter beats played
 treble_last_note_success    DC.B    0       ; stores whether the last hit note was correct
 bass_last_note_success  DC.B    0       ; stores whether the last hit note was correct
 
@@ -1298,6 +1401,7 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
 
 
 
