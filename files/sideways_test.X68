@@ -18,9 +18,6 @@
 * OPTIMISE USING THE COUNTER
 * rendering is wasteful it uses a for loop instead of stopping
 * 
-* INPUT
-* change so purple is a teleport with seperate key
-* 
 * Music
 * make it so the invisible notes are played when they are center over beat line
 * 
@@ -108,13 +105,13 @@ START   ORG    $1000
 
         ; sets up the player keymaps
         LEA     player_1_colour_keymaps,A0
-        ; shiift
-        MOVE.B  #$10,3(A0)
+        ; space
+        MOVE.B  #$20,3(A0)
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
-        ; keypad 1, 5, 3 and control
-        MOVE.L  #$230C2211,player_2_colour_keymaps
+        ; keypad 1, 5, 3 and 0
+        MOVE.L  #$230C222D,player_2_colour_keymaps
 
         ; sets the index to the start
         MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
@@ -510,6 +507,8 @@ HANDLE_INPUT
         LEA     player_1_action_colour,A2
         LEA     player_1_shift_pressed,A3
         MOVE.L  player_1_colour_keymaps,D1
+        ; shift
+        MOVE.L  #$10000000,D3
         BSR     HANDLE_COLOUR_CHANGE
 
         LEA     player_1_position,A0
@@ -524,6 +523,8 @@ HANDLE_INPUT
             LEA     player_2_action_colour,A2
             LEA     player_2_shift_pressed,A3
             MOVE.L  player_2_colour_keymaps,D1
+            ; control
+            MOVE.L  #$11000000,D3
             BSR     HANDLE_COLOUR_CHANGE
 
             IF.L #BLUE <EQ> (A2)    THEN
@@ -552,6 +553,7 @@ HANDLE_INPUT
 ; A2 must contain player action colour
 ; A3 must contain player shift/control pressed
 ; D1 must contain player colour keymaps
+; D3 must contain player shift/control keycode
 HANDLE_COLOUR_CHANGE
         MOVE.W  #19,D0
         TRAP    #15
@@ -596,22 +598,42 @@ HANDLE_COLOUR_CHANGE
             ELSE
                 BCLR.B  #5,(A1)
             ENDI
-            ; check for shift pressed
+            ; check for purple pressed
             BTST.L  #0,D2
+            IF  <NE>    THEN
+                BTST.B  #4,(A1)
+                IF  <EQ>    THEN
+                    MOVE.L  #PURPLE2,(A2)
+                    BSET.B  #4,(A1)
+                    MOVE.W  #8,D0
+                    TRAP    #15
+                ENDI
+            ELSE
+                BCLR.B  #4,(A1)
+            ENDI
+            MOVE.L  D1,(A0)
+
+            ; check for shift/control pressed
+            MOVE.L  D3,D1
+            MOVE.W  #19,D0
+            TRAP    #15
+            BTST.L  #24,D1
             IF  <NE>    THEN
                 IF.B (A3) <EQ> #0 THEN
                     MOVE.W  #8,D0
                     TRAP    #15
+                    MOVE.L  D1,(A0)
                 ENDI
                 MOVE.B  #1,(A3)
             ELSE
                 MOVE.B  #0,(A3)
             ENDI
-            MOVE.L  D1,(A0)
         ELSE
             BCLR.B  #7,(A1)
             BCLR.B  #6,(A1)
             BCLR.B  #5,(A1)
+            BCLR.B  #4,(A1)
+
             MOVE.B  #1,(A3)
         ENDI
         RTS
@@ -1344,7 +1366,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
