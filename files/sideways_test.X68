@@ -20,8 +20,11 @@
 * rendering is wasteful it uses a for loop instead of stopping
 * 
 * INPUT
-* change so only 3 keys are used and shift
 * change so purple is a teleport with seperate key
+* 
+* 
+* Music
+* make it so the invisible notes are played when they are center over beat line
 * 
 * Warnings
 * if in the piano sheet there is a held note with lines then it won't play the full thing
@@ -104,6 +107,10 @@ START   ORG    $1000
         LEA     player_2_lane_number,A1
         BSR     CHANGE_PLAYER_Y_POSITION
 
+        ; sets up the player keymaps
+        LEA     player_1_colour_keymaps,A0
+        MOVE.B  #$10,3(A0)
+
         ; sets the index to the start
         MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
         MOVE.L  #BASS_FILE_CONTENTS,bass_song_file_index
@@ -117,7 +124,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SONG
 
         ; sets the song difficulty
-        MOVE.B  #1,song_difficulty
+        MOVE.B  #8,song_difficulty
 
         JMP     LOOP
 
@@ -301,15 +308,28 @@ CHECK_COLLISIONS
                             MOVE.W  -(A1),D1
                             BCLR.L  #4,D1
                             IF  <NE>    THEN
-                                IF SHIFT IS PRESSED
+                                MOVE.B  #1,D7
+                            ELSE
+                                CLR.B   D7
                             ENDI
                             BSR     GET_COLOUR_FROM_INDEX
                             ; note has been hit correctly
                             IF.L player_1_action_colour <EQ> D1 THEN
-                                MOVE.B  #1,last_note_success
-                                ; sets the position to the left to make the note disappear when checking collision
-                                CLR.W   (A1)+
-                                CLR.W   (A1)
+                                IF.B D7 <EQ> player_1_shift_pressed THEN
+                                    IF.B 6(A1) <EQ> #0  THEN
+                                        MOVE.B  #1,treble_last_note_success
+                                    ELSE
+                                        IF.B 6(A1) <EQ> #1  THEN
+                                            MOVE.B  #1,bass_last_note_success
+                                        ENDI
+                                    ENDI
+                                    ; sets the position to the left to make the note disappear when checking collision
+                                    CLR.W   (A1)+
+                                    CLR.W   (A1)
+                                ELSE
+                                    ADD.W   #2,A1
+                                    CLR.W   (A1)
+                                ENDI
                             ELSE
                                 ; check if the note colour was hit incorrectly
                                 IF.L player_1_action_colour <NE> #WHITE THEN
@@ -324,15 +344,27 @@ CHECK_COLLISIONS
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
-                        SUB.W   #2,A1
-                        BSR     PLAY_MUSIC_ON_HIT
-                        * IF.W -(A1) <EQ> #0  THEN
-                        *     IF.B last_note_success <EQ> #1  THEN
-                        *         BSR     PLAY_MUSIC_ON_HIT
-                        *     ENDI
-                        * ELSE
-                        *     CLR.B   last_note_success
-                        * ENDI
+                        ;SUB.W   #2,A1
+                        ;BSR     PLAY_MUSIC_ON_HIT
+                        IF.W -(A1) <EQ> #0  THEN
+                            IF.B 6(A1) <EQ> #0  THEN
+                                IF.B treble_last_note_success <EQ> #1  THEN
+                                    BSR     PLAY_MUSIC_ON_HIT
+                                ENDI
+                            ELSE
+                                IF.B 6(A1) <EQ> #1 AND.B bass_last_note_success <EQ> #1   THEN
+                                    BSR     PLAY_MUSIC_ON_HIT
+                                ENDI
+                            ENDI
+                        ELSE
+                            IF.B 6(A1) <EQ> #0  THEN
+                                CLR.B   treble_last_note_success
+                            ELSE
+                                IF.B 6(A1) <EQ> #1  THEN
+                                    CLR.B   bass_last_note_success
+                                ENDI
+                            ENDI
+                        ENDI
                         MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
                     ENDI
@@ -454,40 +486,62 @@ HANDLE_COLOUR_CHANGE
         TRAP    #15
 
         IF.L #0 <NE> D1 THEN
+            MOVE.L  D1,D2
+            MOVE.L  last_beat_change_time,D1
             ; change colours
-            BTST.L  #24,D1
+            BTST.L  #24,D2
             IF  <NE>    THEN
                 BTST.B  #7,player_1_action_pressed
                 IF  <EQ>    THEN
                     MOVE.L  #BLUE,player_1_action_colour
                     BSET.B  #7,player_1_action_pressed
+                    MOVE.W  #8,D0
+                    TRAP    #15
                 ENDI
             ELSE
                 BCLR.B  #7,player_1_action_pressed
             ENDI
-            BTST.L  #16,D1
+            BTST.L  #16,D2
             IF  <NE>    THEN
                 BTST.B  #6,player_1_action_pressed
                 IF  <EQ>    THEN
                     MOVE.L  #RED,player_1_action_colour
                     BSET.B  #6,player_1_action_pressed
+                    MOVE.W  #8,D0
+                    TRAP    #15
                 ENDI
             ELSE
                 BCLR.B  #6,player_1_action_pressed
             ENDI
-            BTST.L  #8,D1
+            BTST.L  #8,D2
             IF  <NE>    THEN
                 BTST.B  #5,player_1_action_pressed
                 IF  <EQ>    THEN
                     MOVE.L  #YELLOW,player_1_action_colour
                     BSET.B  #5,player_1_action_pressed
+                    MOVE.W  #8,D0
+                    TRAP    #15
                 ENDI
             ELSE
                 BCLR.B  #5,player_1_action_pressed
             ENDI
-            MOVE.W  #8,D0
-            TRAP    #15
+            ; check for shift pressed
+            BTST.L  #0,D2
+            IF  <NE>    THEN
+                IF.B player_1_shift_pressed <EQ> #0 THEN
+                    MOVE.W  #8,D0
+                    TRAP    #15
+                ENDI
+                MOVE.B  #1,player_1_shift_pressed
+            ELSE
+                MOVE.B  #0,player_1_shift_pressed
+            ENDI
             MOVE.L  D1,last_beat_change_time
+        ELSE
+            BCLR.B  #7,player_1_action_pressed
+            BCLR.B  #6,player_1_action_pressed
+            BCLR.B  #5,player_1_action_pressed
+            MOVE.B  #1,player_1_shift_pressed
         ENDI
         RTS
 
@@ -685,6 +739,7 @@ SPAWN_NEW_NOTE
                 LEA     treble_song_file_index,A1
                 LEA     treble_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
+                MOVE.B  #0,6(A2)
             ELSE
                 ADD.L   #2,treble_song_file_index
             ENDI
@@ -703,10 +758,11 @@ SPAWN_NEW_NOTE
                 LEA     bass_song_file_index,A1
                 LEA     bass_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
+                THIS IS INVISIBLE
                 IF.B two_player <EQ> #0     THEN
                     CLR.W   (A2)
                 ENDI
-                ;MOVE.W  #10,(A2)
+                MOVE.B  two_player,6(A2)
             ELSE
                 ADD.L   #2,bass_song_file_index
             ENDI
@@ -714,10 +770,10 @@ SPAWN_NEW_NOTE
 
         CLR.L   D0
         MOVE.B  song_difficulty,D0
-        IF.W quater_beat_count <LT> D0 THEN
-            MOVE.W   #1,quater_beat_count
+        IF.B quater_beat_count <GE> D0 THEN
+            MOVE.B   #1,quater_beat_count
         ELSE
-            ADD.W   #1,quater_beat_count
+            ADD.B   #1,quater_beat_count
         ENDI
         RTS
 
@@ -760,7 +816,7 @@ LOAD_NOTE_DATA
         ; and the difficulty
         CLR.L   D0
         MOVE.B  song_difficulty,D0
-        IF.W quater_beat_count <LT> D0 THEN
+        IF.B quater_beat_count <LT> D0 THEN
             CLR.W   (A2)
         ELSE
             BSR     PICK_NOTE_COLOUR
@@ -839,6 +895,9 @@ RENDER_SCREEN
         BSR     DRAW_BACKGROUND
         BSR     DRAW_NOTES
         BSR     DRAW_PLAYER_1
+        IF.B two_player <EQ> #1 THEN
+            BSR     DRAW_PLAYER_2
+        ENDI
 
         ; repaints screen
         MOVE.B  #94,D0
@@ -854,8 +913,8 @@ RENDER_SCREEN
 DRAW_BACKGROUND
         ; sets pen and fill colour to white
         MOVE.B  #80,D0
-        ;MOVE.L  #$00FFFFFF,D1
-        MOVE.L  player_1_action_colour,D1
+        MOVE.L  #$00FFFFFF,D1
+        ;MOVE.L  player_1_action_colour,D1
         TRAP    #15
         MOVE.W  #81,D0
         TRAP    #15
@@ -1001,7 +1060,7 @@ DRAW_PLAYER_1
 
         ; sets pen and fill colour to white
         MOVE.B  #80,D0
-        MOVE.L  #$00FFFFFF,D1
+        MOVE.L  player_1_action_colour,D1
         TRAP    #15
         MOVE.W  #81,D0
         TRAP    #15
@@ -1021,6 +1080,34 @@ DRAW_PLAYER_1
         TRAP    #15
         RTS
 
+
+DRAW_PLAYER_2
+        ; sets pen width
+        MOVE.B  #93,D0
+        MOVE.B  #3,D1
+        TRAP    #15
+
+        ; sets pen and fill colour to white
+        MOVE.B  #80,D0
+        MOVE.L  player_2_action_colour,D1
+        TRAP    #15
+        MOVE.W  #81,D0
+        TRAP    #15
+
+        LEA     player_2_position,A0
+        MOVE.W  #PLAYER_SIZE,D3
+        MOVE.W  #PLAYER_SIZE,D4
+        BSR     DRAW_SQUARE
+        
+        ; draws the square bounding box
+        SUB.W   #40,D1
+        SUB.W   #40,D2
+        ADD.W   #40,D3
+        ADD.W   #40,D4
+
+        MOVE.W  #90,D0
+        TRAP    #15
+        RTS
 
 ; draws a square at A0 plus size in D3,D4
 DRAW_SQUARE
@@ -1118,7 +1205,7 @@ player_1_moving         DC.B    0       ; stores whether the player is moving up
 player_1_action_pressed DC.B    0       ; stores whether any action buttons are pressed
 player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_1_action_colour  DC.L    WHITE   ; stores the player action colour
-player_1_colour_keymaps DC.L    'HUK' ; stores the keymaps for the player changing colours
+player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player changing colours
 player_1_shift_pressed  DC.B    0       ; stores whether the shift is pressed down
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
@@ -1181,10 +1268,10 @@ NOTES_NAMES_7           DC.B    '7an7bn7cn7dn7en7fn7gn7as7bs7cs7ds7es7fs7gs'
 NOTES_NAMES_8           DC.B    '8cn'
 
 
-song_difficulty         DS.B    16      ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
-quater_beat_count       DC.W    32      ; stores the count of quater beats played
-last_note_success       DC.B    0       ; stores whether the last hit note was correct
-
+song_difficulty         DC.B    16      ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
+quater_beat_count       DC.B    32      ; stores the count of quater beats played
+treble_last_note_success    DC.B    0       ; stores whether the last hit note was correct
+bass_last_note_success  DC.B    0       ; stores whether the last hit note was correct
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
