@@ -17,7 +17,7 @@ START   ORG    $1000
         MOVE.L  #$FFFFF,D2
         TRAP    #15
 
-        SUB     #1,D2
+        SUB     #23,D2
         MOVE.L  D2,file_size
         
         MOVE.B  #50,D0
@@ -25,6 +25,8 @@ START   ORG    $1000
 
         BSR     INITIALISE_PIXELS_ARRAY
         BSR     QOI_DECODE
+        BSR     RENDER_IMAGE
+        BSR     EXIT_PROGRAM
 
 
 INITIALISE_PIXELS_ARRAY
@@ -50,13 +52,8 @@ QOI_DECODE
             CLR.L   D2
             MOVE.B  (A0,D5),D2
 
-            IF D5 <EQ> #$1529   THEN
-                ILLEGAL
-            ENDI
-
             ; QOI_OP_INDEX
             IF.B D2 <LO> #64    THEN
-                MOVE    #1,D7
                 LEA     previous_seen_pixels,A2
                 MULU    #4,D2
                 ADD     D2,A2
@@ -64,9 +61,9 @@ QOI_DECODE
                 MOVE.L  current_pixel,(A1)
                 ADD     #4,A1
             ELSE
+                LEA     current_pixel,A2
                 ; QOI_OP_DIFF
                 IF.B D2 <LO> #128   THEN
-                    LEA     current_pixel,A2
                     ; check red
                     BTST    #5,D2
                     IF  <NE>    THEN
@@ -114,13 +111,9 @@ QOI_DECODE
                             SUB.B   #2,(A2)
                         ENDI
                     ENDI
-                    MOVE.L  current_pixel,(A1)
-                    BSR     QOI_PUT_IN_PIXEL
-                    ADD     #4,A1
                 ELSE
                     ; QOI_OP_LUMA
                     IF.B D2 <LO> #192   THEN
-                        LEA     current_pixel,A2
                         ; 128 + 32
                         SUB.B   #160,D2
                         MOVE.B  D2,(A2)
@@ -142,30 +135,18 @@ QOI_DECODE
                         ADD     D2,D4
                         SUB     #8,D4
                         MOVE.B  D4,(A2)
-
-                        MOVE.L  current_pixel,(A1)
-                        BSR     QOI_PUT_IN_PIXEL
-                        ADD     #4,A1
                     ELSE
                         ; QOI_OP_RGB
                         IF.B D2 <EQ> #254   THEN
-                            LEA     current_pixel,A2
-
                             ADD     #1,D5
                             MOVE.B  (A0,D5),(A2)+
                             ADD     #1,D5
                             MOVE.B  (A0,D5),(A2)+
                             ADD     #1,D5
                             MOVE.B  (A0,D5),(A2)
-
-                            MOVE.L  current_pixel,(A1)
-                            BSR     QOI_PUT_IN_PIXEL
-                            ADD     #4,A1
                         ELSE
                             ; QOI_OP_RGBA
                             IF.B D2 <EQ> #255   THEN
-                                LEA     current_pixel,A2
-
                                 ADD     #1,D5
                                 MOVE.B  (A0,D5),(A2)+
                                 ADD     #1,D5
@@ -174,25 +155,47 @@ QOI_DECODE
                                 MOVE.B  (A0,D5),(A2)+
                                 ADD     #1,D5
                                 MOVE.B  (A0,D5),(A2)
-
-                                MOVE.L  current_pixel,(A1)
-                                BSR     QOI_PUT_IN_PIXEL
-                                ADD     #4,A1
                             ELSE
                                 ; QOI_OP_RUN
-                                SUB.B   #192,D2
+                                ; 192 + 1
+                                SUB.B   #193,D2
                                 FOR D6 = #0 TO D2   DO
-                                    MOVE.L  current_pixel,(A1)
+                                    BSR     REVERSE_COLOUR_AND_SAVE
                                     ADD     #4,A1
                                 ENDF
                             ENDI
                         ENDI
                     ENDI
                 ENDI
+                BSR     REVERSE_COLOUR_AND_SAVE
+                BSR     QOI_PUT_IN_PIXEL
+                ADD     #4,A1
             ENDI
         ENDF
 
-        BSR     EXIT_PROGRAM
+        RTS
+
+; takes the rgba colour in current_pixel
+; converts it to 0bgr and saves it into A1
+REVERSE_COLOUR_AND_SAVE
+        MOVE.L  current_pixel,D1
+
+        LSR.L   #8,D1
+        MOVE.B  D1,D3
+        LSR.L   #8,D1
+
+        LSL.L   #8,D3
+        LSL.L   #8,D3
+        LSL.L   #8,D3
+        ADD.L   D3,D1
+
+        MOVE.B  D1,D3
+        LSR.L   #8,D1
+        LSL.L   #8,D3
+        ADD.W  D3,D1
+
+        MOVE.L  D1,(A1)
+        RTS
 
 
 ; uses D0, D7, A3
@@ -200,21 +203,25 @@ QOI_PUT_IN_PIXEL
         CLR.L   D7
         LEA     current_pixel,A3
         ; red
+        CLR.L   D0
         MOVE.B  (A3),D0
         MULU    #3,D0
         ADD.L   D0,D7
         ADD     #1,A3
         ; green
+        CLR.L   D0
         MOVE.B  (A3),D0
         MULU    #5,D0
         ADD.L   D0,D7
         ADD     #1,A3
         ; blue
+        CLR.L   D0
         MOVE.B  (A3),D0
         MULU    #7,D0
         ADD.L   D0,D7
         ADD     #1,A3
         ; alpha
+        CLR.L   D0
         MOVE.B  (A3),D0
         MULU    #11,D0
         ADD.L   D0,D7
@@ -229,6 +236,31 @@ QOI_PUT_IN_PIXEL
         RTS
 
 
+RENDER_IMAGE
+        MOVE    OUTPUT_IMAGE_DATA,A0
+        FOR.L D5 = #1 TO (PICTURE_X)  DO
+            FOR.L D6 = #1 TO (PICTURE_Y)  DO
+                ; set pen colour
+                MOVE.B  #80,D0
+                MOVE.L  (A0),D1
+                TRAP    #15
+
+                ;set pixel colour
+                MOVE.B  #82,D0
+                MOVE.W  D5,D1
+                ADD.W   #99,D1
+                MOVE.W  D6,D2
+                ADD.W   #99,D2
+                TRAP    #15
+
+                ADD     #4,A0
+            ENDF
+        ENDF
+
+        RTS
+
+
+
 EXIT_PROGRAM
         MOVE.W  #9,D0
         TRAP    #15
@@ -238,6 +270,8 @@ current_pixel           DC.L    $000000FF      ; stores the current pixel
 previous_pixel          DC.L    $000000FF      ; stores the last seen pixel
 previous_seen_pixels    DS.L    64             ; stores a 64 length array of previous pixels
 
+PICTURE_X       EQU     $10004
+PICTURE_Y       EQU     $10008
 
 
 
@@ -250,6 +284,7 @@ OUTPUT_IMAGE_DATA   EQU $20000
 
 
     END    START
+
 
 
 
