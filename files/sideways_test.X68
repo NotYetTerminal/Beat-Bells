@@ -469,7 +469,7 @@ PLAY_MUSIC_ON_HIT
                 ENDI
 
                 ; puts in the rest time
-                SUB.B   #63,D3
+                SUB.B   #62,D3
                 MOVE.B  D3,(A2,D1)
 
                 ; D1 needed here
@@ -1366,7 +1366,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -1421,6 +1421,7 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
+
 
 
 
