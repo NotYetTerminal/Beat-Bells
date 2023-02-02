@@ -23,40 +23,17 @@ START   ORG    $1000
         MOVE.B  #50,D0
         TRAP    #15
 
-        BSR     INITIALISE_PIXELS_ARRAY
-        BSR     QOI_DECODE
-        MOVE.B  #52,D0
-        LEA     out_name,A1
-        TRAP    #15
-
-        MOVE.B  #54,D0
-        LEA     $20000,A1
-        MOVE.L  #$68C00,D2
-        TRAP    #15
-
-        MOVE.B  #50,D0
-        TRAP    #15
-
+        BSR     QOI_DECODE_C
         BSR     RENDER_IMAGE
         BSR     EXIT_PROGRAM
 
 
-INITIALISE_PIXELS_ARRAY
-        LEA     previous_seen_pixels,A0
-        FOR D5 = 0 TO #63   DO
-            MOVE.L  #0,(A0)
-            ADD     #4,A0
-        ENDF
-        RTS
-
 
 QOI_DECODE
-        ;BSR     QOI_PUT_IN_PIXEL
         MOVE.L  #FILE_CONTENTS,A0
         ADD     #14,A0
         MOVE.L  #OUTPUT_IMAGE_DATA,A1
         FOR.L D5 = #0 TO file_size  DO
-            MOVE.L  current_pixel,previous_pixel
             ;         read    write
             ;MOVE.B  (A0,D5),(A1,D5)
 
@@ -181,6 +158,74 @@ QOI_DECODE
 
         RTS
 
+
+QOI_DECODE_C
+        BSR     ZERO_PIXELS_ARRAY
+        MOVE.L  #$000000FF,current_pixel
+
+        MOVE.L  (PICTURE_X),D1
+        MOVE.L  (PICTURE_Y),D2
+        MULU    D2,D1
+        MOVE.L  D1,pixel_length ; px_len
+
+        SUB.L   #8,file_size    ; CHUNKS LEN
+        CLR.B   index_run       ; run
+        MOVE.L  #14,file_pixel_index ; P
+
+        MOVE.L  #FILE_CONTENTS,A0   ; bytes
+        MOVE.L  #OUTPUT_IMAGE_DATA,A1 ; pixels
+
+        ; px_pos
+        FOR D5 = #1 TO pixel_length BY #4   THEN
+            IF.B index_run <NE> #0  THEN
+                SUB.B   #1,index_run
+            ELSE
+                IF.L file_pixel_index <LO> file_size    THEN
+                    CLR.L   D1
+                    MOVE.B  file_pixel_index(A0),D1
+                    ; QOI_OP_RGB
+                    IF.B D1 <EQ> #254   THEN
+
+                    ELSE
+                        ; QOI_OP_RGBA
+                        IF.B D1 <EQ> #255   THEN
+
+                        ELSE
+                            ; QOI_OP_RUN
+                            IF.B D1 <HS> #192   THEN
+
+                            ELSE
+                                ; QOI_OP_LUMA
+                                IF.B D1 <HS> #128   THEN
+
+                                ELSE
+                                    ; QOI_OP_DIFF
+                                    IF.B D1 <HS> #64    THEN
+
+                                    ELSE
+                                        ; QOI_OP_INDEX
+
+                                    ENDI
+                                ENDI
+                            ENDI
+                        ENDI
+                    ENDI
+                ENDI
+            ENDI
+
+            ; pixels[px_pos + 0]
+        ENDF
+        RTS
+
+
+ZERO_PIXELS_ARRAY
+        LEA     previous_seen_pixels,A0
+        FOR D5 = #0 TO #255 BY #4   DO
+            CLR.L  (A0,D5)
+        ENDF
+        RTS
+
+
 ; takes the rgba colour in current_pixel
 ; converts it to 0bgr and saves it into A1
 REVERSE_COLOUR_AND_SAVE
@@ -276,13 +321,14 @@ EXIT_PROGRAM
 
 
 current_pixel           DC.L    $000000FF      ; stores the current pixel
-previous_pixel          DC.L    $000000FF      ; stores the last seen pixel
 previous_seen_pixels    DS.L    64             ; stores a 64 length array of previous pixels
 
-PICTURE_X       EQU     $10004
-PICTURE_Y       EQU     $10008
+PICTURE_X           EQU     $10004      ; stores the x length of picture
+PICTURE_Y           EQU     $10008      ; stores the y length of picture
 
-
+pixel_length        DS.L    1           ; stores the number of bytes taken up by pixels
+index_run           DS.B    1           ; stores the number of runs for index
+file_pixel_index    DS.L    1           ; stores the file index position
 
 file_name   DC.B    'qoi_logo.qoi',0
 out_name    DC.B    'qoi_out',0
@@ -294,6 +340,7 @@ OUTPUT_IMAGE_DATA   EQU $20000
 
 
     END    START
+
 
 
 
