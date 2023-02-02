@@ -25,6 +25,18 @@ START   ORG    $1000
 
         BSR     INITIALISE_PIXELS_ARRAY
         BSR     QOI_DECODE
+        MOVE.B  #52,D0
+        LEA     out_name,A1
+        TRAP    #15
+
+        MOVE.B  #54,D0
+        LEA     $20000,A1
+        MOVE.L  #$68C00,D2
+        TRAP    #15
+
+        MOVE.B  #50,D0
+        TRAP    #15
+
         BSR     RENDER_IMAGE
         BSR     EXIT_PROGRAM
 
@@ -137,33 +149,27 @@ QOI_DECODE
                         MOVE.B  D4,(A2)
                     ELSE
                         ; QOI_OP_RGB
-                        IF.B D2 <EQ> #254   THEN
+                        IF.B D2 <EQ> #254 OR.B D2 <EQ> #255 THEN
                             ADD     #1,D5
                             MOVE.B  (A0,D5),(A2)+
                             ADD     #1,D5
                             MOVE.B  (A0,D5),(A2)+
                             ADD     #1,D5
-                            MOVE.B  (A0,D5),(A2)
-                        ELSE
+                            MOVE.B  (A0,D5),(A2)+
                             ; QOI_OP_RGBA
                             IF.B D2 <EQ> #255   THEN
                                 ADD     #1,D5
-                                MOVE.B  (A0,D5),(A2)+
-                                ADD     #1,D5
-                                MOVE.B  (A0,D5),(A2)+
-                                ADD     #1,D5
-                                MOVE.B  (A0,D5),(A2)+
-                                ADD     #1,D5
+                                ;write memory to file and compare
                                 MOVE.B  (A0,D5),(A2)
-                            ELSE
-                                ; QOI_OP_RUN
-                                ; 192 + 1
-                                SUB.B   #193,D2
-                                FOR D6 = #0 TO D2   DO
-                                    BSR     REVERSE_COLOUR_AND_SAVE
-                                    ADD     #4,A1
-                                ENDF
                             ENDI
+                        ELSE
+                            ; QOI_OP_RUN
+                            ; 192 + 1
+                            SUB.B   #193,D2
+                            FOR D6 = #0 TO D2   DO
+                                BSR     REVERSE_COLOUR_AND_SAVE
+                                ADD     #4,A1
+                            ENDF
                         ENDI
                     ENDI
                 ENDI
@@ -179,6 +185,9 @@ QOI_DECODE
 ; converts it to 0bgr and saves it into A1
 REVERSE_COLOUR_AND_SAVE
         MOVE.L  current_pixel,D1
+        IF.B D1 <NE> #0 THEN
+            MOVE.B  #0,D7
+        ENDI
 
         LSR.L   #8,D1
         MOVE.B  D1,D3
@@ -276,6 +285,7 @@ PICTURE_Y       EQU     $10008
 
 
 file_name   DC.B    'qoi_logo.qoi',0
+out_name    DC.B    'qoi_out',0
 file_size   DS.L    1
 
 FILE_CONTENTS   EQU     $10000
@@ -284,6 +294,7 @@ OUTPUT_IMAGE_DATA   EQU $20000
 
 
     END    START
+
 
 
 
