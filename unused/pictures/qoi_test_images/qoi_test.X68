@@ -161,7 +161,7 @@ QOI_DECODE
 
 QOI_DECODE_C
         BSR     ZERO_PIXELS_ARRAY
-        MOVE.L  #$000000FF,current_pixel
+        MOVE.L  #$000000FF,current_pixel_r ; px
 
         MOVE.L  (PICTURE_X),D1
         MOVE.L  (PICTURE_Y),D2
@@ -176,11 +176,13 @@ QOI_DECODE_C
         MOVE.L  #OUTPUT_IMAGE_DATA,A1 ; pixels
 
         ; px_pos
-        FOR D5 = #1 TO pixel_length BY #4   THEN
+        FOR D5 = #1 TO pixel_length BY #4   DO
             IF.B index_run <NE> #0  THEN
                 SUB.B   #1,index_run
             ELSE
-                IF.L file_pixel_index <LO> file_size    THEN
+                CHANGE THIS
+                MOVE.L  file_size,D2
+                IF.L file_pixel_index <LO> D2   THEN
                     CLR.L   D1
                     MOVE.B  file_pixel_index(A0),D1
                     ; QOI_OP_RGB
@@ -320,7 +322,12 @@ EXIT_PROGRAM
         TRAP    #15
 
 
-current_pixel           DC.L    $000000FF      ; stores the current pixel
+; stores the current pixel
+current_pixel_r         DC.B    $00
+current_pixel_g         DC.B    $00
+current_pixel_b         DC.B    $00
+current_pixel_a         DC.B    $FF
+current_pixel         DC.B    $FF
 previous_seen_pixels    DS.L    64             ; stores a 64 length array of previous pixels
 
 PICTURE_X           EQU     $10004      ; stores the x length of picture
