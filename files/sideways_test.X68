@@ -111,7 +111,8 @@ START   ORG    $1000
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
         ; keypad 1, 5, 3 and 0
-        MOVE.L  #$230C222D,player_2_colour_keymaps
+        ;MOVE.L  #$230C222D,player_2_colour_keymaps
+        MOVE.L  #$51525654,player_2_colour_keymaps
 
         ; sets the index to the start
         MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
@@ -193,7 +194,7 @@ LOOP
         SUB.L   last_object_time,D1
         IF.L #2 <LE> D1    THEN
             BSR     MOVE_OBJECTS
-            BSR     CHECK_COLLISIONS
+            BSR     CHECK_BOTH_PLAYER_COLLISIONS
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_object_time
@@ -229,7 +230,7 @@ LOOP
             MOVE.W  #8,D0
             TRAP    #15
             SUB.L   player_1_last_beat_change_time,D1
-            IF.L #20 <LE> D1    THEN
+            IF.L #30 <LE> D1    THEN
                 BSR     RESET_PLAYER_1_ACTION
             ENDI
         ENDI
@@ -469,7 +470,7 @@ PLAY_MUSIC_ON_HIT
                 ENDI
 
                 ; puts in the rest time
-                SUB.B   #62,D3
+                SUB.B   #60,D3
                 MOVE.B  D3,(A2,D1)
 
                 ; D1 needed here
@@ -555,7 +556,7 @@ HANDLE_INPUT
 ; D1 must contain player colour keymaps
 ; D3 must contain player shift/control keycode
 HANDLE_COLOUR_CHANGE
-        MOVE.W  #19,D0
+        MOVE.B  #19,D0
         TRAP    #15
 
         IF.L #0 <NE> D1 THEN
@@ -1366,7 +1367,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -1421,8 +1422,6 @@ WHITE           EQU     $00FFFFFF
 
 
         END    START
-
-
 
 
 *~Font name~Courier New~
