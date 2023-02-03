@@ -17,6 +17,9 @@ START   ORG    $1000
         MOVE.L  #$FFFFF,D2
         TRAP    #15
         
+        SUB.L   #8,D2
+        MOVE.L  D2,file_size
+        
         MOVE.B  #50,D0
         TRAP    #15
 
@@ -49,92 +52,104 @@ QOI_DECODE_C
 
         ; px_pos
         FOR.L D5 = #0 TO pixel_length BY #4 DO
+            * IF.L D5 <HI> #$DF7  THEN
+            *     CLR.L   D7
+            * ENDI
             IF.B index_run <HI> #0  THEN
                 SUB.B   #1,index_run
             ELSE
-                CLR.L   D1
-                MOVE.B  (A0,D4),D1
-                ADD.L   #1,D4
-                ; QOI_OP_RGB
-                IF.B D1 <EQ> #254   THEN
-                    MOVE.B  (A0,D4),current_pixel_r
+                IF.L D4 <LO> file_size  THEN
+                    CLR.L   D1
+                    MOVE.B  (A0,D4),D1
                     ADD.L   #1,D4
-                    MOVE.B  (A0,D4),current_pixel_g
-                    ADD.L   #1,D4
-                    MOVE.B  (A0,D4),current_pixel_b
-                    ADD.L   #1,D4
-                ELSE
-                    ; QOI_OP_RGBA
-                    IF.B D1 <EQ> #255   THEN
+                    ; QOI_OP_RGB
+                    IF.B D1 <EQ> #254   THEN
                         MOVE.B  (A0,D4),current_pixel_r
                         ADD.L   #1,D4
                         MOVE.B  (A0,D4),current_pixel_g
                         ADD.L   #1,D4
                         MOVE.B  (A0,D4),current_pixel_b
                         ADD.L   #1,D4
-                        MOVE.B  (A0,D4),current_pixel_a
-                        ADD.L   #1,D4
                     ELSE
-                        ; QOI_OP_RUN
-                        IF.B D1 <HS> #192   THEN
-                            AND.B   #$3F,D1
-                            MOVE.B  D1,index_run
+                        ; QOI_OP_RGBA
+                        IF.B D1 <EQ> #255   THEN
+                            MOVE.B  (A0,D4),current_pixel_r
+                            ADD.L   #1,D4
+                            MOVE.B  (A0,D4),current_pixel_g
+                            ADD.L   #1,D4
+                            MOVE.B  (A0,D4),current_pixel_b
+                            ADD.L   #1,D4
+                            MOVE.B  (A0,D4),current_pixel_a
+                            ADD.L   #1,D4
                         ELSE
-                            ; QOI_OP_LUMA
-                            IF.B D1 <HS> #128   THEN
-                                CLR.L   D2
-                                MOVE.B  (A0,D4),D2
-                                ADD.L   #1,D4
-                                MOVE.L  D2,D3
-
+                            ; QOI_OP_RUN
+                            IF.B D1 <HS> #192   THEN
                                 AND.B   #$3F,D1
-                                SUB.B   #32,D1
-
-                                LSR.L   #4,D3
-                                AND.B   #$0F,D3
-                                SUB.B   #8,D3
-                                ADD.B   D1,D3
-                                ADD.B   D3,current_pixel_r
-
-                                ADD.B   D1,current_pixel_g
-
-                                AND.B   #$0F,D2
-                                SUB.B   #8,D2
-                                ADD.B   D1,D2
-                                ADD.B   D2,current_pixel_b
+                                MOVE.B  D1,index_run
                             ELSE
-                                ; QOI_OP_DIFF
-                                IF.B D1 <HS> #64    THEN
+                                ; QOI_OP_LUMA
+                                IF.B D1 <HS> #128   THEN
                                     CLR.L   D2
-                                    MOVE.B  D1,D2
-                                    LSR.L   #4,D2
-                                    AND.B   #$03,D2
-                                    SUB.B   #2,D2
-                                    ADD.B   D2,current_pixel_r
-                                    
-                                    MOVE.B  D1,D2
-                                    LSR.L   #2,D2
-                                    AND.B   #$03,D2
-                                    SUB.B   #2,D2
-                                    ADD.B   D2,current_pixel_g
-                                    
-                                    MOVE.B  D1,D2
-                                    AND.B   #$03,D2
-                                    SUB.B   #2,D2
+                                    MOVE.B  (A0,D4),D2
+                                    ADD.L   #1,D4
+                                    MOVE.L  D2,D3
+
+                                    AND.B   #$3F,D1
+                                    SUB.B   #32,D1
+
+                                    LSR.L   #4,D3
+                                    AND.B   #$0F,D3
+                                    SUB.B   #8,D3
+                                    ADD.B   D1,D3
+                                    ADD.B   D3,current_pixel_r
+
+                                    ADD.B   D1,current_pixel_g
+
+                                    AND.B   #$0F,D2
+                                    SUB.B   #8,D2
+                                    ADD.B   D1,D2
                                     ADD.B   D2,current_pixel_b
                                 ELSE
-                                    ; QOI_OP_INDEX
-                                    LEA     previous_seen_pixels,A2
-                                    MULU    #4,D1
-                                    ADD.L   D1,A2
-                                    MOVE.L  (A2),current_pixel_r
+                                    ; QOI_OP_DIFF
+                                    IF.B D1 <HS> #64    THEN
+                                        CLR.L   D2
+                                        MOVE.B  D1,D2
+                                        LSR.L   #4,D2
+                                        AND.B   #$03,D2
+                                        SUB.B   #2,D2
+                                        ADD.B   D2,current_pixel_r
+                                        
+                                        MOVE.B  D1,D2
+                                        LSR.L   #2,D2
+                                        AND.B   #$03,D2
+                                        SUB.B   #2,D2
+                                        ADD.B   D2,current_pixel_g
+                                        
+                                        MOVE.B  D1,D2
+                                        AND.B   #$03,D2
+                                        SUB.B   #2,D2
+                                        ADD.B   D2,current_pixel_b
+                                    ELSE
+                                        ; QOI_OP_INDEX
+                                        LEA     previous_seen_pixels,A2
+                                        MULU    #4,D1
+                                        ADD.L   D1,A2
+                                        MOVE.L  (A2),current_pixel_r
+                                    ENDI
                                 ENDI
                             ENDI
                         ENDI
                     ENDI
+                    BSR     QOI_PUT_IN_PIXEL_C
+                ELSE
+                    MOVE.L  #$000000FF,current_pixel_r
                 ENDI
-                BSR     QOI_PUT_IN_PIXEL_C
             ENDI
+            
+            ;MOVE.B  current_pixel_a,3(A1,D5.L)
+            * MOVE.B  current_pixel_b,2(A1,D5.L)
+            * MOVE.B  current_pixel_g,1(A1,D5.L)
+            * MOVE.B  current_pixel_r,(A1,D5.L)
 
             IF.B current_pixel_a <EQ> #0    THEN
                 MOVE.L  #0,(A1,D5.L)
@@ -251,17 +266,19 @@ pixel_length        DS.L    1           ; stores the number of bytes taken up by
 index_run           DS.B    1           ; stores the number of runs for index
 file_pixel_index    DS.L    1           ; stores the file index position
 
-file_name   DC.B    'qoi_logo.qoi',0
+file_name   DC.B    'Guide.qoi',0
 out_name    DC.B    'qoi_out',0
 
+file_size           DS.L    1
 
-MULTIPLIER_SIZE     EQU 1
+MULTIPLIER_SIZE     EQU 8
 
 FILE_CONTENTS   EQU     $10000
 OUTPUT_IMAGE_DATA   EQU $20000
 
 
     END    START
+
 
 
 *~Font name~Courier New~
