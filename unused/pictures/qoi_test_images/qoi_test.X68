@@ -83,44 +83,44 @@ QOI_DECODE_C
                             ; QOI_OP_LUMA
                             IF.B D1 <HS> #128   THEN
                                 CLR.L   D2
-                                MOVE.B  D1,D2
-                                LSR.L   #4,D2
-                                AND.B   #$03,D2
-                                SUB.B   #2,D2
-                                ADD.B   D2,current_pixel_r
-                                
-                                MOVE.B  D1,D2
-                                LSR.L   #2,D2
-                                AND.B   #$03,D2
-                                SUB.B   #2,D2
-                                ADD.B   D2,current_pixel_g
-                                
-                                MOVE.B  D1,D2
-                                AND.B   #$03,D2
-                                SUB.B   #2,D2
+                                MOVE.B  (A0,D4),D2
+                                ADD.L   #1,D4
+                                MOVE.L  D2,D3
+
+                                AND.B   #$3F,D1
+                                SUB.B   #32,D1
+
+                                LSR.L   #4,D3
+                                AND.B   #$0F,D3
+                                SUB.B   #8,D3
+                                ADD.B   D1,D3
+                                ADD.B   D3,current_pixel_r
+
+                                ADD.B   D1,current_pixel_g
+
+                                AND.B   #$0F,D2
+                                SUB.B   #8,D2
+                                ADD.B   D1,D2
                                 ADD.B   D2,current_pixel_b
                             ELSE
                                 ; QOI_OP_DIFF
                                 IF.B D1 <HS> #64    THEN
                                     CLR.L   D2
-                                    MOVE.B  (A0,D4),D2
-                                    ADD.L   #1,D4
-                                    MOVE.L  D2,D3
-
-                                    AND.B   #$3F,D1
-                                    SUB.B   #32,D1
-
-                                    LSR.L   #4,D3
-                                    AND.B   #$0F,D3
-                                    SUB.B   #8,D3
-                                    ADD.B   D1,D3
-                                    ADD.B   D3,current_pixel_r
-
-                                    ADD.B   D1,current_pixel_g
-
-                                    AND.B   #$0F,D2
-                                    SUB.B   #8,D2
-                                    ADD.B   D1,D2
+                                    MOVE.B  D1,D2
+                                    LSR.L   #4,D2
+                                    AND.B   #$03,D2
+                                    SUB.B   #2,D2
+                                    ADD.B   D2,current_pixel_r
+                                    
+                                    MOVE.B  D1,D2
+                                    LSR.L   #2,D2
+                                    AND.B   #$03,D2
+                                    SUB.B   #2,D2
+                                    ADD.B   D2,current_pixel_g
+                                    
+                                    MOVE.B  D1,D2
+                                    AND.B   #$03,D2
+                                    SUB.B   #2,D2
                                     ADD.B   D2,current_pixel_b
                                 ELSE
                                     ; QOI_OP_INDEX
@@ -136,10 +136,14 @@ QOI_DECODE_C
                 BSR     QOI_PUT_IN_PIXEL_C
             ENDI
 
-            MOVE.B  #0,(A1,D5.L)
-            MOVE.B  current_pixel_b,1(A1,D5.L)
-            MOVE.B  current_pixel_g,2(A1,D5.L)
-            MOVE.B  current_pixel_r,3(A1,D5.L)
+            IF.B current_pixel_a <EQ> #0    THEN
+                MOVE.L  #0,(A1,D5.L)
+            ELSE
+                MOVE.B  #0,(A1,D5.L)
+                MOVE.B  current_pixel_b,1(A1,D5.L)
+                MOVE.B  current_pixel_g,2(A1,D5.L)
+                MOVE.B  current_pixel_r,3(A1,D5.L)
+            ENDI
         ENDF
         RTS
 
@@ -251,15 +255,13 @@ file_name   DC.B    'qoi_logo.qoi',0
 out_name    DC.B    'qoi_out',0
 
 
-MULTIPLIER_SIZE     EQU 8
+MULTIPLIER_SIZE     EQU 1
 
 FILE_CONTENTS   EQU     $10000
 OUTPUT_IMAGE_DATA   EQU $20000
 
 
-
     END    START
-
 
 
 *~Font name~Courier New~
