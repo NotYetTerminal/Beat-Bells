@@ -9,7 +9,7 @@ START   ORG    $1000
         BSR     LOAD_PLAYER_1_SPRITES
 
         WHILE <T>   DO
-            MOVE.B  #23,D0
+            MOVEQ   #23,D0
             MOVE.L  #5,D1
             TRAP    #15
         
@@ -47,10 +47,10 @@ LOAD_PLAYER_1_SPRITES
 
 ; A1 must contain the file name, null terminated string
 LOAD_IMAGE_INTO_TEN_THOUSAND
-        MOVE.B  #51,D0
+        MOVEQ   #51,D0
         TRAP    #15
 
-        MOVE.B  #53,D0
+        MOVEQ   #53,D0
         MOVE.L  #FILE_CONTENTS,A1
         MOVE.L  #$FFFFF,D2
         TRAP    #15
@@ -58,7 +58,7 @@ LOAD_IMAGE_INTO_TEN_THOUSAND
         SUB.L   #8,D2
         MOVE.L  D2,file_size
         
-        MOVE.B  #50,D0
+        MOVEQ   #50,D0
         TRAP    #15
 
         RTS
@@ -198,16 +198,16 @@ QOI_DECODE
 
 
 ZERO_PIXELS_ARRAY
-        MOVE.B  #51,D0
+        MOVEQ   #51,D0
         LEA     empty_seen_pixels,A1
         TRAP    #15
 
-        MOVE.B  #53,D0
+        MOVEQ   #53,D0
         LEA     previous_seen_pixels,A1
         MOVE.L  #$FFFFF,D2
         TRAP    #15
         
-        MOVE.B  #50,D0
+        MOVEQ   #50,D0
         TRAP    #15
 
         RTS
@@ -248,31 +248,31 @@ QOI_PUT_IN_PIXEL
 
 ; A0 must contain the start of the sprite
 RENDER_IMAGE
-        MOVE.B  #93,D0
-        MOVE.B  #MULTIPLIER_SIZE,D1
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
         ;MOVE.L  #OUTPUT_IMAGE_DATA,A0
         FOR.L D5 = #1 TO (PICTURE_Y)  DO
             FOR.L D6 = #1 TO (PICTURE_X)  DO
                 ; set pen colour
-                MOVE.B  #80,D0
-                MOVE.L  (A0),D1
+                MOVEQ   #80,D0
+                MOVE.L  (A0)+,D1
                 TRAP    #15
 
                 ; draw rectangle
-                MOVE.B  #87,D0
+                MOVEQ   #87,D0
                 MOVE.W  D6,D1
                 MOVE.W  D5,D2
+                ; multiplies by 3, does 4 - 1
                 LSL.W   #2,D1
                 LSL.W   #2,D2
                 SUB.W   D6,D1
                 SUB.W   D5,D2
+
                 MOVE.W  D1,D3
                 MOVE.W  D2,D4
                 TRAP    #15
-                
-                ADD.W   #4,A0
             ENDF
         ENDF
 
