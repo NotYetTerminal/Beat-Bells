@@ -17,6 +17,7 @@ START   ORG    $1000
             MOVE.L  #player_sprites_start,A0
             MOVE.L  #player_sprite_size,D1
             MOVE.B  image_index,D0
+            ; this mulu can be removed if images of size 32x32 were used then it could just be a bit shift
             MULU    D0,D1
             ADD.L   D1,A0
 
@@ -25,8 +26,9 @@ START   ORG    $1000
             CLR.L   D0
             MOVE.B  image_index,D0
             ADDQ    #1,D0
-            DIVU    #7,D0
-            SWAP    D0
+            ; needs to be the number of images in sprite gif
+            ; modulus 4
+            AND.B   #3,D0
             MOVE.B  D0,image_index
         ENDW
         BSR     EXIT_PROGRAM
@@ -72,12 +74,7 @@ QOI_DECODE
         MOVE.L  (PICTURE_X),D1
         MOVE.L  (PICTURE_Y),D2
         MULU    D2,D1
-        MOVE.L  D1,D2
-        SWAP    D2
-        MULU    #4,D1
-        MULU    #4,D2
-        SWAP    D2
-        ADD.L   D2,D1
+        LSL.L   #2,D1
         SUB.L   #1,D1
         MOVE.L  D1,pixel_length
 
@@ -168,7 +165,7 @@ QOI_DECODE
                                     ELSE
                                         ; QOI_OP_INDEX
                                         LEA     previous_seen_pixels,A2
-                                        MULU    #4,D1
+                                        LSL.L   #2,D1
                                         ADD.L   D1,A2
                                         MOVE.L  (A2),current_pixel_r
                                     ENDI
@@ -216,27 +213,37 @@ QOI_PUT_IN_PIXEL
         LEA     previous_seen_pixels,A2
 
         MOVE.B  current_pixel_r,D1
-        MULU    #3,D1
+        ; multiply by 3
+        MOVE.B  D1,D2
+        LSL.L   #1,D1
         ADD.L   D1,D2
 
         CLR.L   D1
         MOVE.B  current_pixel_g,D1
-        MULU    #5,D1
+        ; multiply by 5
+        ADD.L   D1,D2
+        LSL.L   #2,D1
         ADD.L   D1,D2
 
         CLR.L   D1
         MOVE.B  current_pixel_b,D1
-        MULU    #7,D1
+        ; multiply by 7
+        SUB.L   D1,D2
+        LSL.L   #3,D1
         ADD.L   D1,D2
 
         CLR.L   D1
         MOVE.B  current_pixel_a,D1
-        MULU    #11,D1
+        ; multiply by 11
+        ADD.L   D1,D2
+        ADD.L   D1,D2
+        ADD.L   D1,D2
+        LSL.L   #3,D1
         ADD.L   D1,D2
 
-        DIVU    #64,D2
-        SWAP    D2
-        MULU    #4,D2
+        ; modulus 64
+        AND.L   #63,D2
+        LSL.L   #2,D2
         ADD.L   D2,A2
 
         MOVE.L  current_pixel_r,(A2)
