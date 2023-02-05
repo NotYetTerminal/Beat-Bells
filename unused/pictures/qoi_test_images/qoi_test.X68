@@ -5,6 +5,7 @@
 * Description:  qoi test
 *-----------------------------------------------------------
 
+
 START   ORG    $1000
         BSR     LOAD_PLAYER_1_SPRITES
 
@@ -23,7 +24,7 @@ START   ORG    $1000
 
             CLR.L   D0
             MOVE.B  image_index,D0
-            ADD.B   #1,D0
+            ADDQ    #1,D0
             DIVU    #7,D0
             SWAP    D0
             MOVE.B  D0,image_index
@@ -62,6 +63,7 @@ LOAD_IMAGE_INTO_TEN_THOUSAND
         TRAP    #15
 
         RTS
+
 
 QOI_DECODE
         BSR     ZERO_PIXELS_ARRAY
@@ -133,14 +135,14 @@ QOI_DECODE
 
                                     LSR.L   #4,D3
                                     AND.B   #$0F,D3
-                                    SUB.B   #8,D3
+                                    SUBQ    #8,D3
                                     ADD.B   D1,D3
                                     ADD.B   D3,current_pixel_r
 
                                     ADD.B   D1,current_pixel_g
 
                                     AND.B   #$0F,D2
-                                    SUB.B   #8,D2
+                                    SUBQ    #8,D2
                                     ADD.B   D1,D2
                                     ADD.B   D2,current_pixel_b
                                 ELSE
@@ -150,18 +152,18 @@ QOI_DECODE
                                         MOVE.B  D1,D2
                                         LSR.L   #4,D2
                                         AND.B   #$03,D2
-                                        SUB.B   #2,D2
+                                        SUBQ    #2,D2
                                         ADD.B   D2,current_pixel_r
                                         
                                         MOVE.B  D1,D2
                                         LSR.L   #2,D2
                                         AND.B   #$03,D2
-                                        SUB.B   #2,D2
+                                        SUBQ    #2,D2
                                         ADD.B   D2,current_pixel_g
                                         
                                         MOVE.B  D1,D2
                                         AND.B   #$03,D2
-                                        SUB.B   #2,D2
+                                        SUBQ    #2,D2
                                         ADD.B   D2,current_pixel_b
                                     ELSE
                                         ; QOI_OP_INDEX
@@ -180,11 +182,6 @@ QOI_DECODE
                 ENDI
             ENDI
             
-            ;MOVE.B  current_pixel_a,3(A1,D5.L)
-            * MOVE.B  current_pixel_b,2(A1,D5.L)
-            * MOVE.B  current_pixel_g,1(A1,D5.L)
-            * MOVE.B  current_pixel_r,(A1,D5.L)
-
             IF.B current_pixel_a <EQ> #0    THEN
                 MOVE.L  #0,(A1,D5.L)
             ELSE
