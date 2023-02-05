@@ -6,10 +6,48 @@
 *-----------------------------------------------------------
 
 START   ORG    $1000
+        BSR     LOAD_PLAYER_1_SPRITES
 
-        ; loads in a file
+        WHILE <T>   DO
+            MOVE.B  #23,D0
+            MOVE.L  #5,D1
+            TRAP    #15
+        
+            MOVE.L  #player_sprites_start,A0
+            MOVE.L  #player_sprite_size,D1
+            MOVE.B  image_index,D0
+            MULU    D0,D1
+            ADD.L   D1,A0
+
+            BSR RENDER_IMAGE
+
+            CLR.L   D0
+            MOVE.B  image_index,D0
+            ADD.B   #1,D0
+            DIVU    #7,D0
+            SWAP    D0
+            MOVE.B  D0,image_index
+        ENDW
+        BSR     EXIT_PROGRAM
+
+
+LOAD_PLAYER_1_SPRITES
+        FOR D6 = #0 TO #6   DO
+            MOVE.B  D6,D7
+            ADD.B   #49,D7
+            LEA     player_sprites,A1
+            ADD     #20,A1
+            MOVE.B  D7,(A1)
+            SUB     #20,A1
+            BSR     LOAD_IMAGE_INTO_TEN_THOUSAND
+            BSR     QOI_DECODE
+        ENDF
+        RTS
+
+
+; A1 must contain the file name, null terminated string
+LOAD_IMAGE_INTO_TEN_THOUSAND
         MOVE.B  #51,D0
-        LEA     file_name,A1
         TRAP    #15
 
         MOVE.B  #53,D0
@@ -23,14 +61,11 @@ START   ORG    $1000
         MOVE.B  #50,D0
         TRAP    #15
 
-        BSR     QOI_DECODE_C
-        BSR     RENDER_IMAGE
-        BSR     EXIT_PROGRAM
+        RTS
 
-
-QOI_DECODE_C
+QOI_DECODE
         BSR     ZERO_PIXELS_ARRAY
-        MOVE.L  #$000000FF,current_pixel_r ; px
+        MOVE.L  #$000000FF,current_pixel_r
 
         MOVE.L  (PICTURE_X),D1
         MOVE.L  (PICTURE_Y),D2
@@ -42,19 +77,18 @@ QOI_DECODE_C
         SWAP    D2
         ADD.L   D2,D1
         SUB.L   #1,D1
-        MOVE.L  D1,pixel_length ; px_len
+        MOVE.L  D1,pixel_length
 
-        CLR.B   index_run       ; run
-        MOVE.L  #14,D4 ; P
+        CLR.B   index_run
+        MOVE.L  #14,D4
 
-        MOVE.L  #FILE_CONTENTS,A0   ; bytes
-        MOVE.L  #OUTPUT_IMAGE_DATA,A1 ; pixels
+        MOVE.L  #FILE_CONTENTS,A0
+        MOVE.L  next_free_slot_address,A1
 
-        ; px_pos
+        ADD.L   D1,next_free_slot_address
+        ADD.L   #1,next_free_slot_address
+
         FOR.L D5 = #0 TO pixel_length BY #4 DO
-            * IF.L D5 <HI> #$DF7  THEN
-            *     CLR.L   D7
-            * ENDI
             IF.B index_run <HI> #0  THEN
                 SUB.B   #1,index_run
             ELSE
@@ -140,7 +174,7 @@ QOI_DECODE_C
                             ENDI
                         ENDI
                     ENDI
-                    BSR     QOI_PUT_IN_PIXEL_C
+                    BSR     QOI_PUT_IN_PIXEL
                 ELSE
                     MOVE.L  #$000000FF,current_pixel_r
                 ENDI
@@ -164,14 +198,22 @@ QOI_DECODE_C
 
 
 ZERO_PIXELS_ARRAY
-        LEA     previous_seen_pixels,A0
-        FOR D5 = #0 TO #255 BY #4   DO
-            MOVE.L  #$000000FF,(A0,D5)
-        ENDF
+        MOVE.B  #51,D0
+        LEA     empty_seen_pixels,A1
+        TRAP    #15
+
+        MOVE.B  #53,D0
+        LEA     previous_seen_pixels,A1
+        MOVE.L  #$FFFFF,D2
+        TRAP    #15
+        
+        MOVE.B  #50,D0
+        TRAP    #15
+
         RTS
 
 
-QOI_PUT_IN_PIXEL_C
+QOI_PUT_IN_PIXEL
         CLR.L   D1
         CLR.L   D2
         LEA     previous_seen_pixels,A2
@@ -204,27 +246,30 @@ QOI_PUT_IN_PIXEL_C
         RTS
 
 
+; A0 must contain the start of the sprite
 RENDER_IMAGE
-        MOVE.L  #OUTPUT_IMAGE_DATA,A0
+        MOVE.B  #93,D0
+        MOVE.B  #MULTIPLIER_SIZE,D1
+        TRAP    #15
+
+        ;MOVE.L  #OUTPUT_IMAGE_DATA,A0
         FOR.L D5 = #1 TO (PICTURE_Y)  DO
             FOR.L D6 = #1 TO (PICTURE_X)  DO
                 ; set pen colour
                 MOVE.B  #80,D0
                 MOVE.L  (A0),D1
                 TRAP    #15
-                MOVE.B  #81,D0
-                TRAP    #15
 
-                ;set pixel colour
+                ; draw rectangle
                 MOVE.B  #87,D0
                 MOVE.W  D6,D1
                 MOVE.W  D5,D2
-                MULU    #MULTIPLIER_SIZE,D1
-                MULU    #MULTIPLIER_SIZE,D2
+                LSL.W   #2,D1
+                LSL.W   #2,D2
+                SUB.W   D6,D1
+                SUB.W   D5,D2
                 MOVE.W  D1,D3
                 MOVE.W  D2,D4
-                ADD.W   #MULTIPLIER_SIZE,D3
-                ADD.W   #MULTIPLIER_SIZE,D4
                 TRAP    #15
                 
                 ADD.W   #4,A0
@@ -267,17 +312,26 @@ index_run           DS.B    1           ; stores the number of runs for index
 file_pixel_index    DS.L    1           ; stores the file index position
 
 file_name   DC.B    'Guide.qoi',0
-out_name    DC.B    'qoi_out',0
-
 file_size           DS.L    1
 
-MULTIPLIER_SIZE     EQU 8
+MULTIPLIER_SIZE     EQU 4
 
 FILE_CONTENTS   EQU     $10000
-OUTPUT_IMAGE_DATA   EQU $20000
 
+
+image_index             DC.B    0           ; stores the index of the "gif"
+next_free_slot_address  DC.L    $20000      ; stores the address of the next free available memory space for the next decoded sprite
+
+
+player_sprites      DC.B    'sprites_qoi/player1_1.qoi',0
+player_sprites_start    EQU     $20000      ; stores the starting index of player sprites
+player_sprite_size      EQU     $1900
+
+
+empty_seen_pixels       DC.B    'empty_seen_pixels.bin',0
 
     END    START
+
 
 
 

@@ -312,21 +312,22 @@ def main():
     #args = parser.parse_args()
 
     #if args.encode:
-    # try:
-    #     img = Image.open('Green_Slime.png')
-    # except Exception as exc:
-    #     print(f'image load failed: {exc}')
-    #     return
+    file_name: str = input('File name: ')
+    try:
+        img = Image.open(file_name)
+    except Exception as exc:
+        print(f'image load failed: {exc}')
+        return
 
-    # out_path = replace_extension('Green_Slime.png', 'qoi')
-    # encode_img(img, out_path, out_path)
+    out_path = replace_extension(file_name, 'qoi')
+    encode_img(img, out_path, out_path)
 
     #if args.decode:
-    with open('Guide.qoi', 'rb') as qoi:
-        file_bytes = qoi.read()
+    # with open(file_name, 'rb') as qoi:
+    #     file_bytes = qoi.read()
 
-    out_path = replace_extension('Guide.qoi', 'png')
-    decode_to_img(file_bytes, out_path)
+    # out_path = replace_extension(file_name, 'png')
+    # decode_to_img(file_bytes, out_path)
 
 
 if __name__ == '__main__':
