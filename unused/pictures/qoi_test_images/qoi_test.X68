@@ -15,10 +15,10 @@ START   ORG    $1000
             TRAP    #15
         
             MOVE.L  #player_sprites_start,A0
-            MOVE.L  #player_sprite_size,D1
-            MOVE.B  image_index,D0
-            ; this mulu can be removed if images of size 32x32 were used then it could just be a bit shift
-            MULU    D0,D1
+            MOVE.B  image_index,D1
+            ; multiplies by #$1000 for 32x32 sized image
+            LSL.L   #8,D1
+            LSL.L   #4,D1
             ADD.L   D1,A0
 
             BSR RENDER_IMAGE
@@ -27,15 +27,15 @@ START   ORG    $1000
             MOVE.B  image_index,D0
             ADDQ    #1,D0
             ; needs to be the number of images in sprite gif
-            ; modulus 4
-            AND.B   #3,D0
+            ; modulus 8
+            AND.B   #7,D0
             MOVE.B  D0,image_index
         ENDW
         BSR     EXIT_PROGRAM
 
 
 LOAD_PLAYER_1_SPRITES
-        FOR D6 = #0 TO #6   DO
+        FOR D6 = #0 TO #7   DO
             MOVE.B  D6,D7
             ADD.B   #49,D7
             LEA     player_sprites,A1
@@ -329,12 +329,12 @@ next_free_slot_address  DC.L    $20000      ; stores the address of the next fre
 
 player_sprites      DC.B    'sprites_qoi/player1_1.qoi',0
 player_sprites_start    EQU     $20000      ; stores the starting index of player sprites
-player_sprite_size      EQU     $1900
 
 
 empty_seen_pixels       DC.B    'empty_seen_pixels.bin',0
 
     END    START
+
 
 
 
