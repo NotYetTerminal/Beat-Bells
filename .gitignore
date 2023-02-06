@@ -1,5 +1,3 @@
 *.L68
 *.S68
-*.blend
-*.blend1
-*.fbx
+unused/blends/*
