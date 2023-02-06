@@ -39,9 +39,9 @@ LOAD_PLAYER_1_SPRITES
             MOVE.B  D6,D7
             ADD.B   #49,D7
             LEA     player_sprites,A1
-            ADD     #20,A1
+            ADD     #14,A1
             MOVE.B  D7,(A1)
-            SUB     #20,A1
+            SUB     #14,A1
             BSR     LOAD_IMAGE_INTO_TEN_THOUSAND
             BSR     QOI_DECODE
         ENDF
@@ -283,19 +283,6 @@ RENDER_IMAGE
         RTS
 
 
-; draws a square at A0 plus size in D3,D4
-DRAW_SQUARE
-        ; set bounds of square to draw
-        MOVE.W  (A0)+,D1
-        MOVE.W  (A0),D2
-        ADD.W   D1,D3
-        ADD.W   D2,D4
-
-        MOVE.W  #87,D0
-        TRAP    #15
-        RTS
-
-
 EXIT_PROGRAM
         MOVE.W  #9,D0
         TRAP    #15
@@ -327,7 +314,7 @@ image_index             DC.B    0           ; stores the index of the "gif"
 next_free_slot_address  DC.L    $20000      ; stores the address of the next free available memory space for the next decoded sprite
 
 
-player_sprites      DC.B    'sprites_qoi/player1_1.qoi',0
+player_sprites      DC.B    'sprites_qoi/s71.qoi',0
 player_sprites_start    EQU     $20000      ; stores the starting index of player sprites
 
 

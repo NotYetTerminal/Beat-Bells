@@ -126,6 +126,12 @@ START   ORG    $1000
         BSR     NOTE_SET_UP
         BSR     LOAD_IN_SONG
 
+        ; checks if $28000 has been accidentally used
+        IF.L SPRITES_LOADING <NE> #$FFFFFFFF  THEN
+            ILLEGAL
+        ENDI
+        BSR     LOAD_IN_SPRITES
+
         ; sets the song difficulty
         MOVE.B  #8,song_difficulty
 
@@ -134,7 +140,7 @@ START   ORG    $1000
 
 ; loads in all notes into DirectX memory
 NOTE_SET_UP
-        LEA     BASIC_PATH,A1
+        LEA     NOTES_BASIC_PATH,A1
         LEA     NOTES_NAMES_0,A2
         FOR D1 = #0 TO #101  DO
             FOR D2 = #0 TO #2   DO
@@ -181,6 +187,234 @@ LOAD_IN_SONG
         MOVE.B  #50,D0
         TRAP    #15
 
+        RTS
+
+
+LOAD_IN_SPRITES
+        BSR     LOAD_IN_PLAYER_SPRITES
+        ;BSR     LOAD_IN_NOTES_SPRITES
+        RTS
+
+
+; check if this would be better without as many moves
+LOAD_IN_PLAYER_SPRITES
+        FOR D5 = #0 TO #31   DO
+            ; load player 1
+            LEA     PLAYER_SPRITES_BASIC_PATH,A1
+            ; put in s
+            MOVE.B  #115,15(A1)
+
+            MOVE.B  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,16(A1)
+
+            MOVE.B  D5,D6
+            ; modulus 8
+            AND.B   #7,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,17(A1)
+
+            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            BSR     QOI_DECODE
+        ENDF
+
+        RTS
+
+
+; A1 must contain the file name, null terminated string
+LOAD_IMAGE_INTO_SPRITES_LOADING
+        MOVEQ   #51,D0
+        TRAP    #15
+
+        MOVEQ   #53,D0
+        MOVE.L  #SPRITES_LOADING,A1
+        MOVE.L  #$FFFFF,D2
+        TRAP    #15
+
+        SUB.L   #8,D2
+        MOVE.L  D2,qoi_import_file_size
+        
+        MOVEQ   #50,D0
+        TRAP    #15
+        RTS
+
+
+QOI_DECODE
+        BSR     ZERO_PIXELS_ARRAY
+        MOVE.L  #$000000FF,current_pixel_r
+
+        ; could change index run into a Data registry or Address registry
+        CLR.B   index_run
+        ; starting file index
+        ; skips start stuff
+        ; D4 could be an Address registry
+        MOVE.L  #14,D4
+
+        MOVE.L  #SPRITES_LOADING,A0
+        MOVE.L  next_free_slot_address,A1
+
+        ADD.L   #SPRITES_PIXEL_LENGTH,next_free_slot_address
+
+        FOR.L D6 = #0 TO #SPRITES_PIXEL_LENGTH BY #4    DO
+            IF.B index_run <HI> #0  THEN
+                SUB.B   #1,index_run
+            ELSE
+                IF.L D4 <LO> qoi_import_file_size  THEN
+                    CLR.L   D1
+                    MOVE.B  (A0,D4),D1
+                    ADD.L   #1,D4
+                    ; QOI_OP_RGB
+                    IF.B D1 <EQ> #254   THEN
+                        MOVE.B  (A0,D4),current_pixel_r
+                        ADD.L   #1,D4
+                        MOVE.B  (A0,D4),current_pixel_g
+                        ADD.L   #1,D4
+                        MOVE.B  (A0,D4),current_pixel_b
+                        ADD.L   #1,D4
+                    ELSE
+                        ; QOI_OP_RGBA
+                        IF.B D1 <EQ> #255   THEN
+                            MOVE.B  (A0,D4),current_pixel_r
+                            ADD.L   #1,D4
+                            MOVE.B  (A0,D4),current_pixel_g
+                            ADD.L   #1,D4
+                            MOVE.B  (A0,D4),current_pixel_b
+                            ADD.L   #1,D4
+                            MOVE.B  (A0,D4),current_pixel_a
+                            ADD.L   #1,D4
+                        ELSE
+                            ; QOI_OP_RUN
+                            IF.B D1 <HS> #192   THEN
+                                ; removes first 2 bits
+                                AND.B   #$3F,D1
+                                MOVE.B  D1,index_run
+                            ELSE
+                                ; QOI_OP_LUMA
+                                IF.B D1 <HS> #128   THEN
+                                    CLR.L   D2
+                                    MOVE.B  (A0,D4),D2
+                                    ADD.L   #1,D4
+                                    MOVE.L  D2,D3
+
+                                    AND.B   #$3F,D1
+                                    SUB.B   #32,D1
+
+                                    LSR.L   #4,D3
+                                    AND.B   #$0F,D3
+                                    SUBQ    #8,D3
+                                    ADD.B   D1,D3
+                                    ADD.B   D3,current_pixel_r
+
+                                    ADD.B   D1,current_pixel_g
+
+                                    AND.B   #$0F,D2
+                                    SUBQ    #8,D2
+                                    ADD.B   D1,D2
+                                    ADD.B   D2,current_pixel_b
+                                ELSE
+                                    ; QOI_OP_DIFF
+                                    IF.B D1 <HS> #64    THEN
+                                        CLR.L   D2
+                                        MOVE.B  D1,D2
+                                        LSR.L   #4,D2
+                                        AND.B   #$03,D2
+                                        SUBQ    #2,D2
+                                        ADD.B   D2,current_pixel_r
+                                        
+                                        MOVE.B  D1,D2
+                                        LSR.L   #2,D2
+                                        AND.B   #$03,D2
+                                        SUBQ    #2,D2
+                                        ADD.B   D2,current_pixel_g
+                                        
+                                        MOVE.B  D1,D2
+                                        AND.B   #$03,D2
+                                        SUBQ    #2,D2
+                                        ADD.B   D2,current_pixel_b
+                                    ELSE
+                                        ; QOI_OP_INDEX
+                                        LEA     previous_seen_pixels,A2
+                                        LSL.L   #2,D1
+                                        MOVE.L  (A2,D1),current_pixel_r
+                                    ENDI
+                                ENDI
+                            ENDI
+                        ENDI
+                    ENDI
+                    BSR     QOI_PUT_IN_PIXEL
+                ELSE
+                    MOVE.L  #$000000FF,current_pixel_r
+                ENDI
+            ENDI
+            
+            IF.B current_pixel_a <EQ> #0    THEN
+                MOVE.L  #0,(A1,D6.L)
+            ELSE
+                MOVE.B  #0,(A1,D6.L)
+                MOVE.B  current_pixel_b,1(A1,D6.L)
+                MOVE.B  current_pixel_g,2(A1,D6.L)
+                MOVE.B  current_pixel_r,3(A1,D6.L)
+            ENDI
+        ENDF
+        RTS
+
+
+ZERO_PIXELS_ARRAY
+        MOVEQ   #51,D0
+        LEA     EMPTY_SEEN_PIXELS_FILE,A1
+        TRAP    #15
+
+        MOVEQ   #53,D0
+        LEA     previous_seen_pixels,A1
+        MOVE.L  #$FFFFF,D2
+        TRAP    #15
+        
+        MOVEQ   #50,D0
+        TRAP    #15
+        RTS
+
+
+QOI_PUT_IN_PIXEL
+        CLR.L   D1
+        CLR.L   D2
+        LEA     previous_seen_pixels,A2
+
+        MOVE.B  current_pixel_r,D1
+        ; multiply by 3
+        MOVE.B  D1,D2
+        LSL.L   #1,D1
+        ADD.L   D1,D2
+
+        CLR.L   D1
+        MOVE.B  current_pixel_g,D1
+        ; multiply by 5
+        ADD.L   D1,D2
+        LSL.L   #2,D1
+        ADD.L   D1,D2
+
+        CLR.L   D1
+        MOVE.B  current_pixel_b,D1
+        ; multiply by 7
+        SUB.L   D1,D2
+        LSL.L   #3,D1
+        ADD.L   D1,D2
+
+        CLR.L   D1
+        MOVE.B  current_pixel_a,D1
+        ; multiply by 11
+        ADD.L   D1,D2
+        ADD.L   D1,D2
+        ADD.L   D1,D2
+        LSL.L   #3,D1
+        ADD.L   D1,D2
+
+        ; modulus 64
+        AND.L   #63,D2
+        LSL.L   #2,D2
+
+        MOVE.L  current_pixel_r,(A2,D2)
         RTS
 
 
@@ -1306,6 +1540,19 @@ RANDOM_2
         RTS
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 EXIT_PROGRAM
         MOVE.W  #9,D0
         TRAP    #15
@@ -1379,7 +1626,7 @@ TREBLE_FILE_CONTENTS    EQU     $10000
 BASS_FILE_CONTENTS      EQU     $20000
 
 ; notes names
-BASIC_PATH              DC.B    'notes/aaa.wav',0
+NOTES_BASIC_PATH        DC.B    'notes/aaa.wav',0
 NOTES_NAMES_0           DC.B    '0an0bn0as'
 NOTES_NAMES_1           DC.B    '1an1bn1cn1dn1en1fn1gn1as1bs1cs1ds1es1fs1gs'
 NOTES_NAMES_2           DC.B    '2an2bn2cn2dn2en2fn2gn2as2bs2cs2ds2es2fs2gs'
@@ -1391,11 +1638,11 @@ NOTES_NAMES_7           DC.B    '7an7bn7cn7dn7en7fn7gn7as7bs7cs7ds7es7fs7gs'
 NOTES_NAMES_8           DC.B    '8cn'
 
 
-song_difficulty         DC.B    16      ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
+song_difficulty             DC.B    16      ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
 treble_quater_beat_count    DC.B    32      ; stores the count of quarter beats played
-bass_quater_beat_count  DC.B    32      ; stores the count of quarter beats played
+bass_quater_beat_count      DC.B    32      ; stores the count of quarter beats played
 treble_last_note_success    DC.B    0       ; stores whether the last hit note was correct
-bass_last_note_success  DC.B    0       ; stores whether the last hit note was correct
+bass_last_note_success      DC.B    0       ; stores whether the last hit note was correct
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
@@ -1419,6 +1666,27 @@ PURPLE2         EQU     $00FF0080       ; Teleport
 MAGENTA         EQU     $00FF00FF
 LITEGREY        EQU     $00C0C0C0
 WHITE           EQU     $00FFFFFF
+
+
+; QOI decoding
+SPRITES_LOADING             EQU     $28000
+SPRITES_PIXEL_LENGTH        EQU     $1000       ; size of sprites is 32x32x4
+;PICTURE_DIMENSION           EQU     $20         ; dimension of sprites is 32x32
+
+PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/aaa.qoi',0
+EMPTY_SEEN_PIXELS_FILE      DC.B    'files/empty_seen_pixels.bin',0
+
+; stores the current pixel
+                            DS.L    0
+current_pixel_r             DC.B    $00
+current_pixel_g             DC.B    $00
+current_pixel_b             DC.B    $00
+current_pixel_a             DC.B    $FF
+previous_seen_pixels        DCB.L   64,$FF      ; stores a 64 length array of previous pixels
+
+qoi_import_file_size        DS.L    1           ; stores the size of the imported qoi image
+index_run                   DS.B    1           ; stores the number of runs for index
+next_free_slot_address      DC.L    $2A000      ; stores the address of the next free available memory space for the next decoded sprite
 
 
         END    START
