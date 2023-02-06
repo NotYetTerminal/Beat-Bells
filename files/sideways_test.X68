@@ -1443,7 +1443,13 @@ DRAW_PLAYER_1
         LEA     player_1_position,A1
 
         ; 32x32
+        CLR.L   D2
+        ADD.W   2(A1),D2
+        MOVE.L  D2,D4
         FOR.L D5 = #0 TO #$1F   DO
+            CLR.L   D1
+            ADD.W   (A1),D1
+            MOVE.L  D1,D3
             FOR.L D6 = #0 TO #$1F   DO
                 ; set pen colour
                 MOVEQ   #80,D0
@@ -1452,20 +1458,25 @@ DRAW_PLAYER_1
 
                 ; draw rectangle
                 MOVEQ   #87,D0
-                MOVE.L  D6,D1
-                MOVE.L  D5,D2
+                MOVE.W  D3,D1
+                ;MOVE.L  D6,D1
+                ;MOVE.L  D5,D2
                 ; multiplies by 3, does x4, -1
-                LSL.W   #1,D1
-                LSL.W   #1,D2
+                ;LSL.W   #1,D1
+                ;LSL.W   #1,D2
                 * SUB.W   D6,D1
                 * SUB.W   D5,D2
-                ADD.W   (A1),D1
-                ADD.W   2(A1),D2
+                ;ADD.W   (A1),D1
+                ;ADD.W   2(A1),D2
 
-                MOVE.W  D1,D3
-                MOVE.W  D2,D4
+                ;MOVE.W  D1,D3
+                ;MOVE.W  D2,D4
                 TRAP    #15
+                
+                ADD.W   #2,D3
             ENDF
+            ADD.W   #2,D2
+            ADD.W   #2,D4
         ENDF
         RTS
 
@@ -1727,6 +1738,7 @@ next_free_slot_address      DC.L    SPRITES_HOLDING     ; stores the address of 
 
 
         END    START
+
 
 
 *~Font name~Courier New~
