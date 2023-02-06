@@ -268,7 +268,7 @@ RENDER_IMAGE
                 MOVEQ   #87,D0
                 MOVE.W  D6,D1
                 MOVE.W  D5,D2
-                ; multiplies by 3, does 4 - 1
+                ; multiplies by 3, does x4, -1
                 LSL.W   #2,D1
                 LSL.W   #2,D2
                 SUB.W   D6,D1

@@ -91,7 +91,7 @@ START   ORG    $1000
         ADD.B   D1,bass_note_path_index
 
         ; sets the players' positions
-        MOVE.W  #100,player_1_position
+        MOVE.W  #50,player_1_position
         MOVE.W  #100,player_2_position
         MOVE.B  treble_note_path_index,player_1_lane_number
         MOVE.B  bass_note_path_index,player_2_lane_number
@@ -198,19 +198,23 @@ LOAD_IN_SPRITES
 
 ; check if this would be better without as many moves
 LOAD_IN_PLAYER_SPRITES
-        FOR D5 = #0 TO #31   DO
+        FOR D5 = #0 TO #7   DO
             ; load player 1
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
-            ; put in s
-            MOVE.B  #115,15(A1)
+            ; put in a
+            MOVE.B  #97,15(A1)
 
-            MOVE.B  D5,D6
+            MOVE.L  D5,D6
             ; divide by 8
             LSR.B   #3,D6
-            ADD.B   #48,D6
+            IF.B D6 <EQ> #3 THEN
+                ADD.B   #51,D6
+            ELSE
+                ADD.B   #48,D6
+            ENDI
             MOVE.B  D6,16(A1)
 
-            MOVE.B  D5,D6
+            MOVE.L  D5,D6
             ; modulus 8
             AND.B   #7,D6
             ADD.B   #48,D6
@@ -219,7 +223,27 @@ LOAD_IN_PLAYER_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
+        * FOR D5 = #0 TO #31   DO
+        *     ; load player 2
+        *     LEA     PLAYER_SPRITES_BASIC_PATH,A1
+        *     ; put in b
+        *     MOVE.B  #98,15(A1)
 
+        *     MOVE.B  D5,D6
+        *     ; divide by 8
+        *     LSR.B   #3,D6
+        *     ADD.B   #51,D6
+        *     MOVE.B  D6,16(A1)
+
+        *     MOVE.B  D5,D6
+        *     ; modulus 8
+        *     AND.B   #7,D6
+        *     ADD.B   #48,D6
+        *     MOVE.B  D6,17(A1)
+
+        *     BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+        *     BSR     QOI_DECODE
+        * ENDF
         RTS
 
 
@@ -920,15 +944,15 @@ HANDLE_MOVEMENT
         RTS
 
 
-; changes the players' Y position depending on the lane index
+; changes the player's Y position depending on the lane index
 ; player position needs to be in A0
 ; player lane number needs to be in A1
 CHANGE_PLAYER_Y_POSITION
         CLR.L   D2
         MOVE.B  (A1),D2
         BSR     GET_LANE_Y_POSITION
-        ADD     #2,A0
-        MOVE.W  D3,(A0)
+        SUB.W   #40,D3
+        MOVE.W  D3,2(A0)
         RTS
 
 
@@ -1408,32 +1432,41 @@ GET_COLOUR_FROM_INDEX
         RTS
 
 
+; A0 must contain the start of the sprite
 DRAW_PLAYER_1
         ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #3,D1
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        ; sets pen and fill colour to white
-        MOVE.B  #80,D0
-        MOVE.L  player_1_action_colour,D1
-        TRAP    #15
-        MOVE.W  #81,D0
-        TRAP    #15
+        MOVE.L  #$2A000,A0
+        LEA     player_1_position,A1
 
-        LEA     player_1_position,A0
-        MOVE.W  #PLAYER_SIZE,D3
-        MOVE.W  #PLAYER_SIZE,D4
-        BSR     DRAW_SQUARE
-        
-        ; draws the square bounding box
-        SUB.W   #40,D1
-        SUB.W   #40,D2
-        ADD.W   #40,D3
-        ADD.W   #40,D4
+        ; 32x32
+        FOR.L D5 = #0 TO #$1F   DO
+            FOR.L D6 = #0 TO #$1F   DO
+                ; set pen colour
+                MOVEQ   #80,D0
+                MOVE.L  (A0)+,D1
+                TRAP    #15
 
-        MOVE.W  #90,D0
-        TRAP    #15
+                ; draw rectangle
+                MOVEQ   #87,D0
+                MOVE.L  D6,D1
+                MOVE.L  D5,D2
+                ; multiplies by 3, does x4, -1
+                LSL.W   #1,D1
+                LSL.W   #1,D2
+                * SUB.W   D6,D1
+                * SUB.W   D5,D2
+                ADD.W   (A1),D1
+                ADD.W   2(A1),D2
+
+                MOVE.W  D1,D3
+                MOVE.W  D2,D4
+                TRAP    #15
+            ENDF
+        ENDF
         RTS
 
 
@@ -1669,9 +1702,13 @@ WHITE           EQU     $00FFFFFF
 
 
 ; QOI decoding
-SPRITES_LOADING             EQU     $28000
+SPRITES_LOADING             EQU     $28000      ; address where the qoi file is loaded
+SPRITES_HOLDING             EQU     $2A000      ; address where the unpacked rgba data is stored
 SPRITES_PIXEL_LENGTH        EQU     $1000       ; size of sprites is 32x32x4
 ;PICTURE_DIMENSION           EQU     $20         ; dimension of sprites is 32x32
+
+MULTIPLIER_SIZE             EQU     4           ; the size to multiply the sprites by
+
 
 PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/aaa.qoi',0
 EMPTY_SEEN_PIXELS_FILE      DC.B    'files/empty_seen_pixels.bin',0
@@ -1682,11 +1719,11 @@ current_pixel_r             DC.B    $00
 current_pixel_g             DC.B    $00
 current_pixel_b             DC.B    $00
 current_pixel_a             DC.B    $FF
-previous_seen_pixels        DCB.L   64,$FF      ; stores a 64 length array of previous pixels
+previous_seen_pixels        DCB.L   64,$FF              ; stores a 64 length array of previous pixels
 
-qoi_import_file_size        DS.L    1           ; stores the size of the imported qoi image
-index_run                   DS.B    1           ; stores the number of runs for index
-next_free_slot_address      DC.L    $2A000      ; stores the address of the next free available memory space for the next decoded sprite
+qoi_import_file_size        DS.L    1                   ; stores the size of the imported qoi image
+index_run                   DS.B    1                   ; stores the number of runs for index
+next_free_slot_address      DC.L    SPRITES_HOLDING     ; stores the address of the next free available memory space for the next decoded sprite
 
 
         END    START
