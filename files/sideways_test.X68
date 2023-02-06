@@ -1443,13 +1443,12 @@ DRAW_PLAYER_1
         LEA     player_1_position,A1
 
         ; 32x32
+        CLR.L   D3
         CLR.L   D2
-        ADD.W   2(A1),D2
+        MOVE.W  2(A1),D2
         MOVE.L  D2,D4
         FOR.L D5 = #0 TO #$1F   DO
-            CLR.L   D1
-            ADD.W   (A1),D1
-            MOVE.L  D1,D3
+            MOVE.W  (A1),D3
             FOR.L D6 = #0 TO #$1F   DO
                 ; set pen colour
                 MOVEQ   #80,D0
@@ -1473,10 +1472,10 @@ DRAW_PLAYER_1
                 ;MOVE.W  D2,D4
                 TRAP    #15
                 
-                ADD.W   #2,D3
+                ADDQ    #2,D3
             ENDF
-            ADD.W   #2,D2
-            ADD.W   #2,D4
+            ADDQ    #2,D2
+            ADDQ    #2,D4
         ENDF
         RTS
 
