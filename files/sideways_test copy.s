@@ -1179,8 +1179,7 @@ LOAD_NOTE_DATA
         SUBQ.B  #1,D3
 
         ; gets the number of notes playing on the same beat
-        ;DIVU    #4,D3
-        LSR.B   #2,D3
+        LSL.B   #2,D3
 
         ; assign a colour based on the playing notes
         ; and the difficulty
@@ -1223,6 +1222,7 @@ PICK_NOTE_COLOUR
         ELSE
             MOVEQ   #0,D2
         ENDI
+        ;MULU    #4,D2
         ADD.W   #10,D2
         MOVE.B  (A2,D2),D2
         SUB.B   #96,D2
