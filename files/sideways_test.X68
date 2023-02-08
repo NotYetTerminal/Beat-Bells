@@ -12,8 +12,7 @@
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
-* change only player beat line and player model colours
-* GRAPHICAL TESTING
+* check if pixel is all black and dont render then
 * 
 * OPTIMISE USING THE COUNTER
 * rendering is wasteful it uses a for loop instead of stopping
@@ -464,6 +463,11 @@ LOOP
         TRAP    #15
         SUB.L   last_movement_time,D1
         IF.L #8 <LE> D1    THEN
+            
+            ; increments and does modulus 8
+            ADDQ.B  #1,sprite_gif_index
+            AND.B   #7,sprite_gif_index
+
             BSR     HANDLE_INPUT
             BSR     CHECK_BOTH_PLAYER_COLLISIONS
             MOVE.W  #8,D0
@@ -516,19 +520,19 @@ LOOP
         ENDI
 
         ; render screen
-        IF.B skip_next_frame <EQ> #0    THEN
-            BSR     RENDER_SCREEN
-        ENDI
+        ;IF.B skip_next_frame <EQ> #0    THEN
+        BSR     RENDER_SCREEN
+        ;ENDI
 
         ; gets the time
-        MOVE.W  #8,D0
-        TRAP    #15
-        SUB.L   #5,D1
-        IF.L last_frame_time <LO> D1    THEN
-            ADDQ.B  #1,skip_next_frame
-        ELSE
-            CLR.B   skip_next_frame
-        ENDI
+        * MOVE.W  #8,D0
+        * TRAP    #15
+        * SUB.L   #10,D1
+        * IF.L last_frame_time <LO> D1    THEN
+        *     ADDQ.B  #1,skip_next_frame
+        * ELSE
+        *     CLR.B   skip_next_frame
+        * ENDI
 
         JMP     LOOP
 
@@ -1288,11 +1292,11 @@ DECREMENT_NOTES_TIMES
 
 RENDER_SCREEN
         BSR     DRAW_BACKGROUND
-        BSR     DRAW_NOTES
         BSR     DRAW_PLAYER_1
         IF.B two_player <EQ> #1 THEN
             BSR     DRAW_PLAYER_2
         ENDI
+        BSR     DRAW_NOTES
 
         ; repaints screen
         MOVE.B  #94,D0
@@ -1301,7 +1305,6 @@ RENDER_SCREEN
 		MOVE.B  #11,D0
 		MOVE.W  #$FF00,D1
 		TRAP    #15
-
         RTS
 
 
@@ -1454,17 +1457,22 @@ DRAW_PLAYER_1
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        MOVE.L  #$2A000,A0
+        MOVE.L  player_1_start_sprite,A0
+        MOVE.B  sprite_gif_index,D1
+        LSL.L   #8,D1
+        LSL.L   #2,D1
+        ADD.L   D1,A0
+
         LEA     player_1_position,A1
 
-        ; 32x32
         CLR.L   D3
         CLR.L   D2
         MOVE.W  2(A1),D2
         MOVE.L  D2,D4
-        FOR.L D5 = #0 TO #$1F   DO
+        ; 16x16
+        FOR.L D5 = #0 TO #$F   DO
             MOVE.W  (A1),D3
-            FOR.L D6 = #0 TO #$1F   DO
+            FOR.L D6 = #0 TO #$F   DO
                 ; set pen colour
                 MOVEQ   #80,D0
                 MOVE.L  (A0)+,D1
@@ -1473,24 +1481,12 @@ DRAW_PLAYER_1
                 ; draw rectangle
                 MOVEQ   #87,D0
                 MOVE.W  D3,D1
-                ;MOVE.L  D6,D1
-                ;MOVE.L  D5,D2
-                ; multiplies by 3, does x4, -1
-                ;LSL.W   #1,D1
-                ;LSL.W   #1,D2
-                * SUB.W   D6,D1
-                * SUB.W   D5,D2
-                ;ADD.W   (A1),D1
-                ;ADD.W   2(A1),D2
-
-                ;MOVE.W  D1,D3
-                ;MOVE.W  D2,D4
                 TRAP    #15
-                
-                ADDQ    #2,D3
+
+                ADDQ    #6,D3
             ENDF
-            ADDQ    #2,D2
-            ADDQ    #2,D4
+            ADDQ    #6,D2
+            ADDQ    #6,D4
         ENDF
         RTS
 
@@ -1729,10 +1725,10 @@ WHITE           EQU     $00FFFFFF
 ; QOI decoding
 SPRITES_LOADING             EQU     $28000      ; address where the qoi file is loaded
 SPRITES_HOLDING             EQU     $2A000      ; address where the unpacked rgba data is stored
-SPRITES_PIXEL_LENGTH        EQU     $1000       ; size of sprites is 32x32x4
-;PICTURE_DIMENSION           EQU     $20         ; dimension of sprites is 32x32
+SPRITES_PIXEL_LENGTH        EQU     $400        ; size of sprites is 16x16x4
+;PICTURE_DIMENSION           EQU     $10         ; dimension of sprites is 16x16
 
-MULTIPLIER_SIZE             EQU     4           ; the size to multiply the sprites by
+MULTIPLIER_SIZE             EQU     8           ; the size to multiply the sprites by
 
 
 PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/aaa.qoi',0
@@ -1750,10 +1746,15 @@ qoi_import_file_size        DS.L    1                   ; stores the size of the
 index_run                   DS.B    1                   ; stores the number of runs for index
 next_free_slot_address      DC.L    SPRITES_HOLDING     ; stores the address of the next free available memory space for the next decoded sprite
 
+sprite_gif_index            DC.B    0                   ; stores the index of the sprite gifs max 7
+player_1_start_sprite       DC.L    $2A000
 
-skip_next_frame           DC.B    0                   ; stores whether the next frame should be drawn
+
+;skip_next_frame           DC.B    0                   ; stores whether the next frame should be drawn
 
         END    START
+
+
 
 
 
