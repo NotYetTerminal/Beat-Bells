@@ -8,3 +8,6 @@ for file in os.listdir(base_path):
     if file.endswith('.png'):
         os.rename(base_path + file, base_path + name + str(index) + '.png')
         index += 1
+    elif file.endswith('.qoi'):
+        os.rename(base_path + file, base_path + name + str(index) + '.qoi')
+        index += 1

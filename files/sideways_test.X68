@@ -202,7 +202,7 @@ LOAD_IN_SPRITES
 
 ; check if this would be better without as many moves
 LOAD_IN_PLAYER_SPRITES
-        FOR D5 = #0 TO #7   DO
+        FOR D5 = #0 TO #$27   DO
             ; load player 1
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
             ; put in a
@@ -211,11 +211,11 @@ LOAD_IN_PLAYER_SPRITES
             MOVE.L  D5,D6
             ; divide by 8
             LSR.B   #3,D6
-            IF.B D6 <EQ> #3 THEN
-                ADD.B   #51,D6
-            ELSE
-                ADD.B   #48,D6
-            ENDI
+            * IF.B D6 <EQ> #3 THEN
+            *     ADD.B   #51,D6
+            * ELSE
+            ADD.B   #48,D6
+            * ENDI
             MOVE.B  D6,16(A1)
 
             MOVE.L  D5,D6
@@ -614,13 +614,14 @@ CHECK_COLLISIONS
                         ; check collision with player line
                         IF.B (A4) <EQ> D5   THEN
                             MOVE.W  -(A1),D1
+                            ; checks for shift/control note beat
                             BCLR.L  #4,D1
                             IF  <NE>    THEN
                                 MOVE.B  #1,D7
                             ELSE
                                 CLR.B   D7
                             ENDI
-                            BSR     GET_COLOUR_FROM_INDEX
+                            ;BSR     GET_COLOUR_FROM_INDEX
                             ; note has been hit correctly
                             IF.L (A5) <EQ> D1 THEN
                                 IF.B D7 <EQ> (A6) THEN
@@ -640,7 +641,7 @@ CHECK_COLLISIONS
                                 ENDI
                             ELSE
                                 ; check if the note colour was hit incorrectly
-                                IF.L (A5) <NE> #WHITE THEN
+                                IF.L (A5) <NE> #0   THEN
                                     CLR.W   2(A1)
                                 ENDI
                                 ADD.W   #2,A1
@@ -807,17 +808,17 @@ HANDLE_INPUT
             MOVE.L  #$11000000,D3
             BSR     HANDLE_COLOUR_CHANGE
 
-            IF.L #BLUE <EQ> (A2)    THEN
-                MOVE.L  #AQUA,(A2)
-            ELSE
-                IF.L #RED <EQ> (A2) THEN
-                    MOVE.L  #ORANGE,(A2)
-                ELSE
-                    IF.L #YELLOW <EQ> (A2)  THEN
-                        MOVE.L  #LIME,(A2)
-                    ENDI
-                ENDI
-            ENDI
+            * IF.L #BLUE <EQ> (A2)    THEN
+            *     MOVE.L  #AQUA,(A2)
+            * ELSE
+            *     IF.L #RED <EQ> (A2) THEN
+            *         MOVE.L  #ORANGE,(A2)
+            *     ELSE
+            *         IF.L #YELLOW <EQ> (A2)  THEN
+            *             MOVE.L  #LIME,(A2)
+            *         ENDI
+            *     ENDI
+            * ENDI
 
             LEA     player_2_position,A0
             LEA     player_2_lane_number,A1
@@ -846,7 +847,7 @@ HANDLE_COLOUR_CHANGE
             IF  <NE>    THEN
                 BTST.B  #7,(A1)
                 IF  <EQ>    THEN
-                    MOVE.L  #BLUE,(A2)
+                    MOVE.B  #1,(A2)
                     BSET.B  #7,(A1)
                     MOVE.W  #8,D0
                     TRAP    #15
@@ -858,7 +859,7 @@ HANDLE_COLOUR_CHANGE
             IF  <NE>    THEN
                 BTST.B  #6,(A1)
                 IF  <EQ>    THEN
-                    MOVE.L  #RED,(A2)
+                    MOVE.B  #2,(A2)
                     BSET.B  #6,(A1)
                     MOVE.W  #8,D0
                     TRAP    #15
@@ -870,7 +871,7 @@ HANDLE_COLOUR_CHANGE
             IF  <NE>    THEN
                 BTST.B  #5,(A1)
                 IF  <EQ>    THEN
-                    MOVE.L  #YELLOW,(A2)
+                    MOVE.B  #3,(A2)
                     BSET.B  #5,(A1)
                     MOVE.W  #8,D0
                     TRAP    #15
@@ -883,7 +884,7 @@ HANDLE_COLOUR_CHANGE
             IF  <NE>    THEN
                 BTST.B  #4,(A1)
                 IF  <EQ>    THEN
-                    MOVE.L  #PURPLE2,(A2)
+                    MOVE.B  #4,(A2)
                     BSET.B  #4,(A1)
                     MOVE.W  #8,D0
                     TRAP    #15
@@ -1086,7 +1087,7 @@ DOUBLE_RANDOM_SUB
 
 
 RESET_PLAYER_1_ACTION
-        MOVE.L  #WHITE,player_1_action_colour
+        CLR.B   player_1_action_colour
         CLR.L   player_1_last_beat_change_time
         RTS
 
@@ -1247,6 +1248,18 @@ PICK_NOTE_COLOUR
         ADD.W   #10,D2
         MOVE.B  (A2,D2),D2
         SUB.B   #96,D2
+        ; checks 4 bit
+        BCLR.L  #4,D2
+        IF  <EQ>    THEN
+            IF.B D2 <HI> #3 THEN
+                SUB.B   #3,D2
+            ENDI
+        ELSE
+            IF.B D2 <HI> #3 THEN
+                SUB.B   #3,D2
+            ENDI
+            BSET.L  #4,D2
+        ENDI
         MOVE.W  D2,(A2)
         RTS
 
@@ -1316,7 +1329,6 @@ DRAW_BACKGROUND
         ; sets pen and fill colour to white
         MOVE.B  #80,D0
         MOVE.L  #$00FFFFFF,D1
-        ;MOVE.L  player_1_action_colour,D1
         TRAP    #15
         MOVE.W  #81,D0
         TRAP    #15
@@ -1383,6 +1395,7 @@ DRAW_NOTES
                     IF.W (A0) <NE> #0 AND.W (A0) <NE> #$FFFF    THEN
                         MOVE.B  #80,D0
                         MOVE.W  (A0),D1
+                        MOVE.B  6(A0),D2
                         BCLR.L  #4,D1
                         IF  <EQ>    THEN
                             BSR     GET_COLOUR_FROM_INDEX
@@ -1421,30 +1434,30 @@ GET_COLOUR_FROM_INDEX
             CLR.L   D1
         ELSE
             IF.W D1 <EQ> #1 THEN
-                MOVE.L  #BLUE,D1
+                IF.B D2 <EQ> #0 THEN
+                    MOVE.L  #BLUE,D1
+                ELSE
+                    MOVE.L  #AQUA,D1
+                ENDI
             ELSE
                 IF.W D1 <EQ> #2 THEN
-                    MOVE.L  #RED,D1
+                    IF.B D2 <EQ> #0 THEN
+                        MOVE.L  #RED,D1
+                    ELSE
+                        MOVE.L  #ORANGE,D1
+                    ENDI
                 ELSE
                     IF.W D1 <EQ> #3 THEN
-                        MOVE.L  #YELLOW,D1
+                        IF.B D2 <EQ> #0 THEN
+                            MOVE.L  #YELLOW,D1
+                        ELSE
+                            MOVE.L  #LIME,D1
+                        ENDI
                     ELSE
                         IF.W D1 <EQ> #4 THEN
-                            MOVE.L  #AQUA,D1
+                            MOVE.L  #PURPLE2,D1
                         ELSE
-                            IF.W D1 <EQ> #5 THEN
-                                MOVE.L  #ORANGE,D1
-                            ELSE
-                                IF.W D1 <EQ> #6 THEN
-                                    MOVE.L  #LIME,D1
-                                ELSE
-                                    IF.W D1 <EQ> #7 THEN
-                                        MOVE.L  #PURPLE2,D1
-                                    ELSE
-                                        MOVE.L  #WHITE,D1
-                                    ENDI
-                                ENDI
-                            ENDI
+                            MOVE.L  #WHITE,D1
                         ENDI
                     ENDI
                 ENDI
@@ -1462,6 +1475,12 @@ DRAW_PLAYER_1
         TRAP    #15
 
         MOVE.L  player_1_start_sprite,A0
+        ; multiply by $2000
+        MOVE.B  player_1_action_colour,D0
+        LSL.L   #8,D0
+        LSL.L   #5,D0
+        ADD.L   D0,A0
+        ; multiply by $400
         MOVE.B  sprite_gif_index,D1
         LSL.L   #8,D1
         LSL.L   #2,D1
@@ -1632,7 +1651,7 @@ player_1_lane_number    DS.B    1       ; stores the lane number
 player_1_moving         DC.B    0       ; stores whether the player is moving up or down
 player_1_action_pressed DC.B    0       ; stores whether any action buttons are pressed
 player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
-player_1_action_colour  DC.L    WHITE   ; stores the player action colour
+player_1_action_colour  DC.B    0       ; stores the player action colour
 player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player changing colours
 player_1_shift_pressed  DC.B    0       ; stores whether the shift is pressed down
 
@@ -1664,7 +1683,7 @@ note_objects            DS.W    NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2    ; stor
 ;   W   note colour index, 0 means that it is invisible
 ;   W   x position
 ;   W   y position
-;   W   useless
+;   B   stores the player number 0 or 1, treble or bass
 ;   L*10   music notes data, same as in the file
 
 treble_note_path_index  DC.B    2       ; stores the lane index of the note path
