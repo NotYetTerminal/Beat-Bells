@@ -17,6 +17,7 @@
 * 
 * OPTIMISE USING THE COUNTER
 * rendering is wasteful it uses a for loop instead of stopping
+* TIME.DELTA_TIME
 * 
 * Music
 * make it so the invisible notes are played when they are center over beat line
@@ -515,7 +516,19 @@ LOOP
         ENDI
 
         ; render screen
-        BSR     RENDER_SCREEN
+        IF.B skip_next_frame <EQ> #0    THEN
+            BSR     RENDER_SCREEN
+        ENDI
+
+        ; gets the time
+        MOVE.W  #8,D0
+        TRAP    #15
+        SUB.L   #5,D1
+        IF.L last_frame_time <LO> D1    THEN
+            ADDQ.B  #1,skip_next_frame
+        ELSE
+            CLR.B   skip_next_frame
+        ENDI
 
         JMP     LOOP
 
@@ -1737,6 +1750,8 @@ qoi_import_file_size        DS.L    1                   ; stores the size of the
 index_run                   DS.B    1                   ; stores the number of runs for index
 next_free_slot_address      DC.L    SPRITES_HOLDING     ; stores the address of the next free available memory space for the next decoded sprite
 
+
+skip_next_frame           DC.B    0                   ; stores whether the next frame should be drawn
 
         END    START
 
