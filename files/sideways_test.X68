@@ -9,10 +9,14 @@
 * 
 * Gameplay
 * change psudo random path index to change after long not change
+* make random enemies
+* bar to show progress
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
 * check if pixel is all black and dont render then
+* render out all 7 colours for player 1 and player 2
+* make rocket notes
 * 
 * OPTIMISE USING THE COUNTER
 * rendering is wasteful it uses a for loop instead of stopping
