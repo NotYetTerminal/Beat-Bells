@@ -27,6 +27,8 @@
 * when reading in the sound files the program won't find any B or E sharps, the warnings
 * can be ignored these don't exist
 * 
+* Players can play the other's tracks if they are on the same line
+* 
 * Menu
 * tutorial menu
 * load in song name
@@ -625,25 +627,32 @@ CHECK_COLLISIONS
                             ; note has been hit correctly
                             IF.B (A5) <EQ> D1 THEN
                                 IF.B D7 <EQ> (A6) THEN
+                                    ; sets the position to the left to make the note disappear when checking collision
                                     IF.B 6(A1) <EQ> #0  THEN
-                                        MOVE.B  #1,treble_last_note_success
+                                        MOVE.B  player_1_lane_number,D7
+                                        IF.B (A4) <EQ> D7   THEN
+                                            MOVE.B  #1,treble_last_note_success
+                                            CLR.W   (A1)+
+                                            CLR.W   (A1)
+                                        ELSE
+                                            ADD.W   #2,A1
+                                        ENDI
                                     ELSE
                                         IF.B 6(A1) <EQ> #1  THEN
-                                            MOVE.B  #1,bass_last_note_success
+                                            MOVE.B  player_2_lane_number,D7
+                                            IF.B (A4) <EQ> D7   THEN
+                                                MOVE.B  #1,bass_last_note_success
+                                                CLR.W   (A1)+
+                                                CLR.W   (A1)
+                                            ELSE
+                                                ADD.W   #2,A1
+                                            ENDI
                                         ENDI
                                     ENDI
-                                    ; sets the position to the left to make the note disappear when checking collision
-                                    CLR.W   (A1)+
-                                    CLR.W   (A1)
                                 ELSE
                                     ADD.W   #2,A1
-                                    CLR.W   (A1)
                                 ENDI
                             ELSE
-                                ; check if the note colour was hit incorrectly
-                                * IF.B (A5) <NE> #0   THEN
-                                *     CLR.W   2(A1)
-                                * ENDI
                                 ADD.W   #2,A1
                             ENDI
                         ENDI
@@ -682,7 +691,7 @@ CHECK_COLLISIONS
         RTS
 
 
-; must not use D5, A0, A1
+; must not use D5, A0, A1, A4, A5, A6
 ; A1 contains the address to the start of the note object, ie it's colour
 ; uses D0, D1, D2, D3, D4, D6, A2, A3
 PLAY_MUSIC_ON_HIT
@@ -1232,6 +1241,12 @@ LOAD_NOTE_DATA
         ADD     D1,A0
         SUB.W   #4,A2
         BSR     ENQUEUE_OBJECT_TO_LANE
+        
+        ; check if teleporter
+        IF.W (A2) <EQ> #4   THEN
+            BSR     PICK_RANDOM_PATH_INDEX
+            MOVE.B  (A3),7(A2)
+        ENDI
         RTS
 
 
@@ -1276,15 +1291,21 @@ ENQUEUE_OBJECT_TO_LANE
         RTS
 
 
-; A4 contains the address to the whatever quarter beat count
-CHECK_QUARTER_BEAT_COUNT
-        CLR.L   D0
-        MOVE.B  song_difficulty,D0
-        IF.B (A4) <HS> D0 THEN
-            MOVE.B   #1,(A4)
-        ELSE
-            ADD.B   #1,(A4)
-        ENDI
+; A3 contains the current path index
+PICK_RANDOM_PATH_INDEX
+        MOVE.W  #3,D3
+        BSR     GET_RANDOM_VALUE
+
+        FOR D5 = #0 TO #4   DO
+            IF.B D5 <NE> treble_note_path_index AND.B D5 <NE> bass_note_path_index   THEN
+                IF.B D2 <EQ> #0 THEN
+                    MOVE.B  D5,(A3)
+                    RTS
+                ELSE
+                    SUB.B   #1,D2
+                ENDI
+            ENDI
+        ENDF
         RTS
 
 
@@ -1750,6 +1771,7 @@ player_2_start_sprite       DS.L    1
 ;skip_next_frame           DC.B    0                   ; stores whether the next frame should be drawn
 
         END    START
+
 
 
 *~Font name~Courier New~
