@@ -584,12 +584,20 @@ CHECK_BOTH_PLAYER_COLLISIONS
         LEA     player_1_action_colour,A5
         LEA     player_1_shift_pressed,A6
         BSR     CHECK_COLLISIONS
+        
+        LEA     player_1_position,A0
+        LEA     player_1_lane_number,A1
+        BSR     CHANGE_PLAYER_Y_POSITION
 
         IF.B two_player <EQ> #1 THEN
             LEA     player_2_lane_number,A4
             LEA     player_2_action_colour,A5
             LEA     player_2_shift_pressed,A6
             BSR     CHECK_COLLISIONS
+
+            LEA     player_2_position,A0
+            LEA     player_2_lane_number,A1
+            BSR     CHANGE_PLAYER_Y_POSITION
         ENDI
         RTS
 
@@ -632,6 +640,9 @@ CHECK_COLLISIONS
                                         MOVE.B  player_1_lane_number,D7
                                         IF.B (A4) <EQ> D7   THEN
                                             MOVE.B  #1,treble_last_note_success
+                                            IF.W (A1) <EQ> #4   THEN
+                                                MOVE.B  7(A1),player_1_lane_number
+                                            ENDI
                                             CLR.W   (A1)+
                                             CLR.W   (A1)
                                         ELSE
@@ -642,6 +653,9 @@ CHECK_COLLISIONS
                                             MOVE.B  player_2_lane_number,D7
                                             IF.B (A4) <EQ> D7   THEN
                                                 MOVE.B  #1,bass_last_note_success
+                                                IF.W (A1) <EQ> #4   THEN
+                                                    MOVE.B  7(A1),player_2_lane_number
+                                                ENDI
                                                 CLR.W   (A1)+
                                                 CLR.W   (A1)
                                             ELSE
@@ -1771,6 +1785,7 @@ player_2_start_sprite       DS.L    1
 ;skip_next_frame           DC.B    0                   ; stores whether the next frame should be drawn
 
         END    START
+
 
 
 
