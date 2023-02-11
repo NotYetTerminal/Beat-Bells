@@ -14,16 +14,12 @@
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
-* check if pixel is all black and dont render then
-* render out all 7 colours for player 1 and player 2
-* make rocket notes
+* render out all 4 colours for player 1 and player 2
+* make bell notes
 * 
 * OPTIMISE USING THE COUNTER
 * rendering is wasteful it uses a for loop instead of stopping
 * TIME.DELTA_TIME
-* 
-* Music
-* make it so the invisible notes are played when they are center over beat line
 * 
 * Warnings
 * if in the piano sheet there is a held note with lines then it won't play the full thing
@@ -88,6 +84,9 @@ START   ORG    $1000
         MOVE.L  #33,D0
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
+        ; sets the window to be fullscreen
+        * MOVE.L  #2,D1
+        * TRAP    #15
 
         ; sets lane for the note paths
         MOVE.B  two_player,D1
@@ -96,7 +95,7 @@ START   ORG    $1000
 
         ; sets the players' positions
         MOVE.W  #50,player_1_position
-        MOVE.W  #100,player_2_position
+        MOVE.W  #50,player_2_position
         MOVE.B  treble_note_path_index,player_1_lane_number
         MOVE.B  bass_note_path_index,player_2_lane_number
 
@@ -202,7 +201,7 @@ LOAD_IN_SPRITES
 
 ; check if this would be better without as many moves
 LOAD_IN_PLAYER_SPRITES
-        FOR D5 = #0 TO #$27   DO
+        FOR D5 = #0 TO #39   DO
             ; load player 1
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
             ; put in a
@@ -211,11 +210,7 @@ LOAD_IN_PLAYER_SPRITES
             MOVE.L  D5,D6
             ; divide by 8
             LSR.B   #3,D6
-            * IF.B D6 <EQ> #3 THEN
-            *     ADD.B   #51,D6
-            * ELSE
             ADD.B   #48,D6
-            * ENDI
             MOVE.B  D6,16(A1)
 
             MOVE.L  D5,D6
@@ -227,27 +222,30 @@ LOAD_IN_PLAYER_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
-        * FOR D5 = #0 TO #31   DO
-        *     ; load player 2
-        *     LEA     PLAYER_SPRITES_BASIC_PATH,A1
-        *     ; put in b
-        *     MOVE.B  #98,15(A1)
+        IF.B two_player <EQ> #1 THEN
+            MOVE.L  next_free_slot_address,player_2_start_sprite
+            FOR D5 = #0 TO #39   DO
+                ; load player 2
+                LEA     PLAYER_SPRITES_BASIC_PATH,A1
+                ; put in b
+                MOVE.B  #98,15(A1)
 
-        *     MOVE.B  D5,D6
-        *     ; divide by 8
-        *     LSR.B   #3,D6
-        *     ADD.B   #51,D6
-        *     MOVE.B  D6,16(A1)
+                MOVE.B  D5,D6
+                ; divide by 8
+                LSR.B   #3,D6
+                ADD.B   #48,D6
+                MOVE.B  D6,16(A1)
 
-        *     MOVE.B  D5,D6
-        *     ; modulus 8
-        *     AND.B   #7,D6
-        *     ADD.B   #48,D6
-        *     MOVE.B  D6,17(A1)
+                MOVE.B  D5,D6
+                ; modulus 8
+                AND.B   #7,D6
+                ADD.B   #48,D6
+                MOVE.B  D6,17(A1)
 
-        *     BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-        *     BSR     QOI_DECODE
-        * ENDF
+                BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+                BSR     QOI_DECODE
+            ENDF
+        ENDI
         RTS
 
 
@@ -285,7 +283,7 @@ QOI_DECODE
 
         ADD.L   #SPRITES_PIXEL_LENGTH,next_free_slot_address
 
-        FOR.L D6 = #0 TO #SPRITES_PIXEL_LENGTH BY #4    DO
+        FOR.L D6 = #0 TO #SPRITES_PIXEL_LENGTH-4 BY #4    DO
             IF.B index_run <HI> #0  THEN
                 SUB.B   #1,index_run
             ELSE
@@ -604,11 +602,13 @@ CHECK_COLLISIONS
                 MOVE.W  (A0),A1
                 ADD.W   #2,A1
                 ; check if the note is close to beat line
-                IF.W (A1) <LT> #BEAT_LINE_X THEN
+                IF.W (A1) <LS> #BEAT_LINE_X THEN
                     ; check if the note is invisible
                     IF.W -(A1) <EQ> #0  THEN
                         ADD.W   #2,A1
-                        CLR.W   (A1)
+                        IF.W (A1) <LS> #BEAT_LINE_X-(NOTE_SIZE/2) THEN
+                            CLR.W   (A1)
+                        ENDI
                     ELSE
                         ADD.W   #2,A1
                         ; check collision with player line
@@ -623,7 +623,7 @@ CHECK_COLLISIONS
                             ENDI
                             ;BSR     GET_COLOUR_FROM_INDEX
                             ; note has been hit correctly
-                            IF.L (A5) <EQ> D1 THEN
+                            IF.B (A5) <EQ> D1 THEN
                                 IF.B D7 <EQ> (A6) THEN
                                     IF.B 6(A1) <EQ> #0  THEN
                                         MOVE.B  #1,treble_last_note_success
@@ -641,9 +641,9 @@ CHECK_COLLISIONS
                                 ENDI
                             ELSE
                                 ; check if the note colour was hit incorrectly
-                                IF.L (A5) <NE> #0   THEN
-                                    CLR.W   2(A1)
-                                ENDI
+                                * IF.B (A5) <NE> #0   THEN
+                                *     CLR.W   2(A1)
+                                * ENDI
                                 ADD.W   #2,A1
                             ENDI
                         ENDI
@@ -651,7 +651,7 @@ CHECK_COLLISIONS
                     
 
                     ; check collision with the beat line, ie too late
-                    IF.W (A1) <LT> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
+                    IF.W (A1) <LS> #BEAT_LINE_X-NOTE_SIZE-10 THEN
                         ; check if it was an invisible or hit note
                         IF.W -(A1) <EQ> #0  THEN
                             IF.B 6(A1) <EQ> #0  THEN
@@ -1093,7 +1093,7 @@ RESET_PLAYER_1_ACTION
 
 
 RESET_PLAYER_2_ACTION
-        MOVE.L  #WHITE,player_2_action_colour
+        CLR.B   player_2_action_colour
         CLR.L   player_2_last_beat_change_time
         RTS
 
@@ -1126,7 +1126,7 @@ SPAWN_NEW_NOTE
 
                 CLR.L   D0
                 MOVE.B  song_difficulty,D0
-                IF.B (A4) <GE> D0 THEN
+                IF.B (A4) <HS> D0 THEN
                     MOVE.B   #1,(A4)
                 ENDI
             ELSE
@@ -1156,7 +1156,7 @@ SPAWN_NEW_NOTE
 
                 CLR.L   D0
                 MOVE.B  song_difficulty,D0
-                IF.B (A4) <GE> D0 THEN
+                IF.B (A4) <HS> D0 THEN
                     MOVE.B   #1,(A4)
                 ENDI
             ELSE
@@ -1208,7 +1208,7 @@ LOAD_NOTE_DATA
         ; and the difficulty
         CLR.L   D0
         MOVE.B  song_difficulty,D0
-        IF.B (A4) <LT> D0 THEN
+        IF.B (A4) <LO> D0 THEN
             CLR.W   (A2)
         ELSE
             BSR     PICK_NOTE_COLOUR
@@ -1280,12 +1280,13 @@ ENQUEUE_OBJECT_TO_LANE
 CHECK_QUARTER_BEAT_COUNT
         CLR.L   D0
         MOVE.B  song_difficulty,D0
-        IF.B (A4) <GE> D0 THEN
+        IF.B (A4) <HS> D0 THEN
             MOVE.B   #1,(A4)
         ELSE
             ADD.B   #1,(A4)
         ENDI
         RTS
+
 
 ; loops over music time array
 ; decrements times for each note
@@ -1309,10 +1310,7 @@ DECREMENT_NOTES_TIMES
 
 RENDER_SCREEN
         BSR     DRAW_BACKGROUND
-        BSR     DRAW_PLAYER_1
-        IF.B two_player <EQ> #1 THEN
-            BSR     DRAW_PLAYER_2
-        ENDI
+        BSR     DRAW_PLAYERS
         BSR     DRAW_NOTES
 
         ; repaints screen
@@ -1374,6 +1372,68 @@ DRAW_BEAT_LINE
 DRAW_LINE
         MOVE.B  #84,D0
         TRAP    #15
+        RTS
+
+
+DRAW_PLAYERS
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
+        TRAP    #15
+
+        MOVE.L  player_1_start_sprite,A0
+        MOVE.B  player_1_action_colour,D0
+        LEA     player_1_position,A1
+        BSR     DRAW_PLAYER
+        IF.B two_player <EQ> #1 THEN
+            CLR.L   D0
+            CLR.L   D1
+            ;MOVE.L  player_1_start_sprite,A0
+            MOVE.L  player_2_start_sprite,A0
+            MOVE.B  player_2_action_colour,D0
+            LEA     player_2_position,A1
+            BSR     DRAW_PLAYER
+        ENDI
+        RTS
+
+
+; A0 must contain the start of the sprite
+; D0 must contain the player action colour
+; D1 must contain the player 1 position
+DRAW_PLAYER
+        ; multiply by $2000
+        LSL.L   #8,D0
+        LSL.L   #5,D0
+        ADD.L   D0,A0
+        ; multiply by $400
+        MOVE.B  sprite_gif_index,D1
+        LSL.L   #8,D1
+        LSL.L   #2,D1
+        ADD.L   D1,A0
+
+        CLR.L   D3
+        CLR.L   D2
+        MOVE.W  2(A1),D2
+        MOVE.L  D2,D4
+        ; 16x16
+        FOR.L D5 = #0 TO #$F   DO
+            MOVE.W  (A1),D3
+            FOR.L D6 = #0 TO #$F   DO
+                ; set pen colour
+                MOVEQ   #80,D0
+                MOVE.L  (A0)+,D1
+                TRAP    #15
+
+                ; draw rectangle
+                MOVEQ   #87,D0
+                MOVE.W  D3,D1
+                TRAP    #15
+
+                ADDQ    #6,D3
+            ENDF
+            ADDQ    #6,D2
+            ADDQ    #6,D4
+        ENDF
         RTS
 
 
@@ -1467,81 +1527,6 @@ GET_COLOUR_FROM_INDEX
         RTS
 
 
-; A0 must contain the start of the sprite
-DRAW_PLAYER_1
-        ; sets pen width
-        MOVEQ   #93,D0
-        MOVEQ   #MULTIPLIER_SIZE,D1
-        TRAP    #15
-
-        MOVE.L  player_1_start_sprite,A0
-        ; multiply by $2000
-        MOVE.B  player_1_action_colour,D0
-        LSL.L   #8,D0
-        LSL.L   #5,D0
-        ADD.L   D0,A0
-        ; multiply by $400
-        MOVE.B  sprite_gif_index,D1
-        LSL.L   #8,D1
-        LSL.L   #2,D1
-        ADD.L   D1,A0
-
-        LEA     player_1_position,A1
-
-        CLR.L   D3
-        CLR.L   D2
-        MOVE.W  2(A1),D2
-        MOVE.L  D2,D4
-        ; 16x16
-        FOR.L D5 = #0 TO #$F   DO
-            MOVE.W  (A1),D3
-            FOR.L D6 = #0 TO #$F   DO
-                ; set pen colour
-                MOVEQ   #80,D0
-                MOVE.L  (A0)+,D1
-                TRAP    #15
-
-                ; draw rectangle
-                MOVEQ   #87,D0
-                MOVE.W  D3,D1
-                TRAP    #15
-
-                ADDQ    #6,D3
-            ENDF
-            ADDQ    #6,D2
-            ADDQ    #6,D4
-        ENDF
-        RTS
-
-
-DRAW_PLAYER_2
-        ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #3,D1
-        TRAP    #15
-
-        ; sets pen and fill colour to white
-        MOVE.B  #80,D0
-        MOVE.L  player_2_action_colour,D1
-        TRAP    #15
-        MOVE.W  #81,D0
-        TRAP    #15
-
-        LEA     player_2_position,A0
-        MOVE.W  #PLAYER_SIZE,D3
-        MOVE.W  #PLAYER_SIZE,D4
-        BSR     DRAW_UNFILLED_SQUARE
-        
-        ; draws the square bounding box
-        SUB.W   #40,D1
-        SUB.W   #40,D2
-        ADD.W   #40,D3
-        ADD.W   #40,D4
-
-        MOVE.W  #90,D0
-        TRAP    #15
-        RTS
-
 ; draws a square at A0 plus size in D3,D4
 DRAW_SQUARE
         ; set bounds of square to draw
@@ -1553,6 +1538,7 @@ DRAW_SQUARE
         MOVE.W  #87,D0
         TRAP    #15
         RTS
+
 
 ; draws an unfilled square at A0 plus size in D3,D4
 DRAW_UNFILLED_SQUARE
@@ -1617,19 +1603,6 @@ RANDOM_2
         RTS
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 EXIT_PROGRAM
         MOVE.W  #9,D0
         TRAP    #15
@@ -1660,8 +1633,8 @@ player_2_lane_number    DS.B    3       ; stores the lane number
 player_2_moving         DC.B    0       ; stores whether the player is moving up or down
 player_2_action_pressed DC.B    0       ; stores whether any action buttons are pressed
 player_2_keymaps        DC.L    'AA'    ; stores the movement keys of player
-player_2_action_colour  DC.L    WHITE   ; stores the player action colour
-player_2_colour_keymaps DC.L    'AAAA' ; stores the keymaps for the player changing colours
+player_2_action_colour  DC.B    0       ; stores the player action colour
+player_2_colour_keymaps DC.L    'AAAA'  ; stores the keymaps for the player changing colours
 player_2_shift_pressed  DC.B    0       ; stores whether the control is pressed down
 
 ; stores the number of objects in the arrays
@@ -1716,8 +1689,8 @@ NOTES_NAMES_8           DC.B    '8cn'
 
 
 song_difficulty             DC.B    16      ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
-treble_quater_beat_count    DC.B    32      ; stores the count of quarter beats played
-bass_quater_beat_count      DC.B    32      ; stores the count of quarter beats played
+treble_quater_beat_count    DC.B    128     ; stores the count of quarter beats played
+bass_quater_beat_count      DC.B    128     ; stores the count of quarter beats played
 treble_last_note_success    DC.B    0       ; stores whether the last hit note was correct
 bass_last_note_success      DC.B    0       ; stores whether the last hit note was correct
 
@@ -1771,14 +1744,12 @@ next_free_slot_address      DC.L    SPRITES_HOLDING     ; stores the address of 
 
 sprite_gif_index            DC.B    0                   ; stores the index of the sprite gifs max 7
 player_1_start_sprite       DC.L    $2A000
+player_2_start_sprite       DS.L    1
 
 
 ;skip_next_frame           DC.B    0                   ; stores whether the next frame should be drawn
 
         END    START
-
-
-
 
 
 *~Font name~Courier New~
