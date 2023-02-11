@@ -18,7 +18,6 @@
 * make bell notes
 * 
 * OPTIMISE USING THE COUNTER
-* rendering is wasteful it uses a for loop instead of stopping
 * TIME.DELTA_TIME
 * 
 * Warnings
@@ -197,12 +196,14 @@ LOAD_IN_SONG
 
 LOAD_IN_SPRITES
         BSR     LOAD_IN_PLAYER_SPRITES
-        ;BSR     LOAD_IN_NOTES_SPRITES
+        BSR     LOAD_IN_FILLED_NOTES_SPRITES
+        BSR     LOAD_IN_UNFILLED_NOTES_SPRITES
         RTS
 
 
 ; check if this would be better without as many moves
 LOAD_IN_PLAYER_SPRITES
+        MOVE.L  next_free_slot_address,player_1_start_sprite
         FOR D5 = #0 TO #39   DO
             ; load player 1
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
@@ -247,6 +248,112 @@ LOAD_IN_PLAYER_SPRITES
                 BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
                 BSR     QOI_DECODE
             ENDF
+        ENDI
+        RTS
+
+
+; check if this would be better without as many moves
+LOAD_IN_FILLED_NOTES_SPRITES
+        MOVE.L  next_free_slot_address,filled_notes_1_start_sprite
+        ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+        FOR D5 = #8 TO #39   DO
+            ; load notes 1
+            LEA     FILLED_NOTES_BASIC_PATH,A1
+            ; put in a
+            MOVE.B  #97,21(A1)
+
+            MOVE.L  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,22(A1)
+
+            MOVE.L  D5,D6
+            ; modulus 8
+            AND.B   #7,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,23(A1)
+
+            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            BSR     QOI_DECODE
+        ENDF
+        IF.B two_player <EQ> #1 THEN
+            MOVE.L  next_free_slot_address,filled_notes_2_start_sprite
+            ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+            FOR D5 = #8 TO #39   DO
+                ; load notes 2
+                LEA     FILLED_NOTES_BASIC_PATH,A1
+                ; put in b
+                MOVE.B  #98,21(A1)
+
+                MOVE.B  D5,D6
+                ; divide by 8
+                LSR.B   #3,D6
+                ADD.B   #48,D6
+                MOVE.B  D6,22(A1)
+
+                MOVE.B  D5,D6
+                ; modulus 8
+                AND.B   #7,D6
+                ADD.B   #48,D6
+                MOVE.B  D6,23(A1)
+
+                BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+                BSR     QOI_DECODE
+            ENDF
+        ENDI
+        RTS
+
+
+; check if this would be better without as many moves
+LOAD_IN_UNFILLED_NOTES_SPRITES
+        MOVE.L  next_free_slot_address,unfilled_notes_1_start_sprite
+        ;ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+        * FOR D5 = #8 TO #39   DO
+        *     ; load notes 1
+        *     LEA     UNFILLED_NOTES_BASIC_PATH,A1
+        *     ; put in a
+        *     MOVE.B  #97,23(A1)
+
+        *     MOVE.L  D5,D6
+        *     ; divide by 8
+        *     LSR.B   #3,D6
+        *     ADD.B   #48,D6
+        *     MOVE.B  D6,24(A1)
+
+        *     MOVE.L  D5,D6
+        *     ; modulus 8
+        *     AND.B   #7,D6
+        *     ADD.B   #48,D6
+        *     MOVE.B  D6,25(A1)
+
+        *     BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+        *     BSR     QOI_DECODE
+        * ENDF
+        IF.B two_player <EQ> #1 THEN
+            MOVE.L  next_free_slot_address,unfilled_notes_2_start_sprite
+            ;ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+            * FOR D5 = #8 TO #39   DO
+            *     ; load notes 2
+            *     LEA     UNFILLED_NOTES_BASIC_PATH,A1
+            *     ; put in b
+            *     MOVE.B  #98,23(A1)
+
+            *     MOVE.B  D5,D6
+            *     ; divide by 8
+            *     LSR.B   #3,D6
+            *     ADD.B   #48,D6
+            *     MOVE.B  D6,24(A1)
+
+            *     MOVE.B  D5,D6
+            *     ; modulus 8
+            *     AND.B   #7,D6
+            *     ADD.B   #48,D6
+            *     MOVE.B  D6,25(A1)
+
+            *     BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            *     BSR     QOI_DECODE
+            * ENDF
         ENDI
         RTS
 
@@ -584,7 +691,7 @@ CHECK_BOTH_PLAYER_COLLISIONS
         LEA     player_1_action_colour,A5
         LEA     player_1_shift_pressed,A6
         BSR     CHECK_COLLISIONS
-        
+
         LEA     player_1_position,A0
         LEA     player_1_lane_number,A1
         BSR     CHANGE_PLAYER_Y_POSITION
@@ -1422,8 +1529,6 @@ DRAW_PLAYERS
         BSR     DRAW_PLAYER
         IF.B two_player <EQ> #1 THEN
             CLR.L   D0
-            CLR.L   D1
-            ;MOVE.L  player_1_start_sprite,A0
             MOVE.L  player_2_start_sprite,A0
             MOVE.B  player_2_action_colour,D0
             LEA     player_2_position,A1
@@ -1434,13 +1539,14 @@ DRAW_PLAYERS
 
 ; A0 must contain the start of the sprite
 ; D0 must contain the player action colour
-; D1 must contain the player 1 position
+; A1 must contain the player 1 position
 DRAW_PLAYER
         ; multiply by $2000
         LSL.L   #8,D0
         LSL.L   #5,D0
         ADD.L   D0,A0
         ; multiply by $400
+        CLR.L   D1
         MOVE.B  sprite_gif_index,D1
         LSL.L   #8,D1
         LSL.L   #2,D1
@@ -1472,52 +1578,88 @@ DRAW_PLAYER
         RTS
 
 
+
 DRAW_NOTES
         ; sets pen width
         MOVE.B  #93,D0
-        MOVE.B  #3,D1
+        MOVE.B  #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        LEA     lane_0_object_addresses,A1
+        LEA     lane_0_object_addresses,A3
         ; loops through the five lanes
-        FOR D5 = #0 TO #4   DO
-            MOVE.L  A1,A2
+        FOR D7 = #0 TO #4   DO
+            MOVE.L  A3,A2
             ; loops until encounters an empty position
             IF.W (A2) <NE> #$FFFF   THEN
                 ; LANE_ADDRESSES_SIZE
                 DBLOOP D6 = #38
-                    MOVE.W  (A2),A0
-                    IF.W (A0) <NE> #0 AND.W (A0) <NE> #$FFFF    THEN
-                        MOVE.B  #80,D0
-                        MOVE.W  (A0),D1
-                        MOVE.B  6(A0),D2
-                        BCLR.L  #4,D1
+                    MOVE.W  (A2)+,A1
+                    IF.W (A1) <NE> #0   THEN
+                        CLR.L   D0
+                        MOVE.W  (A1)+,D0
+                        BCLR.L  #4,D0
+                        ; check if filled or unfilled
                         IF  <EQ>    THEN
-                            BSR     GET_COLOUR_FROM_INDEX
-                            TRAP    #15
-                            MOVE.W  #81,D0
-                            TRAP    #15
-                            ADD.W   #2,A0
-
-                            MOVE.W  #NOTE_SIZE,D3
-                            MOVE.W  #NOTE_SIZE,D4
-                            BSR     DRAW_SQUARE
+                            ; check if treble or bass
+                            IF.B 4(A1) <EQ> #0  THEN
+                                MOVE.L  filled_notes_1_start_sprite,A0
+                            ELSE
+                                MOVE.L  filled_notes_2_start_sprite,A0
+                            ENDI
                         ELSE
-                            BSR     GET_COLOUR_FROM_INDEX
-                            TRAP    #15
-                            MOVE.W  #81,D0
-                            TRAP    #15
-                            ADD.W   #2,A0
-
-                            MOVE.W  #NOTE_SIZE,D3
-                            MOVE.W  #NOTE_SIZE,D4
-                            BSR     DRAW_UNFILLED_SQUARE
+                            ; check if treble or bass
+                            IF.B 4(A1) <EQ> #0  THEN
+                                MOVE.L  unfilled_notes_1_start_sprite,A0
+                            ELSE
+                                MOVE.L  unfilled_notes_2_start_sprite,A0
+                            ENDI
                         ENDI
+                        BSR     DRAW_NOTE
                     ENDI
-                    ADD.W   #2,A2
                 UNLESS.W (A2) <NE> #$FFFF
             ENDI
-            ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A1
+            ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A3
+        ENDF
+        RTS
+
+
+; A0 must contain the start of the sprite
+; D0 must contain the note colour
+; A1 must contain the note position
+DRAW_NOTE
+        ; multiply by $2000
+        LSL.L   #8,D0
+        LSL.L   #5,D0
+        ADD.L   D0,A0
+        ; multiply by $400
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        LSL.L   #8,D1
+        LSL.L   #2,D1
+        ADD.L   D1,A0
+
+        CLR.L   D3
+        CLR.L   D2
+        MOVE.W  2(A1),D2
+        MOVE.L  D2,D4
+        ; 12x12
+        FOR.L D5 = #0 TO #$B   DO
+            MOVE.W  (A1),D3
+            FOR.L D6 = #0 TO #$B   DO
+                ; set pen colour
+                MOVEQ   #80,D0
+                MOVE.L  (A0)+,D1
+                TRAP    #15
+
+                ; draw rectangle
+                MOVEQ   #87,D0
+                MOVE.W  D3,D1
+                TRAP    #15
+
+                ADDQ    #6,D3
+            ENDF
+            ADDQ    #6,D2
+            ADDQ    #6,D4
         ENDF
         RTS
 
@@ -1755,14 +1897,14 @@ WHITE           EQU     $00FFFFFF
 
 ; QOI decoding
 SPRITES_LOADING             EQU     $28000      ; address where the qoi file is loaded
-SPRITES_HOLDING             EQU     $2A000      ; address where the unpacked rgba data is stored
 SPRITES_PIXEL_LENGTH        EQU     $400        ; size of sprites is 16x16x4
-;PICTURE_DIMENSION           EQU     $10         ; dimension of sprites is 16x16
 
 MULTIPLIER_SIZE             EQU     8           ; the size to multiply the sprites by
 
 
 PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/aaa.qoi',0
+FILLED_NOTES_BASIC_PATH     DC.B    'filled_notes_sprites/aaa.qoi',0
+UNFILLED_NOTES_BASIC_PATH   DC.B    'unfilled_notes_sprites/aaa.qoi',0
 EMPTY_SEEN_PIXELS_FILE      DC.B    'files/empty_seen_pixels.bin',0
 
 ; stores the current pixel
@@ -1775,16 +1917,22 @@ previous_seen_pixels        DCB.L   64,$FF              ; stores a 64 length arr
 
 qoi_import_file_size        DS.L    1                   ; stores the size of the imported qoi image
 index_run                   DS.B    1                   ; stores the number of runs for index
-next_free_slot_address      DC.L    SPRITES_HOLDING     ; stores the address of the next free available memory space for the next decoded sprite
+next_free_slot_address      DC.L    $2A000              ; stores the address of the next free available memory space for the next decoded sprite
 
 sprite_gif_index            DC.B    0                   ; stores the index of the sprite gifs max 7
-player_1_start_sprite       DC.L    $2A000
-player_2_start_sprite       DS.L    1
 
+player_1_start_sprite           DS.L    1
+player_2_start_sprite           DS.L    1
+filled_notes_1_start_sprite     DS.L    1
+filled_notes_2_start_sprite     DS.L    1
+unfilled_notes_1_start_sprite   DS.L    1
+unfilled_notes_2_start_sprite   DS.L    1
 
 ;skip_next_frame           DC.B    0                   ; stores whether the next frame should be drawn
 
         END    START
+
+
 
 
 
