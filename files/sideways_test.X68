@@ -137,8 +137,10 @@ START   ORG    $1000
         BSR     LOAD_IN_SPRITES
 
         ; sets the song difficulty
-        MOVE.B  #8,song_difficulty
+        MOVE.B  #1,song_difficulty
 
+        ; frame delay, so that framerate is consistent
+        BSR     FRAME_DELAY
         JMP     LOOP
 
 
@@ -636,7 +638,15 @@ LOOP
         JMP     LOOP
 
 
+FRAME_DELAY_UNSET
+        CLR.B   skip_next_note
+        BRA     FRAME_DELAY_SET
+
 FRAME_DELAY
+        MOVE.B  #1,skip_next_note
+        BRA     FRAME_DELAY_SET
+
+FRAME_DELAY_SET
         ; gets the time
         MOVE.W  #8,D0
         TRAP    #15
@@ -644,7 +654,7 @@ FRAME_DELAY
         SUB.L   last_frame_time,D1
         ; n number of centiseconds have passed
         CMP.L   #2,D1
-        BLO     FRAME_DELAY
+        BLO     FRAME_DELAY_UNSET
         ; save time
         MOVE.W  #8,D0
         TRAP    #15
@@ -1216,7 +1226,6 @@ RESET_PLAYER_2_ACTION
 
 
 SPAWN_NEW_NOTE
-        ;invisibleS WRONG AGAIN
         MOVE.L  treble_song_file_index,A0
 
         ; song has ended
@@ -1239,6 +1248,9 @@ SPAWN_NEW_NOTE
                 LEA     treble_song_file_index,A1
                 LEA     treble_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
+                IF.B skip_next_note <EQ> #1 THEN
+                    CLR.W   (A2)
+                ENDI
                 MOVE.B  #0,6(A2)
             ELSE
                 ADD.L   #2,treble_song_file_index
@@ -1260,7 +1272,7 @@ SPAWN_NEW_NOTE
                 LEA     bass_song_file_index,A1
                 LEA     bass_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
-                IF.B two_player <EQ> #0     THEN
+                IF.B two_player <EQ> #0 OR.B skip_next_note <EQ> #1 THEN
                     CLR.W   (A2)
                 ENDI
                 MOVE.B  two_player,6(A2)
@@ -1307,17 +1319,6 @@ LOAD_NOTE_DATA
 
         ; gets the number of notes playing on the same beat
         LSR.B   #2,D3
-
-
-        ; gets the time
-        MOVE.W  #8,D0
-        TRAP    #15
-        SUB.L   #10,D1
-        ; checks if the framerate dropped
-        * IF.L last_frame_time <LO> D1    THEN
-        * ELSE
-        *     CLR.B   skip_next_frame
-        * ENDI
 
         ; assign a colour based on the playing notes
         ; and the difficulty
@@ -1829,7 +1830,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -1916,9 +1917,10 @@ filled_notes_2_start_sprite     DS.L    1
 unfilled_notes_1_start_sprite   DS.L    1
 unfilled_notes_2_start_sprite   DS.L    1
 
-;skip_next_frame           DC.B    0                   ; stores whether the next frame should be drawn
+skip_next_note                  DC.B    0                   ; stores whether the next note should be drawn
 
         END    START
+
 
 
 
