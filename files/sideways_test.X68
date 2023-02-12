@@ -594,7 +594,8 @@ LOOP
             TRAP    #15
             SUB.L   player_1_last_beat_change_time,D1
             IF.L #30 <LE> D1    THEN
-                BSR     RESET_PLAYER_1_ACTION
+                CLR.B   player_1_action_colour
+                CLR.L   player_1_last_beat_change_time
             ENDI
         ENDI
 
@@ -603,7 +604,8 @@ LOOP
             TRAP    #15
             SUB.L   player_2_last_beat_change_time,D1
             IF.L #20 <LE> D1    THEN
-                BSR     RESET_PLAYER_2_ACTION
+                CLR.B   player_2_action_colour
+                CLR.L   player_2_last_beat_change_time
             ENDI
         ENDI
 
@@ -1109,18 +1111,6 @@ DOUBLE_RANDOM_SUB
         IF  <NE>    THEN
             SUB.B   #1,(A2)
         ENDI
-        RTS
-
-
-RESET_PLAYER_1_ACTION
-        CLR.B   player_1_action_colour
-        CLR.L   player_1_last_beat_change_time
-        RTS
-
-
-RESET_PLAYER_2_ACTION
-        CLR.B   player_2_action_colour
-        CLR.L   player_2_last_beat_change_time
         RTS
 
 
