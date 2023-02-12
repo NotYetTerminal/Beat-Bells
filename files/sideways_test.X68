@@ -14,11 +14,8 @@
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
-* render out all 4 colours for player 1 and player 2
-* make bell notes
 * 
 * OPTIMISE USING THE COUNTER
-* TIME.DELTA_TIME
 * 
 * Warnings
 * if in the piano sheet there is a held note with lines then it won't play the full thing
@@ -26,6 +23,7 @@
 * when reading in the sound files the program won't find any B or E sharps, the warnings
 * can be ignored these don't exist
 * 
+* Error
 * Players can play the other's tracks if they are on the same line
 * 
 * Menu
@@ -73,7 +71,8 @@ START   ORG    $1000
         TRAP    #15
         MOVE.L  D1,last_frame_time
         MOVE.L  D1,last_movement_time
-        MOVE.L  D1,last_path_change_time
+        MOVE.L  D1,last_treble_path_change_time
+        MOVE.L  D1,last_bass_path_change_time
         MOVE.L  D1,last_object_time
         MOVE.L  D1,last_note_spawn_time
         MOVE.L  D1,player_1_last_beat_change_time
@@ -588,18 +587,6 @@ LOOP
             MOVE.L  D1,last_movement_time
         ENDI
 
-        ; new path index
-        MOVE.W  #8,D0
-        TRAP    #15
-        SUB.L   last_path_change_time,D1
-        IF.L #200 <LE> D1    THEN
-            LEA     treble_note_path_index,A0
-            LEA     bass_note_path_index,A1
-            BSR     CHANGE_PATH_INDEX
-            MOVE.W  #8,D0
-            TRAP    #15
-            MOVE.L  D1,last_path_change_time
-        ENDI
 
         ; checks for cooldown time
         IF.L player_1_last_beat_change_time <NE> #0  THEN
@@ -735,7 +722,6 @@ CHECK_COLLISIONS
                             ELSE
                                 CLR.B   D7
                             ENDI
-                            ;BSR     GET_COLOUR_FROM_INDEX
                             ; note has been hit correctly
                             IF.B (A5) <EQ> D1 THEN
                                 IF.B D7 <EQ> (A6) THEN
@@ -895,17 +881,13 @@ PLAY_MUSIC_ON_HIT
 ; shifts the lane in A0 one to the left, deleting the object at index 0
 LANE_LEFT_SHIFT
         MOVE.W  A0,A2
-        SUB.W   #2,A2
-        SUB.W   #2,(A2)
+        SUB.W   #2,-(A2)
         MOVE.L  #2,D7
         FOR.W D6 = #0 TO (A2) BY #2 DO
-            IF.W D6 <EQ> (A2)   THEN
-                MOVE.W  #$FFFF,(A0,D6)
-                ADD.B   #2,D7
-            ENDI
             MOVE.W  (A0,D7),(A0,D6)
             ADD.B   #2,D7
         ENDF
+        MOVE.W  #$FFFF,(A0,D6)
         RTS
 
 
@@ -934,18 +916,6 @@ HANDLE_INPUT
             ; control
             MOVE.L  #$11000000,D3
             BSR     HANDLE_COLOUR_CHANGE
-
-            * IF.L #BLUE <EQ> (A2)    THEN
-            *     MOVE.L  #AQUA,(A2)
-            * ELSE
-            *     IF.L #RED <EQ> (A2) THEN
-            *         MOVE.L  #ORANGE,(A2)
-            *     ELSE
-            *         IF.L #YELLOW <EQ> (A2)  THEN
-            *             MOVE.L  #LIME,(A2)
-            *         ENDI
-            *     ENDI
-            * ENDI
 
             LEA     player_2_position,A0
             LEA     player_2_lane_number,A1
@@ -1117,78 +1087,6 @@ GET_LANE_Y_POSITION
         RTS
 
 
-; changes the path node index
-; treble path node index needs to be in A0
-; bass path node index needs to be in A1
-; uses A2
-CHANGE_PATH_INDEX
-        ; if at the top or bottom only call random 2 as it can't go outside the map
-        IF.B (A0) <EQ> #0    THEN
-            IF.B (A1) <NE> #1   THEN
-                MOVE    A0,A2
-                BSR     DOUBLE_RANDOM_ADD
-            ENDI
-        ELSE
-            IF.B (A0) <EQ> #4   THEN
-                IF.B (A1) <NE> #3   THEN
-                    MOVE    A0,A2
-                    BSR     DOUBLE_RANDOM_SUB
-                ENDI
-            ELSE
-                CLR.L   D1
-                MOVE.B  (A0),D1
-                ADD     #1,D1
-                IF.B D1 <EQ> (A1)   THEN
-                    MOVE    A0,A2
-                    BSR     DOUBLE_RANDOM_SUB
-                ELSE
-                    CLR.L   D1
-                    MOVE.B  (A0),D1
-                    SUB     #1,D1
-                    IF.B D1 <EQ> (A1)   THEN
-                        MOVE    A0,A2
-                        BSR     DOUBLE_RANDOM_ADD
-                    ELSE
-                        MOVE    A0,A2
-                        BSR     TRIPLE_RANDOM
-                    ENDI
-                ENDI
-            ENDI
-        ENDI
-        IF.B (A1) <EQ> #0    THEN
-            IF.B (A0) <NE> #1   THEN
-                MOVE    A1,A2
-                BSR     DOUBLE_RANDOM_ADD
-            ENDI
-        ELSE
-            IF.B (A1) <EQ> #4   THEN
-                IF.B (A0) <NE> #3   THEN
-                    MOVE    A1,A2
-                    BSR     DOUBLE_RANDOM_SUB
-                ENDI
-            ELSE
-                CLR.L   D1
-                MOVE.B  (A1),D1
-                ADD     #1,D1
-                IF.B D1 <EQ> (A0)   THEN
-                    MOVE    A1,A2
-                    BSR     DOUBLE_RANDOM_SUB
-                ELSE
-                    CLR.L   D1
-                    MOVE.B  (A1),D1
-                    SUB     #1,D1
-                    IF.B D1 <EQ> (A0)   THEN
-                        MOVE    A1,A2
-                        BSR     DOUBLE_RANDOM_ADD
-                    ELSE
-                        MOVE    A1,A2
-                        BSR     TRIPLE_RANDOM
-                    ENDI
-                ENDI
-            ENDI
-        ENDI
-        RTS
-
 ; these all use the note path index in A2
 TRIPLE_RANDOM
         MOVE.W  #3,D3
@@ -1197,6 +1095,7 @@ TRIPLE_RANDOM
         SUB.B   #1,(A2)
         RTS
 
+
 DOUBLE_RANDOM_ADD
         BSR     RANDOM_2
         IF  <NE>    THEN
@@ -1204,12 +1103,12 @@ DOUBLE_RANDOM_ADD
         ENDI
         RTS
 
+
 DOUBLE_RANDOM_SUB
         BSR     RANDOM_2
         IF  <NE>    THEN
             SUB.B   #1,(A2)
         ENDI
-        RTS
         RTS
 
 
@@ -1252,6 +1151,17 @@ SPAWN_NEW_NOTE
                     CLR.W   (A2)
                 ENDI
                 MOVE.B  #0,6(A2)
+                
+                IF.W (A2) <NE> #0   THEN
+                    ; new path index
+                    MOVE.W  #8,D0
+                    TRAP    #15
+                    SUB.L   last_treble_path_change_time,D1
+                    IF.L #200 <LE> D1    THEN
+                        MOVE.L  D1,last_treble_path_change_time
+                        BSR     CHANGE_TREBLE_PATH_INDEX
+                    ENDI
+                ENDI
             ELSE
                 ADD.L   #2,treble_song_file_index
             ENDI
@@ -1276,6 +1186,17 @@ SPAWN_NEW_NOTE
                     CLR.W   (A2)
                 ENDI
                 MOVE.B  two_player,6(A2)
+
+                IF.B two_player <EQ> #1 AND.W (A2) <NE> #0  THEN
+                    ; new path index
+                    MOVE.W  #8,D0
+                    TRAP    #15
+                    SUB.L   last_bass_path_change_time,D1
+                    IF.L #200 <LE> D1    THEN
+                        MOVE.L  D1,last_bass_path_change_time
+                        BSR     CHANGE_BASS_PATH_INDEX
+                    ENDI
+                ENDI
             ELSE
                 ADD.L   #2,bass_song_file_index
             ENDI
@@ -1413,6 +1334,74 @@ PICK_RANDOM_PATH_INDEX
                 ENDI
             ENDI
         ENDF
+        RTS
+
+
+CHANGE_TREBLE_PATH_INDEX
+        LEA     treble_note_path_index,A2
+        IF.B two_player <EQ> #0 THEN
+            IF.B (A2) <EQ> #0   THEN
+                BSR     DOUBLE_RANDOM_ADD
+            ELSE
+                IF.B (A2) <EQ> #4   THEN
+                    BSR     DOUBLE_RANDOM_SUB
+                ELSE
+                    BSR     TRIPLE_RANDOM
+                ENDI
+            ENDI
+        ELSE
+            IF.B (A2) <EQ> #0   THEN
+                IF.B bass_note_path_index <NE> #1   THEN
+                    BSR     DOUBLE_RANDOM_ADD
+                ENDI
+            ELSE
+                IF.B (A2) <EQ> #4   THEN
+                    IF.B bass_note_path_index <NE> #3   THEN
+                        BSR     DOUBLE_RANDOM_SUB
+                    ENDI
+                ELSE
+                    MOVE.B  (A2),D0
+                    SUB.B   bass_note_path_index,D0
+                    IF.B D0 <EQ> #1 THEN
+                        BSR     DOUBLE_RANDOM_ADD
+                    ELSE
+                        IF.B D0 <EQ> #$FF THEN
+                            BSR     DOUBLE_RANDOM_SUB
+                        ELSE
+                            BSR     TRIPLE_RANDOM
+                        ENDI
+                    ENDI
+                ENDI
+            ENDI
+        ENDI
+        RTS
+
+
+CHANGE_BASS_PATH_INDEX
+        LEA     bass_note_path_index,A2
+        IF.B (A2) <EQ> #0   THEN
+            IF.B treble_note_path_index <NE> #1 THEN
+                BSR     DOUBLE_RANDOM_ADD
+            ENDI
+        ELSE
+            IF.B (A2) <EQ> #4   THEN
+                IF.B treble_note_path_index <NE> #3 THEN
+                    BSR     DOUBLE_RANDOM_SUB
+                ENDI
+            ELSE
+                MOVE.B  (A2),D0
+                SUB.B   treble_note_path_index,D0
+                IF.B D0 <EQ> #1 THEN
+                    BSR     DOUBLE_RANDOM_ADD
+                ELSE
+                    IF.B D0 <EQ> #$FF THEN
+                        BSR     DOUBLE_RANDOM_SUB
+                    ELSE
+                        BSR     TRIPLE_RANDOM
+                    ENDI
+                ENDI
+            ENDI
+        ENDI
         RTS
 
 
@@ -1567,8 +1556,7 @@ DRAW_PLAYER
         ENDF
         RTS
 
-
-
+;POPPING PROBLEM
 DRAW_NOTES
         ; sets pen width
         MOVE.B  #93,D0
@@ -1650,46 +1638,6 @@ DRAW_NOTE
             ADDQ    #6,D2
             ADDQ    #6,D4
         ENDF
-        RTS
-
-
-; colour index needs to be in D1.W
-; returns the colour into D1.L
-GET_COLOUR_FROM_INDEX
-        IF.W D1 <EQ> #0 THEN
-            CLR.L   D1
-        ELSE
-            IF.W D1 <EQ> #1 THEN
-                IF.B D2 <EQ> #0 THEN
-                    MOVE.L  #BLUE,D1
-                ELSE
-                    MOVE.L  #AQUA,D1
-                ENDI
-            ELSE
-                IF.W D1 <EQ> #2 THEN
-                    IF.B D2 <EQ> #0 THEN
-                        MOVE.L  #RED,D1
-                    ELSE
-                        MOVE.L  #ORANGE,D1
-                    ENDI
-                ELSE
-                    IF.W D1 <EQ> #3 THEN
-                        IF.B D2 <EQ> #0 THEN
-                            MOVE.L  #YELLOW,D1
-                        ELSE
-                            MOVE.L  #LIME,D1
-                        ENDI
-                    ELSE
-                        IF.W D1 <EQ> #4 THEN
-                            MOVE.L  #PURPLE2,D1
-                        ELSE
-                            MOVE.L  #WHITE,D1
-                        ENDI
-                    ENDI
-                ENDI
-            ENDI
-        ENDI
-        
         RTS
 
 
@@ -1779,7 +1727,8 @@ random_value            DS.L    1       ; stores a random variable
 
 last_frame_time         DS.L    1       ; stores the time at last frame
 last_movement_time      DS.L    1       ; stores the time when last accepted input
-last_path_change_time   DS.L    1       ; stores the time when path index last changed
+last_treble_path_change_time   DS.L    1       ; stores the time when the treble path index last changed
+last_bass_path_change_time   DS.L    1       ; stores the time when the bass path index last changed
 last_object_time        DS.L    1       ; stores the time when the notes where moved
 last_note_spawn_time    DS.L    1       ; stores the time when note was last spawned
 player_1_last_beat_change_time  DS.L    1       ; stores the time when beat was last checked and put back into white
@@ -1920,11 +1869,6 @@ unfilled_notes_2_start_sprite   DS.L    1
 skip_next_note                  DC.B    0                   ; stores whether the next note should be drawn
 
         END    START
-
-
-
-
-
 
 
 *~Font name~Courier New~
