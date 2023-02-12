@@ -8,14 +8,15 @@
 * TODO
 * 
 * Gameplay
-* change psudo random path index to change after long not change
 * make random enemies
 * bar to show progress
+* change how path index is changing
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
 * 
 * OPTIMISE USING THE COUNTER
+* decrement notes times slow
 * 
 * Warnings
 * if in the piano sheet there is a held note with lines then it won't play the full thing
@@ -45,7 +46,6 @@ BORDER_SIZE             EQU     20
 LANE_SIZE               EQU     (SCREEN_HEIGHT-BORDER_SIZE-BORDER_SIZE)/5
 BEAT_LINE_X             EQU     200
 
-PLAYER_SIZE             EQU     20
 NOTE_SIZE               EQU     40
 
 NOTE_OBJECT_SIZE        EQU     48
@@ -136,7 +136,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SPRITES
 
         ; sets the song difficulty
-        MOVE.B  #8,song_difficulty
+        MOVE.B  #12,song_difficulty
 
         ; frame delay, so that framerate is consistent
         BSR     FRAME_DELAY
@@ -622,20 +622,26 @@ LOOP
         ENDI
 
         ; render screen
-        BSR     RENDER_SCREEN
+        ; render skip is used to keep the game running consistently and skip frames
+        ; when there are many objects on the screen
+        IF.B render_skip_amount <EQ> #0 THEN
+            MOVEQ   #8,D0
+            TRAP    #15
+            MOVE.L  D1,previous_render_time
+            BSR     RENDER_SCREEN
+            MOVEQ   #8,D0
+            TRAP    #15
+            SUB.L   previous_render_time,D1
+            LSR.B   #1,D1
+            MOVE.B  D1,render_skip_amount
+        ELSE
+            SUB.B   #1,render_skip_amount
+        ENDI
 
         JMP     LOOP
 
 
-FRAME_DELAY_UNSET
-        CLR.B   skip_next_note
-        BRA     FRAME_DELAY_SET
-
 FRAME_DELAY
-        MOVE.B  #1,skip_next_note
-        BRA     FRAME_DELAY_SET
-
-FRAME_DELAY_SET
         ; gets the time
         MOVE.W  #8,D0
         TRAP    #15
@@ -643,7 +649,7 @@ FRAME_DELAY_SET
         SUB.L   last_frame_time,D1
         ; n number of centiseconds have passed
         CMP.L   #2,D1
-        BLO     FRAME_DELAY_UNSET
+        BLO     FRAME_DELAY
         ; save time
         MOVE.W  #8,D0
         TRAP    #15
@@ -766,7 +772,7 @@ CHECK_COLLISIONS
                     
 
                     ; check collision with the beat line, ie too late
-                    IF.W (A1) <LS> #BEAT_LINE_X-NOTE_SIZE-10 THEN
+                    IF.W (A1) <LS> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
                         IF.W -(A1) <EQ> #0  THEN
                             IF.B 6(A1) <EQ> #0  THEN
@@ -1089,30 +1095,6 @@ GET_LANE_Y_POSITION
         RTS
 
 
-; these all use the note path index in A2
-TRIPLE_RANDOM
-        MOVE.W  #3,D3
-        BSR     GET_RANDOM_VALUE
-        ADD.B   D2,(A2)
-        SUB.B   #1,(A2)
-        RTS
-
-
-DOUBLE_RANDOM_ADD
-        BSR     RANDOM_2
-        IF  <NE>    THEN
-            ADD.B   #1,(A2)
-        ENDI
-        RTS
-
-
-DOUBLE_RANDOM_SUB
-        BSR     RANDOM_2
-        IF  <NE>    THEN
-            SUB.B   #1,(A2)
-        ENDI
-        RTS
-
 
 SPAWN_NEW_NOTE
         MOVE.L  treble_song_file_index,A0
@@ -1137,12 +1119,15 @@ SPAWN_NEW_NOTE
                 LEA     treble_song_file_index,A1
                 LEA     treble_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
-                IF.B skip_next_note <EQ> #1 THEN
-                    CLR.W   (A2)
+
+                ; check if teleporter
+                IF.W (A2) <EQ> #4   THEN
+                    BSR     PICK_RANDOM_PATH_INDEX
+                    MOVE.B  (A3),7(A2)
                 ENDI
                 MOVE.B  #0,6(A2)
                 
-                IF.W (A2) <NE> #0   THEN
+                IF.W (A2) <NE> #0 AND.W (A2) <NE> #4    THEN
                     ; new path index
                     MOVE.W  #8,D0
                     TRAP    #15
@@ -1172,19 +1157,27 @@ SPAWN_NEW_NOTE
                 LEA     bass_song_file_index,A1
                 LEA     bass_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
-                IF.B two_player <EQ> #0 OR.B skip_next_note <EQ> #1 THEN
+                IF.B two_player <EQ> #0 THEN
                     CLR.W   (A2)
+                ELSE
+                    ; check if teleporter
+                    IF.W (A2) <EQ> #4   THEN
+                        BSR     PICK_RANDOM_PATH_INDEX
+                        MOVE.B  (A3),7(A2)
+                    ENDI
                 ENDI
                 MOVE.B  two_player,6(A2)
 
-                IF.B two_player <EQ> #1 AND.W (A2) <NE> #0  THEN
-                    ; new path index
-                    MOVE.W  #8,D0
-                    TRAP    #15
-                    SUB.L   last_bass_path_change_time,D1
-                    IF.L #200 <LE> D1    THEN
-                        MOVE.L  D1,last_bass_path_change_time
-                        BSR     CHANGE_BASS_PATH_INDEX
+                IF.B two_player <EQ> #1 THEN
+                    IF.W (A2) <NE> #0 AND.W (A2) <NE> #4    THEN
+                        ; new path index
+                        MOVE.W  #8,D0
+                        TRAP    #15
+                        SUB.L   last_bass_path_change_time,D1
+                        IF.L #200 <LE> D1    THEN
+                            MOVE.L  D1,last_bass_path_change_time
+                            BSR     CHANGE_BASS_PATH_INDEX
+                        ENDI
                     ENDI
                 ENDI
             ELSE
@@ -1192,7 +1185,6 @@ SPAWN_NEW_NOTE
             ENDI
             ADD.B   #1,(A4)
         ENDI
-
         RTS
 
 
@@ -1260,11 +1252,6 @@ LOAD_NOTE_DATA
         SUB.W   #4,A2
         BSR     ENQUEUE_OBJECT_TO_LANE
         
-        ; check if teleporter
-        IF.W (A2) <EQ> #4   THEN
-            BSR     PICK_RANDOM_PATH_INDEX
-            MOVE.B  (A3),7(A2)
-        ENDI
         RTS
 
 
@@ -1394,6 +1381,31 @@ CHANGE_BASS_PATH_INDEX
         ENDI
         RTS
 
+;sort these out
+; these all use the note path index in A2
+TRIPLE_RANDOM
+        MOVE.W  #3,D3
+        BSR     GET_RANDOM_VALUE
+        ADD.B   D2,(A2)
+        SUB.B   #1,(A2)
+        RTS
+
+
+DOUBLE_RANDOM_ADD
+        BSR     RANDOM_2
+        IF  <NE>    THEN
+            ADD.B   #1,(A2)
+        ENDI
+        RTS
+
+
+DOUBLE_RANDOM_SUB
+        BSR     RANDOM_2
+        IF  <NE>    THEN
+            SUB.B   #1,(A2)
+        ENDI
+        RTS
+
 
 ; loops over music time array
 ; decrements times for each note
@@ -1420,9 +1432,9 @@ RENDER_SCREEN
         * MOVE.W  #$FF00,D1
         * TRAP    #15
 
-        BSR     DRAW_BACKGROUND
         BSR     DRAW_PLAYERS
         BSR     DRAW_NOTES
+        BSR     DRAW_BACKGROUND
 
         ; repaints screen
         MOVE.B  #94,D0
@@ -1526,9 +1538,9 @@ DRAW_PLAYER
         MOVE.W  2(A1),D2
         MOVE.L  D2,D4
         ; 16x16
-        FOR.L D5 = #0 TO #$F   DO
+        FOR D5 = #0 TO #$F  DO
             MOVE.W  (A1),D3
-            FOR.L D6 = #0 TO #$F   DO
+            FOR D6 = #0 TO #$F  DO
                 ; set pen colour
                 MOVEQ   #80,D0
                 MOVE.L  (A0)+,D1
@@ -1546,7 +1558,7 @@ DRAW_PLAYER
         ENDF
         RTS
 
-;POPPING PROBLEM
+
 DRAW_NOTES
         ; sets pen width
         MOVE.B  #93,D0
@@ -1555,11 +1567,11 @@ DRAW_NOTES
 
         LEA     lane_0_object_addresses,A3
         ; loops through the five lanes
-        FOR D7 = #0 TO #4   DO
+        FOR A4 = #0 TO #4   DO
             MOVE.L  A3,A2
             ; loops until encounters an empty position
             IF.W (A2) <NE> #$FFFF   THEN
-                DBLOOP D6 = #LANE_ADDRESSES_SIZE-1
+                DBLOOP D7 = #LANE_ADDRESSES_SIZE-1
                     MOVE.W  (A2)+,A1
                     IF.W (A1) <NE> #0   THEN
                         CLR.L   D0
@@ -1610,9 +1622,9 @@ DRAW_NOTE
         MOVE.W  2(A1),D2
         MOVE.L  D2,D4
         ; 12x12
-        FOR.L D5 = #0 TO #$B   DO
+        FOR D5 = #0 TO #$B  DO
             MOVE.W  (A1),D3
-            FOR.L D6 = #0 TO #$B   DO
+            FOR D6 = #0 TO #$B  DO
                 ; set pen colour
                 MOVEQ   #80,D0
                 MOVE.L  (A0)+,D1
@@ -1717,8 +1729,8 @@ random_value            DS.L    1       ; stores a random variable
 
 last_frame_time         DS.L    1       ; stores the time at last frame
 last_movement_time      DS.L    1       ; stores the time when last accepted input
-last_treble_path_change_time   DS.L    1       ; stores the time when the treble path index last changed
-last_bass_path_change_time   DS.L    1       ; stores the time when the bass path index last changed
+last_treble_path_change_time    DS.L    1       ; stores the time when the treble path index last changed
+last_bass_path_change_time      DS.L    1       ; stores the time when the bass path index last changed
 last_object_time        DS.L    1       ; stores the time when the notes where moved
 last_note_spawn_time    DS.L    1       ; stores the time when note was last spawned
 player_1_last_beat_change_time  DS.L    1       ; stores the time when beat was last checked and put back into white
@@ -1769,7 +1781,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -1792,8 +1804,16 @@ NOTES_NAMES_6           DC.B    '6an6bn6cn6dn6en6fn6gn6as6bs6cs6ds6es6fs6gs'
 NOTES_NAMES_7           DC.B    '7an7bn7cn7dn7en7fn7gn7as7bs7cs7ds7es7fs7gs'
 NOTES_NAMES_8           DC.B    '8cn'
 
-
-song_difficulty             DC.B    16      ; stores the difficulty of the song playing, 16 - easy, 8 - medium, 4 - hard, 2 - expert, 1 - all the notes
+; stores the difficulty of the song playing
+; one player
+; 20 - easy,
+; 12 - medium,
+; 6 - hard
+; two player
+; 20 - easy,
+; 16 - medium,
+; 12 - hard
+song_difficulty             DC.B    16
 treble_quater_beat_count    DC.B    128     ; stores the count of quarter beats played
 bass_quater_beat_count      DC.B    128     ; stores the count of quarter beats played
 treble_last_note_success    DC.B    0       ; stores whether the last hit note was correct
@@ -1856,10 +1876,10 @@ filled_notes_2_start_sprite     DS.L    1
 unfilled_notes_1_start_sprite   DS.L    1
 unfilled_notes_2_start_sprite   DS.L    1
 
-skip_next_note                  DC.B    0                   ; stores whether the next note should be drawn
+previous_render_time            DS.L    1
+render_skip_amount              DC.B    0
 
         END    START
-
 
 *~Font name~Courier New~
 *~Font size~10~
