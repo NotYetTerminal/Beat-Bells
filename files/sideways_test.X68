@@ -137,7 +137,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SPRITES
 
         ; sets the song difficulty
-        MOVE.B  #1,song_difficulty
+        MOVE.B  #8,song_difficulty
 
         ; frame delay, so that framerate is consistent
         BSR     FRAME_DELAY
