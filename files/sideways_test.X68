@@ -308,52 +308,52 @@ LOAD_IN_FILLED_NOTES_SPRITES
 ; check if this would be better without as many moves
 LOAD_IN_UNFILLED_NOTES_SPRITES
         MOVE.L  next_free_slot_address,unfilled_notes_1_start_sprite
-        ;ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
-        * FOR D5 = #8 TO #39   DO
-        *     ; load notes 1
-        *     LEA     UNFILLED_NOTES_BASIC_PATH,A1
-        *     ; put in a
-        *     MOVE.B  #97,23(A1)
+        ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+        FOR D5 = #8 TO #39   DO
+            ; load notes 1
+            LEA     UNFILLED_NOTES_BASIC_PATH,A1
+            ; put in a
+            MOVE.B  #97,23(A1)
 
-        *     MOVE.L  D5,D6
-        *     ; divide by 8
-        *     LSR.B   #3,D6
-        *     ADD.B   #48,D6
-        *     MOVE.B  D6,24(A1)
+            MOVE.L  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,24(A1)
 
-        *     MOVE.L  D5,D6
-        *     ; modulus 8
-        *     AND.B   #7,D6
-        *     ADD.B   #48,D6
-        *     MOVE.B  D6,25(A1)
+            MOVE.L  D5,D6
+            ; modulus 8
+            AND.B   #7,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,25(A1)
 
-        *     BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-        *     BSR     QOI_DECODE
-        * ENDF
+            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            BSR     QOI_DECODE
+        ENDF
         IF.B two_player <EQ> #1 THEN
             MOVE.L  next_free_slot_address,unfilled_notes_2_start_sprite
-            ;ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
-            * FOR D5 = #8 TO #39   DO
-            *     ; load notes 2
-            *     LEA     UNFILLED_NOTES_BASIC_PATH,A1
-            *     ; put in b
-            *     MOVE.B  #98,23(A1)
+            ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+            FOR D5 = #8 TO #39   DO
+                ; load notes 2
+                LEA     UNFILLED_NOTES_BASIC_PATH,A1
+                ; put in b
+                MOVE.B  #98,23(A1)
 
-            *     MOVE.B  D5,D6
-            *     ; divide by 8
-            *     LSR.B   #3,D6
-            *     ADD.B   #48,D6
-            *     MOVE.B  D6,24(A1)
+                MOVE.B  D5,D6
+                ; divide by 8
+                LSR.B   #3,D6
+                ADD.B   #48,D6
+                MOVE.B  D6,24(A1)
 
-            *     MOVE.B  D5,D6
-            *     ; modulus 8
-            *     AND.B   #7,D6
-            *     ADD.B   #48,D6
-            *     MOVE.B  D6,25(A1)
+                MOVE.B  D5,D6
+                ; modulus 8
+                AND.B   #7,D6
+                ADD.B   #48,D6
+                MOVE.B  D6,25(A1)
 
-            *     BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            *     BSR     QOI_DECODE
-            * ENDF
+                BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+                BSR     QOI_DECODE
+            ENDF
         ENDI
         RTS
 
@@ -631,19 +631,7 @@ LOOP
         ENDI
 
         ; render screen
-        ;IF.B skip_next_frame <EQ> #0    THEN
         BSR     RENDER_SCREEN
-        ;ENDI
-
-        ; gets the time
-        * MOVE.W  #8,D0
-        * TRAP    #15
-        * SUB.L   #10,D1
-        * IF.L last_frame_time <LO> D1    THEN
-        *     ADDQ.B  #1,skip_next_frame
-        * ELSE
-        *     CLR.B   skip_next_frame
-        * ENDI
 
         JMP     LOOP
 
@@ -672,8 +660,7 @@ MOVE_OBJECTS
             MOVE.L  A0,A1
             ; loops until encounters an empty position
             IF.W (A1) <NE> #$FFFF   THEN
-                ; LANE_ADDRESSES_SIZE
-                DBLOOP D6 = #38
+                DBLOOP D6 = #LANE_ADDRESSES_SIZE-1
                     MOVE.W  (A1),A2
                     ADD.W   #2,A2
                     ; moves the notes by 8
@@ -1253,12 +1240,6 @@ SPAWN_NEW_NOTE
                 LEA     treble_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
                 MOVE.B  #0,6(A2)
-
-                CLR.L   D0
-                MOVE.B  song_difficulty,D0
-                IF.B (A4) <HS> D0 THEN
-                    MOVE.B   #1,(A4)
-                ENDI
             ELSE
                 ADD.L   #2,treble_song_file_index
             ENDI
@@ -1283,12 +1264,6 @@ SPAWN_NEW_NOTE
                     CLR.W   (A2)
                 ENDI
                 MOVE.B  two_player,6(A2)
-
-                CLR.L   D0
-                MOVE.B  song_difficulty,D0
-                IF.B (A4) <HS> D0 THEN
-                    MOVE.B   #1,(A4)
-                ENDI
             ELSE
                 ADD.L   #2,bass_song_file_index
             ENDI
@@ -1302,11 +1277,11 @@ SPAWN_NEW_NOTE
 ; 0 in A2 means that the array is full
 CREATE_NOTE_OBJECT
         LEA     note_objects,A2
-        FOR D5 = #0 TO #LANE_ADDRESSES_SIZE-1  DO
-            IF.W (A2) <EQ> #$FFFF   THEN
+        FOR D5 = #0 TO #(NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2)-1 BY #NOTE_OBJECT_SIZE  DO
+            IF.W (A2,D5) <EQ> #$FFFF   THEN
+                ADD.L   D5,A2
                 RTS
             ENDI
-            ADD.W   #NOTE_OBJECT_SIZE,A2
         ENDF
         ILLEGAL
         RTS
@@ -1331,17 +1306,27 @@ LOAD_NOTE_DATA
         SUBQ.B  #1,D3
 
         ; gets the number of notes playing on the same beat
-        ;DIVU    #4,D3
         LSR.B   #2,D3
+
+
+        ; gets the time
+        MOVE.W  #8,D0
+        TRAP    #15
+        SUB.L   #10,D1
+        ; checks if the framerate dropped
+        * IF.L last_frame_time <LO> D1    THEN
+        * ELSE
+        *     CLR.B   skip_next_frame
+        * ENDI
 
         ; assign a colour based on the playing notes
         ; and the difficulty
-        CLR.L   D0
         MOVE.B  song_difficulty,D0
         IF.B (A4) <LO> D0 THEN
             CLR.W   (A2)
         ELSE
             BSR     PICK_NOTE_COLOUR
+            MOVE.B   #1,(A4)
         ENDI
 
         ; assign x and y position based on the path index
@@ -1451,6 +1436,10 @@ DECREMENT_NOTES_TIMES
 
 
 RENDER_SCREEN
+        * MOVE.B  #11,D0
+        * MOVE.W  #$FF00,D1
+        * TRAP    #15
+
         BSR     DRAW_BACKGROUND
         BSR     DRAW_PLAYERS
         BSR     DRAW_NOTES
@@ -1591,8 +1580,7 @@ DRAW_NOTES
             MOVE.L  A3,A2
             ; loops until encounters an empty position
             IF.W (A2) <NE> #$FFFF   THEN
-                ; LANE_ADDRESSES_SIZE
-                DBLOOP D6 = #38
+                DBLOOP D6 = #LANE_ADDRESSES_SIZE-1
                     MOVE.W  (A2)+,A1
                     IF.W (A1) <NE> #0   THEN
                         CLR.L   D0
