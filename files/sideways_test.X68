@@ -9,7 +9,6 @@
 * 
 * Gameplay
 * bar to show progress
-* change how path index is changing
 * charge for unfilled notes
 * 
 * Graphics
@@ -1134,9 +1133,16 @@ SPAWN_NEW_NOTE
                     ; new path index
                     MOVE.W  #8,D0
                     TRAP    #15
+                    MOVE.L  D1,D0
                     SUB.L   last_treble_path_change_time,D1
-                    IF.L #200 <LE> D1    THEN
-                        MOVE.L  D1,last_treble_path_change_time
+                    IF.L #0 <LE> D1 THEN
+                        MOVE.L  D0,last_treble_path_change_time
+                        MOVE.W  #100,D3
+                        BSR     GET_RANDOM_VALUE
+                        ADD.B   #100,D2
+                        CLR.L   D3
+                        MOVE.B  D2,D3
+                        ADD.L   D3,last_treble_path_change_time
                         BSR     CHANGE_TREBLE_PATH_INDEX
                     ENDI
                 ENDI
@@ -1176,9 +1182,16 @@ SPAWN_NEW_NOTE
                         ; new path index
                         MOVE.W  #8,D0
                         TRAP    #15
+                        MOVE.L  D1,D0
                         SUB.L   last_bass_path_change_time,D1
-                        IF.L #200 <LE> D1    THEN
-                            MOVE.L  D1,last_bass_path_change_time
+                        IF.L #0 <LE> D1 THEN
+                            MOVE.L  D0,last_bass_path_change_time
+                            MOVE.W  #100,D3
+                            BSR     GET_RANDOM_VALUE
+                            ADD.B   #100,D2
+                            CLR.L   D3
+                            MOVE.B  D2,D3
+                            ADD.L   D3,last_bass_path_change_time
                             BSR     CHANGE_BASS_PATH_INDEX
                         ENDI
                     ENDI
@@ -1321,34 +1334,34 @@ CHANGE_TREBLE_PATH_INDEX
         LEA     treble_note_path_index,A2
         IF.B two_player <EQ> #0 THEN
             IF.B (A2) <EQ> #0   THEN
-                BSR     DOUBLE_RANDOM_ADD
+                ADD.B   #1,(A2)
             ELSE
                 IF.B (A2) <EQ> #4   THEN
-                    BSR     DOUBLE_RANDOM_SUB
+                    SUB.B   #1,(A2)
                 ELSE
-                    BSR     TRIPLE_RANDOM
+                    BSR     UP_DOWN_RANDOM
                 ENDI
             ENDI
         ELSE
             IF.B (A2) <EQ> #0   THEN
                 IF.B bass_note_path_index <NE> #1   THEN
-                    BSR     DOUBLE_RANDOM_ADD
+                    ADD.B   #1,(A2)
                 ENDI
             ELSE
                 IF.B (A2) <EQ> #4   THEN
                     IF.B bass_note_path_index <NE> #3   THEN
-                        BSR     DOUBLE_RANDOM_SUB
+                        SUB.B   #1,(A2)
                     ENDI
                 ELSE
                     MOVE.B  (A2),D0
                     SUB.B   bass_note_path_index,D0
                     IF.B D0 <EQ> #1 THEN
-                        BSR     DOUBLE_RANDOM_ADD
+                        ADD.B   #1,(A2)
                     ELSE
                         IF.B D0 <EQ> #$FF THEN
-                            BSR     DOUBLE_RANDOM_SUB
+                            SUB.B   #1,(A2)
                         ELSE
-                            BSR     TRIPLE_RANDOM
+                            BSR     UP_DOWN_RANDOM
                         ENDI
                     ENDI
                 ENDI
@@ -1361,50 +1374,36 @@ CHANGE_BASS_PATH_INDEX
         LEA     bass_note_path_index,A2
         IF.B (A2) <EQ> #0   THEN
             IF.B treble_note_path_index <NE> #1 THEN
-                BSR     DOUBLE_RANDOM_ADD
+                ADD.B   #1,(A2)
             ENDI
         ELSE
             IF.B (A2) <EQ> #4   THEN
                 IF.B treble_note_path_index <NE> #3 THEN
-                    BSR     DOUBLE_RANDOM_SUB
+                    SUB.B   #1,(A2)
                 ENDI
             ELSE
                 MOVE.B  (A2),D0
                 SUB.B   treble_note_path_index,D0
                 IF.B D0 <EQ> #1 THEN
-                    BSR     DOUBLE_RANDOM_ADD
+                    ADD.B   #1,(A2)
                 ELSE
                     IF.B D0 <EQ> #$FF THEN
-                        BSR     DOUBLE_RANDOM_SUB
+                        SUB.B   #1,(A2)
                     ELSE
-                        BSR     TRIPLE_RANDOM
+                        BSR     UP_DOWN_RANDOM
                     ENDI
                 ENDI
             ENDI
         ENDI
         RTS
 
-;sort these out
-; these all use the note path index in A2
-TRIPLE_RANDOM
-        MOVE.W  #3,D3
-        BSR     GET_RANDOM_VALUE
-        ADD.B   D2,(A2)
-        SUB.B   #1,(A2)
-        RTS
 
-
-DOUBLE_RANDOM_ADD
+; this uses the note path index in A2
+UP_DOWN_RANDOM
         BSR     RANDOM_2
         IF  <NE>    THEN
             ADD.B   #1,(A2)
-        ENDI
-        RTS
-
-
-DOUBLE_RANDOM_SUB
-        BSR     RANDOM_2
-        IF  <NE>    THEN
+        ELSE
             SUB.B   #1,(A2)
         ENDI
         RTS
@@ -1885,6 +1884,7 @@ notes_speed                     DC.W    12
 
 
         END    START
+
 
 *~Font name~Courier New~
 *~Font size~10~
