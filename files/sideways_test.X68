@@ -60,7 +60,7 @@ START   ORG    $1000
 
         ; turn off input echo
         MOVE.L  #12,D0
-        ; 0 in D1
+        CLR.B   D1
         TRAP    #15
         
         ; turn on double buffering
