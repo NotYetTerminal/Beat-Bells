@@ -1432,13 +1432,10 @@ DECREMENT_NOTES_TIMES
 
 
 RENDER_SCREEN
-        * MOVE.B  #11,D0
-        * MOVE.W  #$FF00,D1
-        * TRAP    #15
-
         BSR     DRAW_PLAYERS
         BSR     DRAW_NOTES
-        BSR     DRAW_BACKGROUND
+        BSR     DRAW_FOREGROUND
+        BSR     DRAW_CHARGE_METERS
 
         ; repaints screen
         MOVE.B  #94,D0
@@ -1447,58 +1444,6 @@ RENDER_SCREEN
 		MOVE.B  #11,D0
 		MOVE.W  #$FF00,D1
 		TRAP    #15
-        RTS
-
-
-DRAW_BACKGROUND
-        ; sets pen and fill colour to white
-        MOVE.B  #80,D0
-        MOVE.L  #$00FFFFFF,D1
-        TRAP    #15
-        MOVE.W  #81,D0
-        TRAP    #15
-        
-        BSR     DRAW_LANE_LINES
-        BSR     DRAW_BEAT_LINE
-        RTS
-
-
-DRAW_LANE_LINES
-        ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #3,D1
-        TRAP    #15
-        
-        MOVE.W  #LEFT_BORDER_PADDING+1,D1
-        MOVE.W  #SCREEN_WIDTH-RIGHT_BORDER_PADDING-1,D3
-        FOR D5 = #0 TO #5   DO
-            MOVE.W  #LANE_SIZE,D2
-            MULU    D5,D2
-            ADD.W   #TOP_BORDER_PADDING,D2
-            MOVE.W  D2,D4
-            BSR     DRAW_LINE
-        ENDF
-        RTS
-
-
-DRAW_BEAT_LINE
-        ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #5,D1
-        TRAP    #15
-
-        MOVE.W  #BEAT_LINE_X,D1
-        MOVE.W  #BORDER_SIZE+1,D2
-        MOVE.W  #BEAT_LINE_X,D3
-        MOVE.W  #SCREEN_HEIGHT-BORDER_SIZE-1,D4
-        BSR     DRAW_LINE
-        RTS
-
-
-; line from D1.W,D2.W TO D3.W,D4.W
-DRAW_LINE
-        MOVE.B  #84,D0
-        TRAP    #15
         RTS
 
 
@@ -1646,6 +1591,75 @@ DRAW_NOTE
         ENDF
         RTS
 
+
+DRAW_FOREGROUND
+        ; sets pen and fill colour to white
+        MOVE.B  #80,D0
+        MOVE.L  #$00FFFFFF,D1
+        TRAP    #15
+        MOVE.W  #81,D0
+        TRAP    #15
+        
+        BSR     DRAW_LANE_LINES
+        BSR     DRAW_BEAT_LINE
+        RTS
+
+
+DRAW_LANE_LINES
+        ; sets pen width
+        MOVE.B  #93,D0
+        MOVE.B  #3,D1
+        TRAP    #15
+        
+        MOVE.W  #LEFT_BORDER_PADDING+1,D1
+        MOVE.W  #SCREEN_WIDTH-RIGHT_BORDER_PADDING-1,D3
+        FOR D5 = #0 TO #5   DO
+            MOVE.W  #LANE_SIZE,D2
+            MULU    D5,D2
+            ADD.W   #TOP_BORDER_PADDING,D2
+            MOVE.W  D2,D4
+            BSR     DRAW_LINE
+        ENDF
+        RTS
+
+
+DRAW_BEAT_LINE
+        ; sets pen width
+        MOVE.B  #93,D0
+        MOVE.B  #5,D1
+        TRAP    #15
+
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  #BORDER_SIZE+1,D2
+        MOVE.W  #BEAT_LINE_X,D3
+        MOVE.W  #SCREEN_HEIGHT-BORDER_SIZE-1,D4
+        BSR     DRAW_LINE
+        RTS
+
+
+; line from D1.W,D2.W TO D3.W,D4.W
+DRAW_LINE
+        MOVE.B  #84,D0
+        TRAP    #15
+        RTS
+
+
+DRAW_CHARGE_METERS
+        LEA     player_1_position,A0
+        MOVE.W  #20,D1
+        MOVE.W  2(A0),D2
+        MOVE.W  D1,D3
+        ADD.W   #10,D3
+        MOVE.W  D2,D4
+        ADD.W   #40,D4
+
+        MOVE.W  #90,D0
+        TRAP    #15
+
+        IF.B two_player <EQ> #1 THEN
+
+        ENDI
+        RTS
 
 ; draws a square at A0 plus size in D3,D4
 DRAW_SQUARE
