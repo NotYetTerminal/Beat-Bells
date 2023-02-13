@@ -670,8 +670,9 @@ MOVE_OBJECTS
                 DBLOOP D6 = #LANE_ADDRESSES_SIZE-1
                     MOVE.W  (A1),A2
                     ADD.W   #2,A2
-                    ; moves the notes by 8
-                    SUB.W   notes_speed,(A2)
+                    ; moves the notes
+                    MOVE.W  notes_speed,D1
+                    SUB.W   D1,(A2)
                     ADD.W   #2,A1
                 UNLESS.W (A1) <NE> #$FFFF
             ENDI
