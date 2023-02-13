@@ -8,9 +8,9 @@
 * TODO
 * 
 * Gameplay
-* make random enemies
 * bar to show progress
 * change how path index is changing
+* charge for unfilled notes
 * 
 * Graphics
 * check if the centre of lanes is calculated correctly
@@ -37,10 +37,12 @@
 * song difficulty
 * song file name
 * one or two player
+* notes moving speed
 
 ; set constants
-SCREEN_WIDTH            EQU     1280
-SCREEN_HEIGHT           EQU     720
+; 1280x720
+SCREEN_WIDTH            EQU     1920
+SCREEN_HEIGHT           EQU     1080
 
 BORDER_SIZE             EQU     20
 LANE_SIZE               EQU     (SCREEN_HEIGHT-BORDER_SIZE-BORDER_SIZE)/5
@@ -85,8 +87,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        * MOVE.L  #2,D1
-        * TRAP    #15
+        MOVE.L  #2,D1
+        TRAP    #15
 
         ; sets lane for the note paths
         MOVE.B  two_player,D1
@@ -669,7 +671,7 @@ MOVE_OBJECTS
                     MOVE.W  (A1),A2
                     ADD.W   #2,A2
                     ; moves the notes by 8
-                    SUB.W   #8,(A2)
+                    SUB.W   notes_speed,(A2)
                     ADD.W   #2,A1
                 UNLESS.W (A1) <NE> #$FFFF
             ENDI
@@ -1878,6 +1880,8 @@ unfilled_notes_2_start_sprite   DS.L    1
 
 previous_render_time            DS.L    1
 render_skip_amount              DC.B    0
+notes_speed                     DC.W    12
+
 
         END    START
 
