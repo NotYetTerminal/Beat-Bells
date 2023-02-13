@@ -11,9 +11,6 @@
 * bar to show progress
 * charge for unfilled notes
 * 
-* Graphics
-* check if the centre of lanes is calculated correctly
-* 
 * OPTIMISE USING THE COUNTER
 * decrement notes times slow
 * 
@@ -1096,8 +1093,8 @@ GET_LANE_Y_POSITION
         MOVE.L  #LANE_SIZE,D3
         MULU    D2,D3
         MOVE.L  #LANE_SIZE,D2
-        ADD.W   #TOP_BORDER_PADDING,D2
         LSR.W   #1,D2
+        ADD.W   #TOP_BORDER_PADDING,D2
         ADD.W   D2,D3
         RTS
 
@@ -1262,7 +1259,7 @@ LOAD_NOTE_DATA
         MOVE.B  (A3),D2
         BSR     GET_LANE_Y_POSITION
         MOVE.W  D3,(A2)
-        SUB.W   #NOTE_SIZE/2,(A2)
+        SUB.W   #30,(A2)
 
         ; adds note object to the end of the lane queue
         CLR.L   D1
