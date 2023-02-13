@@ -44,7 +44,12 @@ SCREEN_WIDTH            EQU     1920
 SCREEN_HEIGHT           EQU     1080
 
 BORDER_SIZE             EQU     20
-LANE_SIZE               EQU     (SCREEN_HEIGHT-BORDER_SIZE-BORDER_SIZE)/5
+TOP_BORDER_PADDING      EQU     100
+RIGHT_BORDER_PADDING    EQU     20
+BOTTOM_BORDER_PADDING   EQU     50
+LEFT_BORDER_PADDING     EQU     20
+
+LANE_SIZE               EQU     (SCREEN_HEIGHT-TOP_BORDER_PADDING-BOTTOM_BORDER_PADDING)/5
 BEAT_LINE_X             EQU     200
 
 NOTE_SIZE               EQU     40
@@ -1091,7 +1096,7 @@ GET_LANE_Y_POSITION
         MOVE.L  #LANE_SIZE,D3
         MULU    D2,D3
         MOVE.L  #LANE_SIZE,D2
-        ADD.W   #BORDER_SIZE,D2
+        ADD.W   #TOP_BORDER_PADDING,D2
         LSR.W   #1,D2
         ADD.W   D2,D3
         RTS
@@ -1467,12 +1472,12 @@ DRAW_LANE_LINES
         MOVE.B  #3,D1
         TRAP    #15
         
-        MOVE.W  #BORDER_SIZE+1,D1
-        MOVE.W  #SCREEN_WIDTH-BORDER_SIZE-1,D3
+        MOVE.W  #LEFT_BORDER_PADDING+1,D1
+        MOVE.W  #SCREEN_WIDTH-RIGHT_BORDER_PADDING-1,D3
         FOR D5 = #0 TO #5   DO
             MOVE.W  #LANE_SIZE,D2
             MULU    D5,D2
-            ADD.W   #BORDER_SIZE,D2
+            ADD.W   #TOP_BORDER_PADDING,D2
             MOVE.W  D2,D4
             BSR     DRAW_LINE
         ENDF
@@ -1884,6 +1889,7 @@ notes_speed                     DC.W    12
 
 
         END    START
+
 
 
 *~Font name~Courier New~
