@@ -7,6 +7,10 @@
 
 * TODO
 * 
+* GAMEPLAY
+* Score counter
+* Life bar
+* 
 * OPTIMISE USING THE COUNTER
 * decrement notes times slow
 * 
@@ -759,11 +763,15 @@ CHECK_COLLISIONS
                                 CLR.B   treble_last_note_success
                                 CLR.B   player_1_charge_amount
                             ELSE
-                                IF.B 6(A1) <EQ> #1  THEN
-                                    CLR.B   bass_last_note_success
-                                    CLR.B   player_2_charge_amount
-                                ENDI
+                                CLR.B   bass_last_note_success
+                                CLR.B   player_2_charge_amount
                             ENDI
+                            LEA     lanes_colours,A3
+                            MOVE.L  D5,D7
+                            LSL.L   #2,D7
+                            ADD.L   D7,A3
+                            MOVE.L  #WHITE,(A3)+
+                            MOVE.L  #WHITE,(A3)
                         ENDI
                         MOVE.W  #$FFFF,(A1)
                         BSR     LANE_LEFT_SHIFT
@@ -1724,11 +1732,7 @@ DRAW_LANE_LINES
             BSR     DRAW_LINE
         ENDF
 
-        ; sets pen colour to white
-        MOVE.B  #80,D0
-        MOVE.L  #WHITE,D1
-        TRAP    #15
-
+        ; draw the filled in area
         MOVE.W  #LEFT_BORDER_PADDING+1,D1
         SUB.W   D1,D3
 
@@ -1740,12 +1744,20 @@ DRAW_LANE_LINES
         DIVU    D5,D3
 
         ADD.W   D1,D3
+        MOVE.W  D1,D7
 
+        LEA     lanes_colours,A0
         FOR D5 = #0 TO #5   DO
+            ; sets pen colour
+            MOVE.B  #80,D0
+            MOVE.L  (A0)+,D1
+            TRAP    #15
+
             MOVE.W  #LANE_SIZE,D2
             MULU    D5,D2
             ADD.W   #TOP_BORDER_PADDING,D2
             MOVE.W  D2,D4
+            MOVE.W  D7,D1
             BSR     DRAW_LINE
         ENDF
 
