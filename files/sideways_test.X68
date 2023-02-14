@@ -7,9 +7,6 @@
 
 * TODO
 * 
-* Gameplay
-* bar to show progress
-* 
 * OPTIMISE USING THE COUNTER
 * decrement notes times slow
 * 
@@ -35,7 +32,6 @@
 * notes moving speed
 
 ; set constants
-; 1280x720
 SCREEN_WIDTH            EQU     1920
 SCREEN_HEIGHT           EQU     1080
 
@@ -183,6 +179,7 @@ LOAD_IN_SONG
         LEA     TREBLE_FILE_CONTENTS,A1
         MOVE.L  #$FFFFF,D2
         TRAP    #15
+        MOVE.W  D2,treble_song_file_size
         ; tells the program that this is the last byte
         ADD.L   #1,D2
         MOVE.B  #$FF,D2
@@ -789,18 +786,28 @@ NOTE_HIT_DETECTION
                     MOVE.B  #1,treble_last_note_success
                     ; puts in the notes hits animation state
                     LEA     lanes_notes_hit_animations,A2
+                    LEA     lanes_colours,A3
                     LSL.L   #2,D7
                     ADD.L   D7,A2
+                    ADD.L   D7,A3
                     IF.W D1 <EQ> #1 THEN
                         MOVE.L  #BLUE,(A2)
+                        MOVE.L  #BLUE,(A3)+
+                        MOVE.L  #BLUE,(A3)
                     ELSE
                         IF.W D1 <EQ> #2 THEN
                             MOVE.L  #RED,(A2)
+                            MOVE.L  #RED,(A3)+
+                            MOVE.L  #RED,(A3)
                         ELSE
                             IF.W D1 <EQ> #3 THEN
                                 MOVE.L  #YELLOW,(A2)
+                                MOVE.L  #YELLOW,(A3)+
+                                MOVE.L  #YELLOW,(A3)
                             ELSE
                                 MOVE.L  #PURPLE2,(A2)
+                                MOVE.L  #PURPLE2,(A3)+
+                                MOVE.L  #PURPLE2,(A3)
                                 MOVE.B  7(A1),player_1_lane_number
                             ENDI
                         ENDI
@@ -819,18 +826,28 @@ NOTE_HIT_DETECTION
                         MOVE.B  #1,bass_last_note_success
                         ; puts in the notes hits animation state
                         LEA     lanes_notes_hit_animations,A2
+                        LEA     lanes_colours,A3
                         LSL.L   #2,D7
                         ADD.L   D7,A2
+                        ADD.L   D7,A3
                         IF.W D1 <EQ> #1 THEN
                             MOVE.L  #AQUA,(A2)
+                            MOVE.L  #AQUA,(A3)+
+                            MOVE.L  #AQUA,(A3)
                         ELSE
                             IF.W D1 <EQ> #2 THEN
                                 MOVE.L  #ORANGE,(A2)
+                                MOVE.L  #ORANGE,(A3)+
+                                MOVE.L  #ORANGE,(A3)
                             ELSE
                                 IF.W D1 <EQ> #3 THEN
                                     MOVE.L  #LIME,(A2)
+                                    MOVE.L  #LIME,(A3)+
+                                    MOVE.L  #LIME,(A3)
                                 ELSE
                                     MOVE.L  #PURPLE2,(A2)
+                                    MOVE.L  #PURPLE2,(A3)+
+                                    MOVE.L  #PURPLE2,(A3)
                                     MOVE.B  7(A1),player_2_lane_number
                                 ENDI
                             ENDI
@@ -1510,11 +1527,11 @@ CHECK_LANES_EMPTY
         FOR D5 = #0 TO #4   DO
             ; loops until encounters an empty position
             IF.W (A0) <NE> #$FFFF   THEN
-                MOVEQ   #1,D0
                 RTS
             ENDI
             ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A0
         ENDF
+        MOVEQ   #1,D0
         RTS
 
 
@@ -1681,13 +1698,6 @@ DRAW_NOTE
 
 
 DRAW_FOREGROUND
-        ; sets pen and fill colour to white
-        MOVE.B  #80,D0
-        MOVE.L  #$00FFFFFF,D1
-        TRAP    #15
-        MOVE.W  #81,D0
-        TRAP    #15
-        
         BSR     DRAW_LANE_LINES
         BSR     DRAW_BEAT_LINE
         RTS
@@ -1699,6 +1709,11 @@ DRAW_LANE_LINES
         MOVE.B  #3,D1
         TRAP    #15
         
+        ; sets pen colour to grey
+        MOVE.B  #80,D0
+        MOVE.L  #$00444444,D1
+        TRAP    #15
+
         MOVE.W  #LEFT_BORDER_PADDING+1,D1
         MOVE.W  #SCREEN_WIDTH-RIGHT_BORDER_PADDING-1,D3
         FOR D5 = #0 TO #5   DO
@@ -1708,6 +1723,32 @@ DRAW_LANE_LINES
             MOVE.W  D2,D4
             BSR     DRAW_LINE
         ENDF
+
+        ; sets pen colour to white
+        MOVE.B  #80,D0
+        MOVE.L  #WHITE,D1
+        TRAP    #15
+
+        MOVE.W  #LEFT_BORDER_PADDING+1,D1
+        SUB.W   D1,D3
+
+        MOVE.W  treble_song_file_size,D5
+        MOVE.L  treble_song_file_index,D7
+        SUB.L   #TREBLE_FILE_CONTENTS,D7
+
+        MULU    D7,D3
+        DIVU    D5,D3
+
+        ADD.W   D1,D3
+
+        FOR D5 = #0 TO #5   DO
+            MOVE.W  #LANE_SIZE,D2
+            MULU    D5,D2
+            ADD.W   #TOP_BORDER_PADDING,D2
+            MOVE.W  D2,D4
+            BSR     DRAW_LINE
+        ENDF
+
         RTS
 
 
@@ -1715,6 +1756,11 @@ DRAW_BEAT_LINE
         ; sets pen width
         MOVE.B  #93,D0
         MOVE.B  #5,D1
+        TRAP    #15
+
+        ; sets pen and fill colour to white
+        MOVE.B  #80,D0
+        MOVE.L  #WHITE,D1
         TRAP    #15
 
         MOVE.W  #BEAT_LINE_X,D1
@@ -1812,7 +1858,7 @@ DRAW_NOTES_HITS_ANIMATIONS
                 ; sets pen colour
                 MOVE.B  #80,D0
                 MOVE.L  (A1),D1
-                AND.L   #$00FFFFFF,D1
+                AND.L   #WHITE,D1
                 TRAP    #15
 
                 MOVE.W  D5,D2
@@ -2060,6 +2106,7 @@ treble_note_path_index  DC.B    2       ; stores the lane index of the note path
 bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
+treble_song_file_size   DC.W    0       ; stores the total length of the treble song file
 
 two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
 
@@ -2150,6 +2197,7 @@ previous_render_time            DS.L    1
 render_skip_amount              DC.B    0
 notes_speed                     DC.W    12
 
+lanes_colours                   DCB.L   6,WHITE
 lanes_notes_hit_animations      DCB.L   5,$00000000
 ; stores the status of lane hit animations
 ; first byte is used as an index
