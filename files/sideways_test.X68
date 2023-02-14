@@ -36,8 +36,8 @@
 
 ; set constants
 ; 1280x720
-SCREEN_WIDTH            EQU     1280
-SCREEN_HEIGHT           EQU     720
+SCREEN_WIDTH            EQU     1920
+SCREEN_HEIGHT           EQU     1080
 
 BORDER_SIZE             EQU     20
 TOP_BORDER_PADDING      EQU     100
@@ -87,8 +87,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        * MOVE.L  #2,D1
-        * TRAP    #15
+        MOVE.L  #2,D1
+        TRAP    #15
 
         ; sets lane for the note paths
         MOVE.B  two_player,D1
@@ -139,6 +139,12 @@ START   ORG    $1000
 
         ; sets the song difficulty
         MOVE.B  #12,song_difficulty
+
+        MOVE.B  song_difficulty,D0
+        LSR.B   #1,D0
+        MOVEQ   #20,D1
+        SUB.B   D0,D1
+        MOVE.W  D1,notes_speed
 
         ; frame delay, so that framerate is consistent
         BSR     FRAME_DELAY
@@ -671,8 +677,10 @@ MOVE_OBJECTS
                     MOVE.W  (A1),A2
                     ADD.W   #2,A2
                     ; moves the notes
-                    MOVE.W  notes_speed,D1
-                    SUB.W   D1,(A2)
+                    MOVE.W  notes_speed,D2
+                    ADD.W   D1,D2
+                    ADD.W   D1,D2
+                    SUB.W   D2,(A2)
                     ADD.W   #2,A1
                 UNLESS.W (A1) <NE> #$FFFF
             ENDI
@@ -735,7 +743,11 @@ CHECK_COLLISIONS
                                     ADD.W   #2,A1
                                 ENDI
                             ELSE
-                                BSR     NOTE_HIT_DETECTION
+                                IF.B (A6) <EQ> #0   THEN
+                                    BSR     NOTE_HIT_DETECTION
+                                ELSE
+                                    ADD.W   #2,A1
+                                ENDI
                             ENDI
                         ENDI
                     ENDI
@@ -756,9 +768,11 @@ CHECK_COLLISIONS
                         ELSE
                             IF.B 6(A1) <EQ> #0  THEN
                                 CLR.B   treble_last_note_success
+                                CLR.B   player_1_charge_amount
                             ELSE
                                 IF.B 6(A1) <EQ> #1  THEN
                                     CLR.B   bass_last_note_success
+                                    CLR.B   player_2_charge_amount
                                 ENDI
                             ENDI
                         ENDI
@@ -785,13 +799,13 @@ NOTE_HIT_DETECTION
                     LEA     lanes_notes_hit_animations,A2
                     LSL.L   #2,D7
                     ADD.L   D7,A2
-                    IF.W (A1) <EQ> #1   THEN
+                    IF.W D1 <EQ> #1 THEN
                         MOVE.L  #BLUE,(A2)
                     ELSE
-                        IF.W (A1) <EQ> #2   THEN
+                        IF.W D1 <EQ> #2 THEN
                             MOVE.L  #RED,(A2)
                         ELSE
-                            IF.W (A1) <EQ> #3   THEN
+                            IF.W D1 <EQ> #3 THEN
                                 MOVE.L  #YELLOW,(A2)
                             ELSE
                                 MOVE.L  #PURPLE2,(A2)
@@ -802,6 +816,7 @@ NOTE_HIT_DETECTION
                     MOVE.B  #7,(A2)
                     CLR.W   (A1)+
                     CLR.W   (A1)
+                    CLR.B   (A6)
                 ELSE
                     ADD.W   #2,A1
                 ENDI
@@ -814,14 +829,14 @@ NOTE_HIT_DETECTION
                         LEA     lanes_notes_hit_animations,A2
                         LSL.L   #2,D7
                         ADD.L   D7,A2
-                        IF.W (A1) <EQ> #1   THEN
+                        IF.W D1 <EQ> #1 THEN
                             MOVE.L  #AQUA,(A2)
                         ELSE
-                            IF.W (A1) <EQ> #2   THEN
-                                MOVE.L  #GREEN,(A2)
+                            IF.W D1 <EQ> #2 THEN
+                                MOVE.L  #ORANGE,(A2)
                             ELSE
-                                IF.W (A1) <EQ> #3   THEN
-                                    MOVE.L  #ORANGE,(A2)
+                                IF.W D1 <EQ> #3 THEN
+                                    MOVE.L  #LIME,(A2)
                                 ELSE
                                     MOVE.L  #PURPLE2,(A2)
                                     MOVE.B  7(A1),player_2_lane_number
@@ -831,6 +846,7 @@ NOTE_HIT_DETECTION
                         MOVE.B  #7,(A2)
                         CLR.W   (A1)+
                         CLR.W   (A1)
+                        CLR.B   (A6)
                     ELSE
                         ADD.W   #2,A1
                     ENDI
@@ -967,7 +983,7 @@ HANDLE_INPUT
 
             ; control
             MOVE.L  #$11000000,D3
-            LEA     player_1_charge_amount,A3
+            LEA     player_2_charge_amount,A3
             BSR     HANDLE_CHARGE
 
             LEA     player_2_position,A0
@@ -1060,7 +1076,12 @@ HANDLE_CHARGE
         BTST.L  #24,D1
         IF  <NE>    THEN
             IF.B (A3) <LO> #80  THEN
-                ADD.B   #10,(A3)
+                MOVE.B   #40,D2
+                SUB.B   song_difficulty,D2
+                ADD.B   D2,(A3)
+                IF.B (A3) <HI> #80  THEN
+                    MOVE.B  #80,(A3)
+                ENDI
             ENDI
         ELSE
             CLR.B   (A3)
@@ -1813,7 +1834,7 @@ DRAW_NOTES_HITS_ANIMATIONS
         
         ; sets pen width
         MOVE.B  #93,D0
-        MOVE.B  #3,D1
+        MOVE.B  #5,D1
         TRAP    #15
 
         CLR.L   D2
@@ -1838,7 +1859,13 @@ DRAW_NOTES_HITS_ANIMATIONS
                         BSR     LONG_DRAW
                     ENDI
                 ENDI
+                
+                * IF.B lane_note_animation_index <NE> #0  THEN
+                *     SUB.B   #1,lane_note_animation_index
+                * ELSE
+                *     MOVE.B  #1,lane_note_animation_index
                 SUB.B   #1,(A1)
+                * ENDI
             ENDI
             ADD.L   #4,A1
         ENDF
@@ -2071,7 +2098,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -2113,14 +2140,6 @@ bass_last_note_success      DC.B    0       ; stores whether the last hit note w
 ; the treble notes are going to be red, yellow and blue
 ; the bass notes are going to be aqua, lime, and orange
 ; teleport is goin to be purple2
-BLACK           EQU     $00000000
-MAROON          EQU     $00000080
-GREEN           EQU     $00008000
-OLIVE           EQU     $00008080
-NAVY            EQU     $00800000
-PURPLE          EQU     $00800080
-TEAL            EQU     $00808000
-GREY            EQU     $00808080
 BLUE            EQU     $00FF0000       ; Treble A, D
 RED             EQU     $000000FF       ; Treble B, E
 YELLOW          EQU     $0000FFFF       ; Treble C, F
@@ -2128,8 +2147,6 @@ AQUA            EQU     $00FFFF00       ; Bass A, D
 ORANGE          EQU     $000080FF       ; Bass B, E
 LIME            EQU     $0000FF00       ; Bass C, F
 PURPLE2         EQU     $00FF0080       ; Teleport
-MAGENTA         EQU     $00FF00FF
-LITEGREY        EQU     $00C0C0C0
 WHITE           EQU     $00FFFFFF
 
 
@@ -2170,12 +2187,14 @@ previous_render_time            DS.L    1
 render_skip_amount              DC.B    0
 notes_speed                     DC.W    12
 
-lanes_notes_hit_animations      DCB.L    5,$00000000
+lane_note_animation_index       DC.B    0
+lanes_notes_hit_animations      DCB.L   5,$00000000
 ; stores the status of lane hit animations
 ; first byte is used as an index
 ; other three are the coolour BGR
 
         END    START
+
 
 
 
