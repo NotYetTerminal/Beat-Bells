@@ -144,6 +144,12 @@ START   ORG    $1000
         MOVEQ   #20,D1
         SUB.B   D0,D1
         MOVE.W  D1,notes_speed
+        
+        ; set font properties
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$060E0000,D2
+        TRAP    #15
 
         ; frame delay, so that framerate is consistent
         BSR     FRAME_DELAY
@@ -579,6 +585,19 @@ LOOP
             BSR     MOVE_OBJECTS
             BSR     HANDLE_INPUT
             BSR     CHECK_BOTH_PLAYER_COLLISIONS
+
+            ADD.W   #1,player_1_life_amount
+            IF.W player_1_life_amount <HI> #400 THEN
+                MOVE.W  #400,player_1_life_amount
+            ENDI
+
+            IF.B two_player <EQ> #1 THEN
+                ADD.W   #1,player_2_life_amount
+                IF.W player_2_life_amount <HI> #400 THEN
+                    MOVE.W  #400,player_2_life_amount
+                ENDI
+            ENDI
+
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_object_time
@@ -762,9 +781,11 @@ CHECK_COLLISIONS
                             IF.B 6(A1) <EQ> #0  THEN
                                 CLR.B   treble_last_note_success
                                 CLR.B   player_1_charge_amount
+                                SUB.W   #100,player_1_life_amount
                             ELSE
                                 CLR.B   bass_last_note_success
                                 CLR.B   player_2_charge_amount
+                                SUB.W   #100,player_1_life_amount
                             ENDI
                             LEA     lanes_colours,A3
                             MOVE.L  D5,D7
@@ -1549,6 +1570,8 @@ RENDER_SCREEN
         BSR     DRAW_FOREGROUND
         BSR     DRAW_CHARGE_METERS
         BSR     DRAW_NOTES_HITS_ANIMATIONS
+        BSR     DRAW_SCORE
+        BSR     DRAW_LIFE_BARS
 
         ; repaints screen
         MOVE.B  #94,D0
@@ -1982,29 +2005,113 @@ LONG_DRAW
         BSR     DRAW_LINE
         RTS
 
-; draws a square at A0 plus size in D3,D4
-DRAW_SQUARE
-        ; set bounds of square to draw
-        MOVE.W  (A0)+,D1
-        MOVE.W  (A0),D2
-        ADD.W   D1,D3
-        ADD.W   D2,D4
 
-        MOVE.W  #87,D0
+DRAW_SCORE
+        ; sets pen fill to black
+        MOVE.W  #81,D0
+        CLR.L   D1
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$1802,D1
+        TRAP    #15
+
+        ; show text
+        MOVEQ   #14,D0
+        LEA     score_text,A1
+        TRAP    #15
+
+        ; show number
+        MOVEQ   #3,D0
+        MOVE.L  #20340,D1
         TRAP    #15
         RTS
 
 
-; draws an unfilled square at A0 plus size in D3,D4
-DRAW_UNFILLED_SQUARE
-        ; set bounds of square to draw
-        MOVE.W  (A0)+,D1
-        MOVE.W  (A0),D2
-        ADD.W   D1,D3
-        ADD.W   D2,D4
-
-        MOVE.W  #90,D0
+DRAW_LIFE_BARS
+        ; sets pen width
+        MOVE.B  #93,D0
+        MOVE.B  #1,D1
         TRAP    #15
+
+        IF.B two_player <EQ> #0 THEN
+            ; sets pen and fill colour
+            MOVE.B  #80,D0
+            MOVE.L  #WHITE,D1
+            TRAP    #15
+
+            ; draw border
+            MOVE.W  #90,D0
+            MOVE.W  #800,D1
+            MOVE.W  #35,D2
+            MOVE.W  #1200,D3
+            MOVE.W  #60,D4
+            TRAP    #15
+
+            ; sets pen and fill colour to red
+            MOVE.B  #80,D0
+            MOVE.L  #RED,D1
+            TRAP    #15
+            MOVE.W  #81,D0
+            TRAP    #15
+
+            MOVE.W  #87,D0
+            MOVE.W  #801,D1
+            MOVE.W  #800,D3
+            ADD.W   #1,D2
+            SUB.W   #1,D4
+
+            ADD.W   player_1_life_amount,D3
+
+            IF.W player_1_life_amount <EQ> #400    THEN
+                SUB.W   #1,D3
+            ENDI
+            TRAP    #15
+        ELSE
+            IF.B coop_mode <EQ> #0  THEN
+
+            ELSE
+                ; sets pen and fill colour
+                MOVE.B  #80,D0
+                MOVE.L  #WHITE,D1
+                TRAP    #15
+
+                ; draw border
+                MOVE.W  #90,D0
+                MOVE.W  #800,D1
+                MOVE.W  #35,D2
+                MOVE.W  #1200,D3
+                MOVE.W  #60,D4
+                TRAP    #15
+                
+                MOVE.W  player_1_life_amount,D7
+                ADD.W   player_2_life_amount,D7
+                LSR.W   #1,D7
+                CLR.B   D6
+                FOR.W D5 = #0 TO D7 BY #25  DO
+                    IF.B D6 <EQ> #0 THEN
+                        MOVE.L  #RED,D1
+                        MOVEQ   #1,D6
+                    ELSE
+                        MOVE.L  #LIME,D1
+                        CLR.B   D6
+                    EDNI
+                    ; sets pen and fill colour
+                    MOVE.B  #80,D0
+                    TRAP    #15
+                    MOVE.W  #81,D0
+                    TRAP    #15
+
+                    MOVE.W  #801,D1
+                    MOVE.W  D5,D0
+                    WORK HERE
+
+                    MOVE.W  #87,D0
+                    TRAP    #15
+                ENDF
+            ENDI
+        ENDI
         RTS
 
 
@@ -2082,6 +2189,7 @@ player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_1_action_colour  DC.B    0       ; stores the player action colour
 player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player changing colours
 player_1_charge_amount  DC.B    0       ; stores the charge amount
+player_1_life_amount    DC.W    200     ; stores the life amount
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
 player_2_lane_number    DS.B    3       ; stores the lane number
@@ -2091,6 +2199,7 @@ player_2_keymaps        DC.L    'AA'    ; stores the movement keys of player
 player_2_action_colour  DC.B    0       ; stores the player action colour
 player_2_colour_keymaps DC.L    'AAAA'  ; stores the keymaps for the player changing colours
 player_2_charge_amount  DC.B    0       ; stores the charge amount
+player_2_life_amount    DC.W    200     ; stores the life amount
 
 ; stores the number of objects in the arrays
 lane_0_object_count     DC.W    0
@@ -2121,6 +2230,7 @@ bass_song_file_index    DC.L    0       ; stores the byte index that the song is
 treble_song_file_size   DC.W    0       ; stores the total length of the treble song file
 
 two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
+coop_mode               DC.B    1       ; stores whether two player is coop 1 or versus 0
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -2215,7 +2325,11 @@ lanes_notes_hit_animations      DCB.L   5,$00000000
 ; first byte is used as an index
 ; other three are the coolour BGR
 
+
+score_text                      DC.B    'Score: ',0
+
         END    START
+
 
 
 *~Font name~Courier New~
