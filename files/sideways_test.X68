@@ -36,8 +36,8 @@
 
 ; set constants
 ; 1280x720
-SCREEN_WIDTH            EQU     1920
-SCREEN_HEIGHT           EQU     1080
+SCREEN_WIDTH            EQU     1280
+SCREEN_HEIGHT           EQU     720
 
 BORDER_SIZE             EQU     20
 TOP_BORDER_PADDING      EQU     100
@@ -87,8 +87,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        MOVE.L  #2,D1
-        TRAP    #15
+        * MOVE.L  #2,D1
+        * TRAP    #15
 
         ; sets lane for the note paths
         MOVE.B  two_player,D1
@@ -703,7 +703,7 @@ CHECK_BOTH_PLAYER_COLLISIONS
         ENDI
         RTS
 
-; A4 must contain the player lane_number
+; A4 must contain the player lane number
 ; A5 must contain the player action colour
 ; A6 must contain the player charge amount
 CHECK_COLLISIONS
@@ -777,26 +777,63 @@ NOTE_HIT_DETECTION
         IF.B (A5) <EQ> D1 THEN
             ; sets the position to the left to make the note disappear when checking collision
             IF.B 6(A1) <EQ> #0  THEN
+                CLR.L   D7
                 MOVE.B  player_1_lane_number,D7
                 IF.B (A4) <EQ> D7   THEN
                     MOVE.B  #1,treble_last_note_success
-                    IF.W (A1) <EQ> #4   THEN
-                        MOVE.B  7(A1),player_1_lane_number
+                    ; puts in the notes hits animation state
+                    LEA     lanes_notes_hit_animations,A2
+                    LSL.L   #2,D7
+                    ADD.L   D7,A2
+                    IF.W (A1) <EQ> #1   THEN
+                        MOVE.L  #BLUE,(A2)
+                    ELSE
+                        IF.W (A1) <EQ> #2   THEN
+                            MOVE.L  #RED,(A2)
+                        ELSE
+                            IF.W (A1) <EQ> #3   THEN
+                                MOVE.L  #YELLOW,(A2)
+                            ELSE
+                                MOVE.L  #PURPLE2,(A2)
+                                MOVE.B  7(A1),player_1_lane_number
+                            ENDI
+                        ENDI
                     ENDI
+                    MOVE.B  #7,(A2)
                     CLR.W   (A1)+
                     CLR.W   (A1)
                 ELSE
                     ADD.W   #2,A1
                 ENDI
             ELSE
-                MOVE.B  player_2_lane_number,D7
-                IF.B (A4) <EQ> D7   THEN
-                    MOVE.B  #1,bass_last_note_success
-                    IF.W (A1) <EQ> #4   THEN
-                        MOVE.B  7(A1),player_2_lane_number
+                IF.B 6(A1) <EQ> #1  THEN
+                    MOVE.B  player_2_lane_number,D7
+                    IF.B (A4) <EQ> D7   THEN
+                        MOVE.B  #1,bass_last_note_success
+                        ; puts in the notes hits animation state
+                        LEA     lanes_notes_hit_animations,A2
+                        LSL.L   #2,D7
+                        ADD.L   D7,A2
+                        IF.W (A1) <EQ> #1   THEN
+                            MOVE.L  #AQUA,(A2)
+                        ELSE
+                            IF.W (A1) <EQ> #2   THEN
+                                MOVE.L  #GREEN,(A2)
+                            ELSE
+                                IF.W (A1) <EQ> #3   THEN
+                                    MOVE.L  #ORANGE,(A2)
+                                ELSE
+                                    MOVE.L  #PURPLE2,(A2)
+                                    MOVE.B  7(A1),player_2_lane_number
+                                ENDI
+                            ENDI
+                        ENDI
+                        MOVE.B  #7,(A2)
+                        CLR.W   (A1)+
+                        CLR.W   (A1)
+                    ELSE
+                        ADD.W   #2,A1
                     ENDI
-                    CLR.W   (A1)+
-                    CLR.W   (A1)
                 ELSE
                     ADD.W   #2,A1
                 ENDI
@@ -805,6 +842,7 @@ NOTE_HIT_DETECTION
             ADD.W   #2,A1
         ENDI
         RTS
+
 
 ; must not use D5, A0, A1, A4, A5, A6
 ; A1 contains the address to the start of the note object, ie it's colour
@@ -1447,6 +1485,7 @@ RENDER_SCREEN
         BSR     DRAW_NOTES
         BSR     DRAW_FOREGROUND
         BSR     DRAW_CHARGE_METERS
+        BSR     DRAW_NOTES_HITS_ANIMATIONS
 
         ; repaints screen
         MOVE.B  #94,D0
@@ -1768,6 +1807,160 @@ DRAW_CHARGE_METERS
         ENDI
         RTS
 
+
+DRAW_NOTES_HITS_ANIMATIONS
+        LEA     lanes_notes_hit_animations,A1
+        
+        ; sets pen width
+        MOVE.B  #93,D0
+        MOVE.B  #2,D1
+        TRAP    #15
+
+        CLR.L   D2
+        FOR D5 = #0 TO #4   DO
+            IF.B (A1) <NE> #0   THEN
+                ; sets pen colour
+                MOVE.B  #80,D0
+                MOVE.L  (A1),D1
+                AND.L   #$00FFFFFF,D1
+                TRAP    #15
+
+                MOVE.W  D5,D2
+                BSR     GET_LANE_Y_POSITION
+                MOVE.W  D3,D7
+
+                IF.B (A1) <LO> #4   THEN
+                    BSR     LOWER_SHORT_DRAW
+                ELSE
+                    IF.B (A1) <HI> #4   THEN
+                        BSR     UPPER_SHORT_DRAW
+                    ELSE
+                        BSR     LONG_DRAW
+                    ENDI
+                ENDI
+                SUB.B   #1,(A1)
+                ADD.L   #4,A1
+            ENDI
+        ENDF
+        RTS
+
+
+LOWER_SHORT_DRAW
+        CLR.L   D6
+        MOVE.B  (A1),D6
+        LSL.L   #3,D6
+
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        SUB.W   #32,D1
+        SUB.W   #32,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        ADD.W   D6,D3
+        ADD.W   D6,D4
+        BSR     DRAW_LINE
+
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        ADD.W   #32,D1
+        SUB.W   #32,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        SUB.W   D6,D3
+        ADD.W   D6,D4
+        BSR     DRAW_LINE
+
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        SUB.W   #32,D1
+        ADD.W   #32,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        ADD.W   D6,D3
+        SUB.W   D6,D4
+        BSR     DRAW_LINE
+
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        ADD.W   #32,D1
+        ADD.W   #32,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        SUB.W   D6,D3
+        SUB.W   D6,D4
+        BSR     DRAW_LINE
+        RTS
+
+
+UPPER_SHORT_DRAW
+        MOVE.W  #BEAT_LINE_X,D3
+        MOVE.W  D7,D4
+
+        CLR.L   D6
+        MOVE.B  (A1),D6
+        SUB.B   #4,D6
+        LSL.L   #3,D6
+
+        MOVE.W  D3,D1
+        MOVE.W  D4,D2
+        SUB.W   D6,D1
+        SUB.W   D6,D2
+        BSR     DRAW_LINE
+        
+        MOVE.W  D3,D1
+        MOVE.W  D4,D2
+        ADD.W   D6,D1
+        SUB.W   D6,D2
+        BSR     DRAW_LINE
+        
+        MOVE.W  D3,D1
+        MOVE.W  D4,D2
+        SUB.W   D6,D1
+        ADD.W   D6,D2
+        BSR     DRAW_LINE
+        
+        MOVE.W  D3,D1
+        MOVE.W  D4,D2
+        ADD.W   D6,D1
+        ADD.W   D6,D2
+        BSR     DRAW_LINE
+        RTS
+
+
+LONG_DRAW
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        SUB.W   #32,D1
+        SUB.W   #32,D2
+        MOVE.W  #BEAT_LINE_X,D3
+        MOVE.W  D7,D4
+        BSR     DRAW_LINE
+
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        ADD.W   #32,D1
+        SUB.W   #32,D2
+        MOVE.W  #BEAT_LINE_X,D3
+        MOVE.W  D7,D4
+        BSR     DRAW_LINE
+
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        SUB.W   #32,D1
+        ADD.W   #32,D2
+        MOVE.W  #BEAT_LINE_X,D3
+        MOVE.W  D7,D4
+        BSR     DRAW_LINE
+
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        ADD.W   #32,D1
+        ADD.W   #32,D2
+        MOVE.W  #BEAT_LINE_X,D3
+        MOVE.W  D7,D4
+        BSR     DRAW_LINE
+        RTS
+
 ; draws a square at A0 plus size in D3,D4
 DRAW_SQUARE
         ; set bounds of square to draw
@@ -1906,7 +2099,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -2005,8 +2198,15 @@ previous_render_time            DS.L    1
 render_skip_amount              DC.B    0
 notes_speed                     DC.W    12
 
+lanes_notes_hit_animations      DCB.L    5,$00000000
+; stores the status of lane hit animations
+; first byte is used as an index
+; other three are the coolour BGR
 
         END    START
+
+
+
 
 
 
