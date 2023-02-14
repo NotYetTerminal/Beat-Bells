@@ -1813,7 +1813,7 @@ DRAW_NOTES_HITS_ANIMATIONS
         
         ; sets pen width
         MOVE.B  #93,D0
-        MOVE.B  #2,D1
+        MOVE.B  #3,D1
         TRAP    #15
 
         CLR.L   D2
@@ -1839,8 +1839,8 @@ DRAW_NOTES_HITS_ANIMATIONS
                     ENDI
                 ENDI
                 SUB.B   #1,(A1)
-                ADD.L   #4,A1
             ENDI
+            ADD.L   #4,A1
         ENDF
         RTS
 
@@ -1893,36 +1893,24 @@ LOWER_SHORT_DRAW
 
 
 UPPER_SHORT_DRAW
-        MOVE.W  #BEAT_LINE_X,D3
-        MOVE.W  D7,D4
-
-        CLR.L   D6
-        MOVE.B  (A1),D6
-        SUB.B   #4,D6
+        MOVEQ   #8,D6
+        SUB.B  (A1),D6
         LSL.L   #3,D6
 
-        MOVE.W  D3,D1
-        MOVE.W  D4,D2
+        MOVE.W  #BEAT_LINE_X,D1
+        MOVE.W  D7,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+
         SUB.W   D6,D1
         SUB.W   D6,D2
+        ADD.W   D6,D3
+        ADD.W   D6,D4
         BSR     DRAW_LINE
         
-        MOVE.W  D3,D1
-        MOVE.W  D4,D2
-        ADD.W   D6,D1
-        SUB.W   D6,D2
-        BSR     DRAW_LINE
-        
-        MOVE.W  D3,D1
-        MOVE.W  D4,D2
-        SUB.W   D6,D1
-        ADD.W   D6,D2
-        BSR     DRAW_LINE
-        
-        MOVE.W  D3,D1
-        MOVE.W  D4,D2
-        ADD.W   D6,D1
-        ADD.W   D6,D2
+        MOVE.W  D3,D7
+        MOVE.W  D1,D3
+        MOVE.W  D7,D1
         BSR     DRAW_LINE
         RTS
 
@@ -1930,34 +1918,18 @@ UPPER_SHORT_DRAW
 LONG_DRAW
         MOVE.W  #BEAT_LINE_X,D1
         MOVE.W  D7,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+
         SUB.W   #32,D1
         SUB.W   #32,D2
-        MOVE.W  #BEAT_LINE_X,D3
-        MOVE.W  D7,D4
+        ADD.W   #32,D3
+        ADD.W   #32,D4
         BSR     DRAW_LINE
 
-        MOVE.W  #BEAT_LINE_X,D1
-        MOVE.W  D7,D2
-        ADD.W   #32,D1
-        SUB.W   #32,D2
-        MOVE.W  #BEAT_LINE_X,D3
-        MOVE.W  D7,D4
-        BSR     DRAW_LINE
-
-        MOVE.W  #BEAT_LINE_X,D1
-        MOVE.W  D7,D2
-        SUB.W   #32,D1
-        ADD.W   #32,D2
-        MOVE.W  #BEAT_LINE_X,D3
-        MOVE.W  D7,D4
-        BSR     DRAW_LINE
-
-        MOVE.W  #BEAT_LINE_X,D1
-        MOVE.W  D7,D2
-        ADD.W   #32,D1
-        ADD.W   #32,D2
-        MOVE.W  #BEAT_LINE_X,D3
-        MOVE.W  D7,D4
+        MOVE.W  D3,D7
+        MOVE.W  D1,D3
+        MOVE.W  D7,D1
         BSR     DRAW_LINE
         RTS
 
