@@ -1114,6 +1114,11 @@ SPAWN_NEW_NOTE
             IF.B (A0) <EQ> #13  THEN
                 ADDQ.L  #2,treble_song_file_index
                 ADDQ.L  #2,A0
+            ELSE
+                IF.B (A0) <EQ> #10  THEN
+                    ADDQ.L  #1,treble_song_file_index
+                    ADDQ.L  #1,A0
+                ENDI
             ENDI
 
             LEA	    treble_quater_beat_count,A4
@@ -1160,6 +1165,11 @@ SPAWN_NEW_NOTE
             IF.B (A0) <EQ> #13  THEN
                 ADD.L   #2,bass_song_file_index
                 ADD.L   #2,A0
+            ELSE
+                IF.B (A0) <EQ> #10  THEN
+                    ADDQ.L  #1,bass_song_file_index
+                    ADDQ.L  #1,A0
+                ENDI
             ENDI
 
             LEA	    bass_quater_beat_count,A4
