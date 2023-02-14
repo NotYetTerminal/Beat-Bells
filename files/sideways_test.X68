@@ -1655,19 +1655,115 @@ DRAW_LINE
 
 
 DRAW_CHARGE_METERS
-        LEA     player_1_position,A0
-        MOVE.W  #20,D1
-        MOVE.W  2(A0),D2
-        MOVE.W  D1,D3
-        ADD.W   #10,D3
-        MOVE.W  D2,D4
-        ADD.W   #40,D4
-
-        MOVE.W  #90,D0
+        ; sets pen width
+        MOVE.B  #93,D0
+        MOVE.B  #1,D1
         TRAP    #15
 
-        IF.B two_player <EQ> #1 THEN
+        IF.B player_1_charge_amount <NE> #0 THEN
+            ; sets pen colour to white
+            MOVE.B  #80,D0
+            MOVE.L  #$00FFFFFF,D1
+            TRAP    #15
 
+            ; draw charge meter border
+            LEA     player_1_position,A0
+            MOVE.W  #20,D1
+            MOVE.W  2(A0),D2
+            MOVE.W  D1,D3
+            ADD.W   #10,D3
+            MOVE.W  D2,D4
+            ADD.W   #80,D4
+
+            MOVE.W  #90,D0
+            TRAP    #15
+            MOVE.W  D1,D7
+
+            ; draw charge meter inside
+            IF.B player_1_charge_amount <EQ> #80    THEN
+                ; sets pen and fill colour to red
+                MOVE.B  #80,D0
+                MOVE.L  #$000000FF,D1
+                TRAP    #15
+                MOVE.W  #81,D0
+                TRAP    #15
+            ELSE
+                ; sets pen and fill colour to dark red
+                MOVE.B  #80,D0
+                MOVE.L  #$00000088,D1
+                TRAP    #15
+                MOVE.W  #81,D0
+                TRAP    #15
+            ENDI
+            MOVE.W  D7,D1
+            ADD.W   #1,D1
+            SUB.W   #1,D3
+
+            MOVE.W  D4,D2
+            CLR.L   D7
+            MOVE.B  player_1_charge_amount,D7
+            SUB.W   D7,D2
+            IF.B player_1_charge_amount <EQ> #80    THEN
+                ADD.W   #1,D2
+            ENDI
+            
+            SUB.W   #1,D4
+            
+            MOVE.W  #87,D0
+            TRAP    #15
+        ENDI
+
+        IF.B two_player <EQ> #1 AND.B player_2_charge_amount <NE> #0 THEN
+            ; sets pen colour to white
+            MOVE.B  #80,D0
+            MOVE.L  #$00FFFFFF,D1
+            TRAP    #15
+
+            ; draw charge meter border
+            LEA     player_2_position,A0
+            MOVE.W  #20,D1
+            MOVE.W  2(A0),D2
+            MOVE.W  D1,D3
+            ADD.W   #10,D3
+            MOVE.W  D2,D4
+            ADD.W   #80,D4
+
+            MOVE.W  #90,D0
+            TRAP    #15
+            MOVE.W  D1,D7
+
+            ; draw charge meter inside
+            IF.B player_2_charge_amount <EQ> #80    THEN
+                ; sets pen and fill colour to red
+                MOVE.B  #80,D0
+                MOVE.L  #$0000FF00,D1
+                TRAP    #15
+                MOVE.W  #81,D0
+                TRAP    #15
+            ELSE
+                ; sets pen and fill colour to dark red
+                MOVE.B  #80,D0
+                MOVE.L  #$00008800,D1
+                TRAP    #15
+                MOVE.W  #81,D0
+                TRAP    #15
+            ENDI
+            MOVE.W  D7,D1
+            ADD.W   #1,D1
+            SUB.W   #1,D3
+
+            MOVE.W  D4,D2
+            CLR.L   D7
+            MOVE.B  player_2_charge_amount,D7
+            SUB.W   D7,D2
+            IF.B player_2_charge_amount <EQ> #80    THEN
+                ADD.W   #1,D2
+            ENDI
+            
+            SUB.W   #1,D4
+            
+            MOVE.W  #87,D0
+            TRAP    #15
         ENDI
         RTS
 
@@ -1772,6 +1868,7 @@ player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_1_action_colour  DC.B    0       ; stores the player action colour
 player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player changing colours
 player_1_shift_pressed  DC.B    0       ; stores whether the shift is pressed down
+player_1_charge_amount  DC.B    0       ; stores the charge amount
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
 player_2_lane_number    DS.B    3       ; stores the lane number
@@ -1781,6 +1878,7 @@ player_2_keymaps        DC.L    'AA'    ; stores the movement keys of player
 player_2_action_colour  DC.B    0       ; stores the player action colour
 player_2_colour_keymaps DC.L    'AAAA'  ; stores the keymaps for the player changing colours
 player_2_shift_pressed  DC.B    0       ; stores whether the control is pressed down
+player_2_charge_amount  DC.B    0       ; stores the charge amount
 
 ; stores the number of objects in the arrays
 lane_0_object_count     DC.W    0
