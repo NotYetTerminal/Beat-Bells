@@ -72,7 +72,6 @@ START   ORG    $1000
         MOVE.W  #8,D0
         TRAP    #15
         MOVE.L  D1,last_frame_time
-        MOVE.L  D1,last_movement_time
         MOVE.L  D1,last_treble_path_change_time
         MOVE.L  D1,last_bass_path_change_time
         MOVE.L  D1,last_object_time
@@ -138,7 +137,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SPRITES
 
         ; sets the song difficulty
-        MOVE.B  #12,song_difficulty
+        MOVE.B  #20,song_difficulty
 
         MOVE.B  song_difficulty,D0
         LSR.B   #1,D0
@@ -210,7 +209,6 @@ LOAD_IN_SPRITES
         RTS
 
 
-; check if this would be better without as many moves
 LOAD_IN_PLAYER_SPRITES
         MOVE.L  next_free_slot_address,player_1_start_sprite
         FOR D5 = #0 TO #39   DO
@@ -567,34 +565,18 @@ LOOP
         BSR     FRAME_DELAY
 
         ; moves the enemies and notes
+        ; input + change position
         MOVE.W  #8,D0
         TRAP    #15
         SUB.L   last_object_time,D1
         IF.L #2 <LE> D1    THEN
             BSR     MOVE_OBJECTS
+            BSR     HANDLE_INPUT
             BSR     CHECK_BOTH_PLAYER_COLLISIONS
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_object_time
         ENDI
-
-        ; input + change position
-        MOVE.W  #8,D0
-        TRAP    #15
-        SUB.L   last_movement_time,D1
-        IF.L #8 <LE> D1    THEN
-            
-            ; increments and does modulus 8
-            ADDQ.B  #1,sprite_gif_index
-            AND.B   #7,sprite_gif_index
-
-            BSR     HANDLE_INPUT
-            BSR     CHECK_BOTH_PLAYER_COLLISIONS
-            MOVE.W  #8,D0
-            TRAP    #15
-            MOVE.L  D1,last_movement_time
-        ENDI
-
 
         ; checks for cooldown time
         IF.L player_1_last_beat_change_time <NE> #0  THEN
@@ -624,6 +606,11 @@ LOOP
         IF.L #10 <LE> D1    THEN
             BSR     SPAWN_NEW_NOTE
             BSR     DECREMENT_NOTES_TIMES
+
+            ; increments and does modulus 8
+            ADDQ.B  #1,sprite_gif_index
+            AND.B   #7,sprite_gif_index
+
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_note_spawn_time
@@ -1076,9 +1063,13 @@ HANDLE_CHARGE
         BTST.L  #24,D1
         IF  <NE>    THEN
             IF.B (A3) <LO> #80  THEN
-                MOVE.B   #40,D2
-                SUB.B   song_difficulty,D2
-                ADD.B   D2,(A3)
+                MOVE.B  #40,D2
+                SUB.B  song_difficulty,D2
+                MOVE.B  D2,D0
+                LSR.B   #2,D0
+                LSR.B   #3,D2
+                ADD.B   D2,D0
+                ADD.B   D0,(A3)
                 IF.B (A3) <HI> #80  THEN
                     MOVE.B  #80,(A3)
                 ENDI
@@ -1757,7 +1748,7 @@ DRAW_METER
             IF.B D5 <NE> #80    THEN
                 ; sets pen and fill colour to grey
                 MOVE.B  #80,D0
-                MOVE.L  #$00888888,D1
+                MOVE.L  #$00444444,D1
                 TRAP    #15
                 MOVE.W  #81,D0
                 TRAP    #15
@@ -1812,12 +1803,7 @@ DRAW_NOTES_HITS_ANIMATIONS
                     ENDI
                 ENDI
                 
-                * IF.B lane_note_animation_index <NE> #0  THEN
-                *     SUB.B   #1,lane_note_animation_index
-                * ELSE
-                *     MOVE.B  #1,lane_note_animation_index
                 SUB.B   #1,(A1)
-                * ENDI
             ENDI
             ADD.L   #4,A1
         ENDF
@@ -1997,7 +1983,6 @@ EXIT_PROGRAM
 random_value            DS.L    1       ; stores a random variable
 
 last_frame_time         DS.L    1       ; stores the time at last frame
-last_movement_time      DS.L    1       ; stores the time when last accepted input
 last_treble_path_change_time    DS.L    1       ; stores the time when the treble path index last changed
 last_bass_path_change_time      DS.L    1       ; stores the time when the bass path index last changed
 last_object_time        DS.L    1       ; stores the time when the notes where moved
@@ -2050,7 +2035,7 @@ bass_note_path_index    DC.B    2       ; stores the lane index of the note path
 treble_song_file_index  DC.L    0       ; stores the byte index that the song is at
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 
-two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -2139,18 +2124,12 @@ previous_render_time            DS.L    1
 render_skip_amount              DC.B    0
 notes_speed                     DC.W    12
 
-lane_note_animation_index       DC.B    0
 lanes_notes_hit_animations      DCB.L   5,$00000000
 ; stores the status of lane hit animations
 ; first byte is used as an index
 ; other three are the coolour BGR
 
         END    START
-
-
-
-
-
 
 
 *~Font name~Courier New~
