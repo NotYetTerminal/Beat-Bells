@@ -9,7 +9,6 @@
 * 
 * Gameplay
 * bar to show progress
-* charge for unfilled notes
 * 
 * OPTIMISE USING THE COUNTER
 * decrement notes times slow
@@ -685,7 +684,7 @@ MOVE_OBJECTS
 CHECK_BOTH_PLAYER_COLLISIONS
         LEA     player_1_lane_number,A4
         LEA     player_1_action_colour,A5
-        LEA     player_1_shift_pressed,A6
+        LEA     player_1_charge_amount,A6
         BSR     CHECK_COLLISIONS
 
         LEA     player_1_position,A0
@@ -695,7 +694,7 @@ CHECK_BOTH_PLAYER_COLLISIONS
         IF.B two_player <EQ> #1 THEN
             LEA     player_2_lane_number,A4
             LEA     player_2_action_colour,A5
-            LEA     player_2_shift_pressed,A6
+            LEA     player_2_charge_amount,A6
             BSR     CHECK_COLLISIONS
 
             LEA     player_2_position,A0
@@ -706,7 +705,7 @@ CHECK_BOTH_PLAYER_COLLISIONS
 
 ; A4 must contain the player lane_number
 ; A5 must contain the player action colour
-; A6 must contain the player shift/control pressed
+; A6 must contain the player charge amount
 CHECK_COLLISIONS
         LEA     lane_0_object_addresses,A0
         ; loops through the five lanes
@@ -730,50 +729,16 @@ CHECK_COLLISIONS
                             ; checks for shift/control note beat
                             BCLR.L  #4,D1
                             IF  <NE>    THEN
-                                MOVE.B  #1,D7
-                            ELSE
-                                CLR.B   D7
-                            ENDI
-                            ; note has been hit correctly
-                            IF.B (A5) <EQ> D1 THEN
-                                IF.B D7 <EQ> (A6) THEN
-                                    ; sets the position to the left to make the note disappear when checking collision
-                                    IF.B 6(A1) <EQ> #0  THEN
-                                        MOVE.B  player_1_lane_number,D7
-                                        IF.B (A4) <EQ> D7   THEN
-                                            MOVE.B  #1,treble_last_note_success
-                                            IF.W (A1) <EQ> #4   THEN
-                                                MOVE.B  7(A1),player_1_lane_number
-                                            ENDI
-                                            CLR.W   (A1)+
-                                            CLR.W   (A1)
-                                        ELSE
-                                            ADD.W   #2,A1
-                                        ENDI
-                                    ELSE
-                                        IF.B 6(A1) <EQ> #1  THEN
-                                            MOVE.B  player_2_lane_number,D7
-                                            IF.B (A4) <EQ> D7   THEN
-                                                MOVE.B  #1,bass_last_note_success
-                                                IF.W (A1) <EQ> #4   THEN
-                                                    MOVE.B  7(A1),player_2_lane_number
-                                                ENDI
-                                                CLR.W   (A1)+
-                                                CLR.W   (A1)
-                                            ELSE
-                                                ADD.W   #2,A1
-                                            ENDI
-                                        ENDI
-                                    ENDI
+                                IF.B (A6) <EQ> #80  THEN
+                                    BSR     NOTE_HIT_DETECTION
                                 ELSE
                                     ADD.W   #2,A1
                                 ENDI
                             ELSE
-                                ADD.W   #2,A1
+                                BSR     NOTE_HIT_DETECTION
                             ENDI
                         ENDI
                     ENDI
-                    
 
                     ; check collision with the beat line, ie too late
                     IF.W (A1) <LS> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
@@ -806,6 +771,40 @@ CHECK_COLLISIONS
         ENDF
         RTS
 
+
+; note has been hit correctly
+NOTE_HIT_DETECTION
+        IF.B (A5) <EQ> D1 THEN
+            ; sets the position to the left to make the note disappear when checking collision
+            IF.B 6(A1) <EQ> #0  THEN
+                MOVE.B  player_1_lane_number,D7
+                IF.B (A4) <EQ> D7   THEN
+                    MOVE.B  #1,treble_last_note_success
+                    IF.W (A1) <EQ> #4   THEN
+                        MOVE.B  7(A1),player_1_lane_number
+                    ENDI
+                    CLR.W   (A1)+
+                    CLR.W   (A1)
+                ELSE
+                    ADD.W   #2,A1
+                ENDI
+            ELSE
+                MOVE.B  player_2_lane_number,D7
+                IF.B (A4) <EQ> D7   THEN
+                    MOVE.B  #1,bass_last_note_success
+                    IF.W (A1) <EQ> #4   THEN
+                        MOVE.B  7(A1),player_2_lane_number
+                    ENDI
+                    CLR.W   (A1)+
+                    CLR.W   (A1)
+                ELSE
+                    ADD.W   #2,A1
+                ENDI
+            ENDI
+        ELSE
+            ADD.W   #2,A1
+        ENDI
+        RTS
 
 ; must not use D5, A0, A1, A4, A5, A6
 ; A1 contains the address to the start of the note object, ie it's colour
@@ -907,11 +906,13 @@ HANDLE_INPUT
         LEA     player_1_last_beat_change_time,A0
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
-        LEA     player_1_shift_pressed,A3
         MOVE.L  player_1_colour_keymaps,D1
+        BSR     HANDLE_COLOUR_CHANGE
+
         ; shift
         MOVE.L  #$10000000,D3
-        BSR     HANDLE_COLOUR_CHANGE
+        LEA     player_1_charge_amount,A3
+        BSR     HANDLE_CHARGE
 
         LEA     player_1_position,A0
         LEA     player_1_lane_number,A1
@@ -923,11 +924,13 @@ HANDLE_INPUT
             LEA     player_2_last_beat_change_time,A0
             LEA     player_2_action_pressed,A1
             LEA     player_2_action_colour,A2
-            LEA     player_2_shift_pressed,A3
             MOVE.L  player_2_colour_keymaps,D1
+            BSR     HANDLE_COLOUR_CHANGE
+
             ; control
             MOVE.L  #$11000000,D3
-            BSR     HANDLE_COLOUR_CHANGE
+            LEA     player_1_charge_amount,A3
+            BSR     HANDLE_CHARGE
 
             LEA     player_2_position,A0
             LEA     player_2_lane_number,A1
@@ -941,9 +944,7 @@ HANDLE_INPUT
 ; A0 must contain player last beat change time
 ; A1 must contain player action pressed
 ; A2 must contain player action colour
-; A3 must contain player shift/control pressed
 ; D1 must contain player colour keymaps
-; D3 must contain player shift/control keycode
 HANDLE_COLOUR_CHANGE
         MOVE.B  #19,D0
         TRAP    #15
@@ -1002,29 +1003,29 @@ HANDLE_COLOUR_CHANGE
                 BCLR.B  #4,(A1)
             ENDI
             MOVE.L  D1,(A0)
-
-            ; check for shift/control pressed
-            MOVE.L  D3,D1
-            MOVE.W  #19,D0
-            TRAP    #15
-            BTST.L  #24,D1
-            IF  <NE>    THEN
-                IF.B (A3) <EQ> #0 THEN
-                    MOVE.W  #8,D0
-                    TRAP    #15
-                    MOVE.L  D1,(A0)
-                ENDI
-                MOVE.B  #1,(A3)
-            ELSE
-                MOVE.B  #0,(A3)
-            ENDI
         ELSE
             BCLR.B  #7,(A1)
             BCLR.B  #6,(A1)
             BCLR.B  #5,(A1)
             BCLR.B  #4,(A1)
+        ENDI
+        RTS
 
-            MOVE.B  #1,(A3)
+
+; A3 contains the player charge address
+; D3 must contain player shift/control keycode
+HANDLE_CHARGE
+        ; check for shift/control pressed
+        MOVE.L  D3,D1
+        MOVE.W  #19,D0
+        TRAP    #15
+        BTST.L  #24,D1
+        IF  <NE>    THEN
+            IF.B (A3) <LO> #80  THEN
+                ADD.B   #10,(A3)
+            ENDI
+        ELSE
+            CLR.B   (A3)
         ENDI
         RTS
 
@@ -1867,7 +1868,6 @@ player_1_action_pressed DC.B    0       ; stores whether any action buttons are 
 player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_1_action_colour  DC.B    0       ; stores the player action colour
 player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player changing colours
-player_1_shift_pressed  DC.B    0       ; stores whether the shift is pressed down
 player_1_charge_amount  DC.B    0       ; stores the charge amount
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
@@ -1877,7 +1877,6 @@ player_2_action_pressed DC.B    0       ; stores whether any action buttons are 
 player_2_keymaps        DC.L    'AA'    ; stores the movement keys of player
 player_2_action_colour  DC.B    0       ; stores the player action colour
 player_2_colour_keymaps DC.L    'AAAA'  ; stores the keymaps for the player changing colours
-player_2_shift_pressed  DC.B    0       ; stores whether the control is pressed down
 player_2_charge_amount  DC.B    0       ; stores the charge amount
 
 ; stores the number of objects in the arrays
