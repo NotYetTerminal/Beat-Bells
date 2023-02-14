@@ -137,7 +137,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SPRITES
 
         ; sets the song difficulty
-        MOVE.B  #20,song_difficulty
+        MOVE.B  #6,song_difficulty
 
         MOVE.B  song_difficulty,D0
         LSR.B   #1,D0
@@ -183,6 +183,9 @@ LOAD_IN_SONG
         LEA     TREBLE_FILE_CONTENTS,A1
         MOVE.L  #$FFFFF,D2
         TRAP    #15
+        ; tells the program that this is the last byte
+        ADD.L   #1,D2
+        MOVE.B  #$FF,D2
 
         MOVE.B  #51,D0
         LEA     song_name,A1
@@ -195,6 +198,8 @@ LOAD_IN_SONG
         LEA     BASS_FILE_CONTENTS,A1
         MOVE.L  #$FFFFF,D2
         TRAP    #15
+        ADD.L   #1,D2
+        MOVE.B  #$FF,D2
 
         MOVE.B  #50,D0
         TRAP    #15
@@ -1155,12 +1160,7 @@ SPAWN_NEW_NOTE
         MOVE.L  treble_song_file_index,A0
 
         ; song has ended
-        IF.B (A0) <EQ> #$FF THEN
-            MOVE.L  bass_song_file_index,A0
-            IF.B (A0) <EQ> #$FF THEN
-                BSR     EXIT_PROGRAM
-            ENDI
-        ELSE
+        IF.B (A0) <NE> #$FF THEN
             ; check for carraige return and line feed
             IF.B (A0) <EQ> #13  THEN
                 ADDQ.L  #2,treble_song_file_index
@@ -1475,10 +1475,12 @@ UP_DOWN_RANDOM
 ; loops over music time array
 ; decrements times for each note
 DECREMENT_NOTES_TIMES
+        CLR.B   D0
         LEA notes_times_array,A1
         FOR D5 = #0 TO #101  DO
             IF.B (A1,D5) <NE> #$FF  THEN
                 SUB.B   #1,(A1,D5)
+                MOVEQ   #1,D0
                 IF.B (A1,D5) <EQ> #0    THEN
                     ; stops a note playing
                     MOVE.B  D5,D1
@@ -1488,6 +1490,30 @@ DECREMENT_NOTES_TIMES
                     MOVE.B  #$FF,(A1,D5)
                 ENDI
             ENDI
+        ENDF
+        IF.B D0 <EQ> #0 THEN
+            MOVE.L  treble_song_file_index,A0
+            MOVE.L  bass_song_file_index,A1
+            IF.B (A0) <EQ> #$FF AND.B (A1) <EQ> #$FF    THEN
+                BSR     CHECK_LANES_EMPTY
+                IF.B D0 <EQ> #1 THEN
+                    BSR     EXIT_PROGRAM
+                ENDI
+            ENDI
+        ENDI
+        RTS
+
+
+CHECK_LANES_EMPTY
+        LEA     lane_0_object_addresses,A0
+        ; loops through the five lanes
+        FOR D5 = #0 TO #4   DO
+            ; loops until encounters an empty position
+            IF.W (A0) <NE> #$FFFF   THEN
+                MOVEQ   #1,D0
+                RTS
+            ENDI
+            ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A0
         ENDF
         RTS
 

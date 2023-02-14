@@ -273,7 +273,6 @@ def export_music_data(file_name: str, in_music_data: list):
             #    f.write('\n')
             end_index += 4
             
-        f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n')
         f.write('0,0,0,0,\n0,0,0,0,\n0,0,0,0,\n0,0,0,0')
 
 
