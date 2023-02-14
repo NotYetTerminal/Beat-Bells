@@ -1721,14 +1721,27 @@ DRAW_CHARGE_METERS
         MOVE.B  #1,D1
         TRAP    #15
 
-        IF.B player_1_charge_amount <NE> #0 THEN
+        LEA     player_1_position,A0
+        MOVE.B  player_1_charge_amount,D5
+        BSR     DRAW_METER
+
+        LEA     player_2_position,A0
+        MOVE.B  player_2_charge_amount,D5
+        BSR     DRAW_METER
+        RTS
+
+; A0 contains the address to the player position
+; D5 contains the player charge amount
+DRAW_METER
+        IF.B D5 <NE> #0 THEN
             ; sets pen colour to white
             MOVE.B  #80,D0
-            MOVE.L  #$00FFFFFF,D1
+            MOVE.L  #WHITE,D1
+            TRAP    #15
+            MOVE.W  #81,D0
             TRAP    #15
 
             ; draw charge meter border
-            LEA     player_1_position,A0
             MOVE.W  #20,D1
             MOVE.W  2(A0),D2
             MOVE.W  D1,D3
@@ -1741,17 +1754,10 @@ DRAW_CHARGE_METERS
             MOVE.W  D1,D7
 
             ; draw charge meter inside
-            IF.B player_1_charge_amount <EQ> #80    THEN
-                ; sets pen and fill colour to red
+            IF.B D5 <NE> #80    THEN
+                ; sets pen and fill colour to grey
                 MOVE.B  #80,D0
-                MOVE.L  #$000000FF,D1
-                TRAP    #15
-                MOVE.W  #81,D0
-                TRAP    #15
-            ELSE
-                ; sets pen and fill colour to dark red
-                MOVE.B  #80,D0
-                MOVE.L  #$00000088,D1
+                MOVE.L  #$00888888,D1
                 TRAP    #15
                 MOVE.W  #81,D0
                 TRAP    #15
@@ -1762,65 +1768,11 @@ DRAW_CHARGE_METERS
 
             MOVE.W  D4,D2
             CLR.L   D7
-            MOVE.B  player_1_charge_amount,D7
+            MOVE.B  D5,D7
             SUB.W   D7,D2
-            IF.B player_1_charge_amount <EQ> #80    THEN
+            IF.B D5 <EQ> #80    THEN
                 ADD.W   #1,D2
             ENDI
-            
-            SUB.W   #1,D4
-            
-            MOVE.W  #87,D0
-            TRAP    #15
-        ENDI
-
-        IF.B two_player <EQ> #1 AND.B player_2_charge_amount <NE> #0 THEN
-            ; sets pen colour to white
-            MOVE.B  #80,D0
-            MOVE.L  #$00FFFFFF,D1
-            TRAP    #15
-
-            ; draw charge meter border
-            LEA     player_2_position,A0
-            MOVE.W  #20,D1
-            MOVE.W  2(A0),D2
-            MOVE.W  D1,D3
-            ADD.W   #10,D3
-            MOVE.W  D2,D4
-            ADD.W   #80,D4
-
-            MOVE.W  #90,D0
-            TRAP    #15
-            MOVE.W  D1,D7
-
-            ; draw charge meter inside
-            IF.B player_2_charge_amount <EQ> #80    THEN
-                ; sets pen and fill colour to red
-                MOVE.B  #80,D0
-                MOVE.L  #$0000FF00,D1
-                TRAP    #15
-                MOVE.W  #81,D0
-                TRAP    #15
-            ELSE
-                ; sets pen and fill colour to dark red
-                MOVE.B  #80,D0
-                MOVE.L  #$00008800,D1
-                TRAP    #15
-                MOVE.W  #81,D0
-                TRAP    #15
-            ENDI
-            MOVE.W  D7,D1
-            ADD.W   #1,D1
-            SUB.W   #1,D3
-
-            MOVE.W  D4,D2
-            CLR.L   D7
-            MOVE.B  player_2_charge_amount,D7
-            SUB.W   D7,D2
-            IF.B player_2_charge_amount <EQ> #80    THEN
-                ADD.W   #1,D2
-            ENDI
-            
             SUB.W   #1,D4
             
             MOVE.W  #87,D0
