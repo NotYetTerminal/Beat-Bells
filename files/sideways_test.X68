@@ -214,6 +214,7 @@ LOAD_IN_SONG
 
 LOAD_IN_SPRITES
         BSR     LOAD_IN_PLAYER_SPRITES
+        BSR     LOAD_IN_PUNCHING_SPRITES
         BSR     LOAD_IN_FILLED_NOTES_SPRITES
         BSR     LOAD_IN_UNFILLED_NOTES_SPRITES
         RTS
@@ -261,6 +262,56 @@ LOAD_IN_PLAYER_SPRITES
                 AND.B   #7,D6
                 ADD.B   #48,D6
                 MOVE.B  D6,17(A1)
+
+                BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+                BSR     QOI_DECODE
+            ENDF
+        ENDI
+        RTS
+
+
+LOAD_IN_PUNCHING_SPRITES
+        MOVE.L  next_free_slot_address,punching_1_start_sprite
+        FOR D5 = #0 TO #39   DO
+            ; load punching 1
+            LEA     PUNCHING_SPRITES_BASIC_PATH,A1
+            ; put in a
+            MOVE.B  #97,17(A1)
+
+            MOVE.L  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,18(A1)
+
+            MOVE.L  D5,D6
+            ; modulus 8
+            AND.B   #7,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,19(A1)
+
+            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            BSR     QOI_DECODE
+        ENDF
+        IF.B two_player <EQ> #1 THEN
+            MOVE.L  next_free_slot_address,punching_2_start_sprite
+            FOR D5 = #0 TO #39   DO
+                ; load punching 2
+                LEA     PUNCHING_SPRITES_BASIC_PATH,A1
+                ; put in b
+                MOVE.B  #98,17(A1)
+
+                MOVE.B  D5,D6
+                ; divide by 8
+                LSR.B   #3,D6
+                ADD.B   #48,D6
+                MOVE.B  D6,18(A1)
+
+                MOVE.B  D5,D6
+                ; modulus 8
+                AND.B   #7,D6
+                ADD.B   #48,D6
+                MOVE.B  D6,19(A1)
 
                 BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
                 BSR     QOI_DECODE
@@ -612,7 +663,7 @@ LOOP
             ENDI
         ENDI
 
-        IF.L player_2_last_beat_change_time <NE> #0  THEN
+        IF.B two_player <EQ> #1 AND.L player_2_last_beat_change_time <NE> #0  THEN
             MOVE.W  #8,D0
             TRAP    #15
             SUB.L   player_2_last_beat_change_time,D1
@@ -633,6 +684,10 @@ LOOP
             ; increments and does modulus 8
             ADDQ.B  #1,sprite_gif_index
             AND.B   #7,sprite_gif_index
+
+            IF.B player_1_punching_index <NE> #0 AND.B player_1_punching_index <NE> #8  THEN
+                ADDQ.B  #1,player_1_punching_index
+            ENDI
 
             ADD.L   #1,score
 
@@ -1000,6 +1055,7 @@ HANDLE_INPUT
         LEA     player_1_last_beat_change_time,A0
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
+        LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
         BSR     HANDLE_COLOUR_CHANGE
 
@@ -1018,6 +1074,7 @@ HANDLE_INPUT
             LEA     player_2_last_beat_change_time,A0
             LEA     player_2_action_pressed,A1
             LEA     player_2_action_colour,A2
+            LEA     player_2_punching_index,A4
             MOVE.L  player_2_colour_keymaps,D1
             BSR     HANDLE_COLOUR_CHANGE
 
@@ -1038,6 +1095,7 @@ HANDLE_INPUT
 ; A0 must contain player last beat change time
 ; A1 must contain player action pressed
 ; A2 must contain player action colour
+; A4 must conatin the player punching index
 ; D1 must contain player colour keymaps
 HANDLE_COLOUR_CHANGE
         MOVE.B  #19,D0
@@ -1097,6 +1155,7 @@ HANDLE_COLOUR_CHANGE
                 BCLR.B  #4,(A1)
             ENDI
             MOVE.L  D1,(A0)
+            MOVE.B  #1,(A4)
         ELSE
             BCLR.B  #7,(A1)
             BCLR.B  #6,(A1)
@@ -1107,6 +1166,7 @@ HANDLE_COLOUR_CHANGE
 
 
 ; A3 contains the player charge address
+; A4 contains the player punching index
 ; D3 must contain player shift/control keycode
 HANDLE_CHARGE
         ; check for shift/control pressed
@@ -1127,8 +1187,14 @@ HANDLE_CHARGE
                     MOVE.B  #80,(A3)
                 ENDI
             ENDI
+            IF.B (A4) <EQ> #8   THEN
+                CLR.B   (A4)
+            ENDI
         ELSE
             CLR.B   (A3)
+            IF.B (A4) <EQ> #0   THEN
+                MOVE.B  #8,(A4)
+            ENDI
         ENDI
         RTS
 
@@ -1591,31 +1657,55 @@ DRAW_PLAYERS
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        MOVE.L  player_1_start_sprite,A0
-        MOVE.B  player_1_action_colour,D0
         LEA     player_1_position,A1
+        MOVE.B  player_1_action_colour,D0
+        CLR.L   D1
+        IF.B player_1_punching_index <EQ> #8    THEN
+            MOVE.L  player_1_start_sprite,A0
+            MOVE.B  sprite_gif_index,D1
+        ELSE
+            MOVE.L  punching_1_start_sprite,A0
+            IF.B player_1_punching_index <EQ> #0    THEN
+                CLR.L   D0
+            ELSE
+                MOVE.B  player_1_punching_index,D1
+            ENDI
+        ENDI
         BSR     DRAW_PLAYER
+
         IF.B two_player <EQ> #1 THEN
             CLR.L   D0
-            MOVE.L  player_2_start_sprite,A0
-            MOVE.B  player_2_action_colour,D0
+
             LEA     player_2_position,A1
+            MOVE.B  player_2_action_colour,D0
+            CLR.L   D1
+            IF.B player_2_punching_index <EQ> #8    THEN
+                MOVE.L  player_2_start_sprite,A0
+                MOVE.B  sprite_gif_index,D1
+            ELSE
+                MOVE.L  punching_2_start_sprite,A0
+                IF.B player_2_punching_index <EQ> #0    THEN
+                    CLR.L   D0
+                ELSE
+                    MOVE.B  player_2_punching_index,D1
+                ENDI
+            ENDI
+
             BSR     DRAW_PLAYER
         ENDI
         RTS
 
 
 ; A0 must contain the start of the sprite
-; D0 must contain the player action colour
 ; A1 must contain the player 1 position
+; D0 must contain the player action colour
+; D1 must contain the sprite gif index
 DRAW_PLAYER
         ; multiply by $2000
         LSL.L   #8,D0
         LSL.L   #5,D0
         ADD.L   D0,A0
         ; multiply by $400
-        CLR.L   D1
-        MOVE.B  sprite_gif_index,D1
         LSL.L   #8,D1
         LSL.L   #2,D1
         ADD.L   D1,A0
@@ -2265,6 +2355,7 @@ player_1_action_colour  DC.B    0       ; stores the player action colour
 player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player changing colours
 player_1_charge_amount  DC.B    0       ; stores the charge amount
 player_1_life_amount    DC.W    200     ; stores the life amount
+player_1_punching_index DC.B    0       ; stores whether player is punching
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
 player_2_lane_number    DS.B    3       ; stores the lane number
@@ -2275,6 +2366,7 @@ player_2_action_colour  DC.B    0       ; stores the player action colour
 player_2_colour_keymaps DC.L    'AAAA'  ; stores the keymaps for the player changing colours
 player_2_charge_amount  DC.B    0       ; stores the charge amount
 player_2_life_amount    DC.W    200     ; stores the life amount
+player_2_punching_index DC.B    0       ; stores whether player is punching
 
 ; stores the number of objects in the arrays
 lane_0_object_count     DC.W    0
@@ -2365,6 +2457,7 @@ MULTIPLIER_SIZE             EQU     8           ; the size to multiply the sprit
 
 
 PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/aaa.qoi',0
+PUNCHING_SPRITES_BASIC_PATH DC.B    'punching_sprites/aaa.qoi',0
 FILLED_NOTES_BASIC_PATH     DC.B    'filled_notes_sprites/aaa.qoi',0
 UNFILLED_NOTES_BASIC_PATH   DC.B    'unfilled_notes_sprites/aaa.qoi',0
 EMPTY_SEEN_PIXELS_FILE      DC.B    'files/empty_seen_pixels.bin',0
@@ -2385,6 +2478,8 @@ sprite_gif_index            DC.B    0                   ; stores the index of th
 
 player_1_start_sprite           DS.L    1
 player_2_start_sprite           DS.L    1
+punching_1_start_sprite         DS.L    1
+punching_2_start_sprite         DS.L    1
 filled_notes_1_start_sprite     DS.L    1
 filled_notes_2_start_sprite     DS.L    1
 unfilled_notes_1_start_sprite   DS.L    1
