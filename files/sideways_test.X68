@@ -7,9 +7,6 @@
 
 * TODO
 * 
-* GAMEPLAY
-* Score counter
-* 
 * OPTIMISE USING THE COUNTER
 * decrement notes times slow
 * 
@@ -635,6 +632,8 @@ LOOP
             ADDQ.B  #1,sprite_gif_index
             AND.B   #7,sprite_gif_index
 
+            ADD.L   #1,score
+
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_note_spawn_time
@@ -653,6 +652,8 @@ LOOP
             SUB.L   previous_render_time,D1
             LSR.B   #1,D1
             MOVE.B  D1,render_skip_amount
+
+            BSR     CHECK_LIFE_AMOUNTS
         ELSE
             SUB.B   #1,render_skip_amount
         ENDI
@@ -2023,7 +2024,7 @@ DRAW_SCORE
 
         ; show number
         MOVEQ   #3,D0
-        MOVE.L  #20340,D1
+        MOVE.L  score,D1
         TRAP    #15
         RTS
 
@@ -2061,7 +2062,9 @@ DRAW_LIFE_BARS
             ADD.W   #1,D2
             SUB.W   #1,D4
 
-            ADD.W   player_1_life_amount,D3
+            IF.W player_1_life_amount <GT> #0   THEN
+                ADD.W   player_1_life_amount,D3
+            ENDI
 
             IF.W player_1_life_amount <EQ> #400    THEN
                 SUB.W   #1,D3
@@ -2082,7 +2085,9 @@ DRAW_LIFE_BARS
                 ADD.W   #1,D2
                 SUB.W   #13,D4
 
-                ADD.W   player_1_life_amount,D3
+                IF.W player_1_life_amount <GT> #0   THEN
+                    ADD.W   player_1_life_amount,D3
+                ENDI
 
                 IF.W player_1_life_amount <EQ> #400    THEN
                     SUB.W   #1,D3
@@ -2102,7 +2107,9 @@ DRAW_LIFE_BARS
                 ADD.W   #13,D2
                 MOVE.W  #59 ,D4
 
-                ADD.W   player_2_life_amount,D3
+                IF.W player_2_life_amount <GT> #0   THEN
+                    ADD.W   player_2_life_amount,D3
+                ENDI
 
                 IF.W player_2_life_amount <EQ> #400    THEN
                     SUB.W   #1,D3
@@ -2112,8 +2119,14 @@ DRAW_LIFE_BARS
             ELSE
                 MOVE.W  player_1_life_amount,D7
                 ADD.W   player_2_life_amount,D7
-                LSR.W   #1,D7
-                SUB.W   #25,D7
+
+                IF.W D7 <GT> #0   THEN
+                    LSR.W   #1,D7
+                    SUB.W   #25,D7
+                ELSE
+                    CLR.W   D7
+                ENDI
+
                 CLR.B   D6
 
                 ADD.W   #1,D2
@@ -2146,6 +2159,32 @@ DRAW_LIFE_BARS
                 ENDF
             ENDI
         ENDI
+        RTS
+
+
+CHECK_LIFE_AMOUNTS
+        IF.B two_player <EQ> #1 THEN
+            IF.B coop_mode <EQ> #0  THEN
+                IF.W player_1_life_amount <LT> #1   THEN
+                    BSR     EXIT_PROGRAM
+                ENDI
+                IF.W player_2_life_amount <LT> #1   THEN
+                    BSR     EXIT_PROGRAM
+                ENDI
+            ELSE
+                MOVE.W  player_1_life_amount,D0
+                ADD.W   player_2_life_amount,D0
+                IF.W D0 <LT> #1 THEN
+                    BSR     EXIT_PROGRAM
+                ENDI
+            ENDI
+        ELSE
+            IF.W player_1_life_amount <LT> #1   THEN
+                BSR     EXIT_PROGRAM
+            ENDI
+        ENDI
+
+
         RTS
 
 
@@ -2263,7 +2302,7 @@ treble_song_file_index  DC.L    0       ; stores the byte index that the song is
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 treble_song_file_size   DC.W    0       ; stores the total length of the treble song file
 
-two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
+two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
 coop_mode               DC.B    0       ; stores whether two player is coop 1 or versus 0
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
@@ -2359,7 +2398,7 @@ lanes_notes_hit_animations      DCB.L   5,$00000000
 ; first byte is used as an index
 ; other three are the coolour BGR
 
-
+score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
 
         END    START
