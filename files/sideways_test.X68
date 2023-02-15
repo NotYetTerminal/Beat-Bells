@@ -518,16 +518,20 @@ MAIN_MENU_LOOP
         BSR     HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
+            CLR.B   player_1_action_colour
             BRA     SELECT_SONG_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
+                CLR.B   player_1_action_colour
                 MOVE.B  #1,song_playing_type
                 BRA     GAME_START
             ELSE
                 IF.B player_1_action_colour <EQ> #3 THEN
+                    CLR.B   player_1_action_colour
                     BRA     EXIT_PROGRAM
                 ELSE
                     IF.B player_1_action_colour <EQ> #4 THEN
+                        CLR.B   player_1_action_colour
                         ADDQ.B  #1,menu_screen_game_type
                         IF.B menu_screen_game_type <HI> #2  THEN
                             CLR.B   menu_screen_game_type
@@ -704,6 +708,7 @@ LOAD_SCREEN_LOOP
         BSR     HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #4 THEN
+            CLR.B   player_1_action_colour
             BSR     FRAME_DELAY
             BRA     GAME_LOOP
         ENDI
@@ -1221,9 +1226,11 @@ PAUSE_MENU_LOOP
         BSR     HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
+            CLR.B   player_1_action_colour
             BRA     GAME_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
+                CLR.B   player_1_action_colour
                 BRA     MAIN_MENU_LOOP
             ENDI
         ENDI
@@ -1763,7 +1770,11 @@ DECREMENT_NOTES_TIMES
                 BSR     CHECK_LANES_EMPTY
                 IF.B D0 <EQ> #1 THEN
                     ; load in new song or show victory screen with percentage hit
-                    BSR     EXIT_PROGRAM
+                    IF.B song_playing_type <EQ> #0  THEN
+                        BSR     GAME_WON_MENU_LOOP
+                    ELSE
+                        BSR     LOAD_IN_NEW_SONG
+                    ENDI
                 ENDI
             ENDI
         ENDI
@@ -2442,9 +2453,11 @@ GAME_OVER_LOOP
         BSR HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
+            CLR.B   player_1_action_colour
             BRA     MAIN_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
+                CLR.B   player_1_action_colour
                 BRA     GAME_START
             ENDI
         ENDI
@@ -2455,6 +2468,30 @@ GAME_OVER_LOOP
 
 
 DRAW_GAME_OVER
+
+
+        RTS
+
+
+GAME_WON_MENU_LOOP
+        BSR HANDLE_MENU_SELECT
+
+        IF.B player_1_action_colour <EQ> #1 THEN
+            CLR.B   player_1_action_colour
+            BRA     MAIN_MENU_LOOP
+        ELSE
+            IF.B player_1_action_colour <EQ> #2 THEN
+                CLR.B   player_1_action_colour
+                BRA     GAME_START
+            ENDI
+        ENDI
+        CLR.B   player_1_action_colour
+
+        BSR     DRAW_GAME_WON_MENU
+        RTS
+
+
+DRAW_GAME_WON_MENU
 
 
         RTS
