@@ -7,6 +7,8 @@
 
 * TODO
 * 
+* Punching animation
+* 
 * OPTIMISE USING THE COUNTER
 * decrement notes times slow
 * 
