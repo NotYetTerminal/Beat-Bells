@@ -61,8 +61,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        MOVE.L  #2,D1
-        TRAP    #15
+        * MOVE.L  #2,D1
+        * TRAP    #15
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
@@ -82,6 +82,7 @@ START   ORG    $1000
         MOVE.L  #$060E0000,D2
         TRAP    #15
 
+        BRA     GAME_START
         BRA     MAIN_MENU_LOOP
 
 
@@ -513,10 +514,28 @@ QOI_PUT_IN_PIXEL
 
 
 MAIN_MENU_LOOP
-        LEA     main_menu_select_line,A2
-        LEA     player_1_moving,A2
-        MOVE.L  player_1_keymaps,D1
-        BSR     HANDLE_MOVEMENT
+;CHANGE THIS
+        BSR     HANDLE_COLOUR_CHANGE
+
+        IF.B player_1_action_colour <EQ> #1 THEN
+            ;BRA     SELECT_SONG_MENU_LOOP
+        ELSE
+            IF.B player_1_action_colour <EQ> #2 THEN
+                MOVE.B  #1,song_playing_type
+                ;BRA     LOAD_SCREEN_LOOP
+            ELSE
+                IF.B player_1_action_colour <EQ> #3 THEN
+                    BRA     EXIT_PROGRAM
+                ELSE
+                    IF.B player_1_action_colour <EQ> #4 THEN
+                        ADDQ.B  #1,menu_screen_game_type
+                        IF.B menu_screen_game_type <HI> #2  THEN
+                            CLR.B   menu_screen_game_type
+                        ENDI
+                    ENDI
+                ENDI
+            ENDI
+        ENDI
 
         BSR     HANDLE_DIFFICULTY_INPUT
         BSR     DRAW_MAIN_MENU
@@ -546,31 +565,6 @@ HANDLE_DIFFICULTY_INPUT
         IF  <NE>    then
             MOVE.B  #2,main_menu_difficulty
         ENDI
-
-        ; check for keys
-        MOVE.W  #19,D0
-        ; 4 5 6
-        MOVE.L  #$34353600,D1
-        TRAP    #15
-
-        ; checks 4
-        BTST.L  #24,D1
-        IF  <NE>    then
-            MOVE.B  #0,two_player
-        ENDI
-        ; checks 5
-        BTST.L  #16,D1
-        IF  <NE>    then
-            MOVE.B  #1,two_player
-            MOVE.B  #1,coop_mode
-        ENDI
-        ; checks 6
-        BTST.L  #8,D1
-        IF  <NE>    then
-            MOVE.B  #1,two_player
-            MOVE.B  #0,coop_mode
-        ENDI
-
         RTS
 
 
@@ -1116,6 +1110,8 @@ LANE_LEFT_SHIFT
 
 
 HANDLE_INPUT
+        BSR     HANDLE_PAUSE
+
         LEA     player_1_last_beat_change_time,A0
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
@@ -1125,7 +1121,7 @@ HANDLE_INPUT
         BSR     HANDLE_COLOUR_CHANGE
 
         ; shift
-        MOVE.L  #$10000000,D3
+        MOVE.L  #$10000000,D1
         LEA     player_1_charge_amount,A3
         BSR     HANDLE_CHARGE
 
@@ -1147,7 +1143,7 @@ HANDLE_INPUT
             BSR     HANDLE_COLOUR_CHANGE
 
             ; control
-            MOVE.L  #$11000000,D3
+            MOVE.L  #$11000000,D1
             LEA     player_2_charge_amount,A3
             BSR     HANDLE_CHARGE
 
@@ -1160,6 +1156,28 @@ HANDLE_INPUT
             BSR     CHANGE_PLAYER_Y_POSITION
         ENDI
         RTS
+
+
+HANDLE_PAUSE
+        MOVE.B  #19,D0
+        MOVE.L  #$1B000000,D1
+        TRAP    #15
+
+        ; checks esc
+        BTST.L  #24,D2
+        IF  <NE>    THEN
+            BRA     PAUSE_MENU_LOOP
+        ENDI
+        RTS
+
+
+PAUSE_MENU_LOOP
+;CHANGE THIS
+        BSR     HANDLE_COLOUR_CHANGE
+
+        ;BSR     DRAW_PAUSE_MENU
+
+        BRA     PAUSE_MENU_LOOP
 
 
 ; A0 must contain player last beat change time
@@ -1245,10 +1263,9 @@ HANDLE_COLOUR_CHANGE
 
 ; A3 contains the player charge address
 ; A4 contains the player punching index
-; D3 must contain player shift/control keycode
+; D1 must contain player shift/control keycode
 HANDLE_CHARGE
         ; check for shift/control pressed
-        MOVE.L  D3,D1
         MOVE.W  #19,D0
         TRAP    #15
         BTST.L  #24,D1
@@ -2579,13 +2596,15 @@ lanes_notes_hit_animations      DCB.L   5,$00000000
 score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
 
-
-main_menu_select_line           DC.B    0               ; stores the select line
+select_song_line                DC.B    0               ; stores the select line
 main_menu_difficulty            DC.B    0               ; stores the difficulty
+menu_screen_game_type           DC.B    0               ; stores whether single player 0 versus 1 or coop 2
 
+song_playing_type               DC.B    1               ; stores whether practice 0 or endless 1
 
 
         END    START
+
 
 
 *~Font name~Courier New~
