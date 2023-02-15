@@ -35,7 +35,6 @@
 SCREEN_WIDTH            EQU     1920
 SCREEN_HEIGHT           EQU     1080
 
-BORDER_SIZE             EQU     20
 TOP_BORDER_PADDING      EQU     100
 RIGHT_BORDER_PADDING    EQU     20
 BOTTOM_BORDER_PADDING   EQU     50
@@ -52,30 +51,10 @@ LANE_ADDRESSES_SIZE     EQU     55
 
 ; program start
 START   ORG    $1000
-
         ; turn off input echo
         MOVE.L  #12,D0
         CLR.B   D1
         TRAP    #15
-        
-        ; turn on double buffering
-        ; avoids flickering
-		MOVE.L  #92,D0
-        MOVE.B  #17,D1
-		TRAP    #15
-		
-		; store time in variables
-        MOVE.W  #8,D0
-        TRAP    #15
-        MOVE.L  D1,last_frame_time
-        MOVE.L  D1,last_treble_path_change_time
-        MOVE.L  D1,last_bass_path_change_time
-        MOVE.L  D1,last_object_time
-        MOVE.L  D1,last_note_spawn_time
-        MOVE.L  D1,player_1_last_beat_change_time
-        MOVE.L  D1,player_2_last_beat_change_time
-        ; stores the time as starting seed
-        MOVE.L  D1,random_value
 
         ; sets the screen size
         MOVE.L  #33,D0
@@ -84,24 +63,6 @@ START   ORG    $1000
         ; sets the window to be fullscreen
         MOVE.L  #2,D1
         TRAP    #15
-
-        ; sets lane for the note paths
-        MOVE.B  two_player,D1
-        SUB.B   D1,treble_note_path_index
-        ADD.B   D1,bass_note_path_index
-
-        ; sets the players' positions
-        MOVE.W  #50,player_1_position
-        MOVE.W  #50,player_2_position
-        MOVE.B  treble_note_path_index,player_1_lane_number
-        MOVE.B  bass_note_path_index,player_2_lane_number
-
-        LEA     player_1_position,A0
-        LEA     player_1_lane_number,A1
-        BSR     CHANGE_PLAYER_Y_POSITION
-        LEA     player_2_position,A0
-        LEA     player_2_lane_number,A1
-        BSR     CHANGE_PLAYER_Y_POSITION
 
         ; sets up the player keymaps
         LEA     player_1_colour_keymaps,A0
@@ -114,17 +75,8 @@ START   ORG    $1000
         ;MOVE.L  #$230C222D,player_2_colour_keymaps
         MOVE.L  #$51525654,player_2_colour_keymaps
 
-        ; sets the index to the start
-        MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
-        MOVE.L  #BASS_FILE_CONTENTS,bass_song_file_index
-
-        ; sets up notes and music
-        ; checks if $10000 has been accidentally used
-        IF.L TREBLE_FILE_CONTENTS <NE> #$FFFFFFFF  THEN
-            ILLEGAL
-        ENDI
+        ; sets up notes
         BSR     NOTE_SET_UP
-        BSR     LOAD_IN_SONG
 
         ; checks if $28000 has been accidentally used
         IF.L SPRITES_LOADING <NE> #$FFFFFFFF  THEN
@@ -132,24 +84,13 @@ START   ORG    $1000
         ENDI
         BSR     LOAD_IN_SPRITES
 
-        ; sets the song difficulty
-        MOVE.B  #20,song_difficulty
-
-        MOVE.B  song_difficulty,D0
-        LSR.B   #1,D0
-        MOVEQ   #20,D1
-        SUB.B   D0,D1
-        MOVE.W  D1,notes_speed
-        
         ; set font properties
         MOVEQ   #21,D0
         MOVE.L  #WHITE,D1
         MOVE.L  #$060E0000,D2
         TRAP    #15
 
-        ; frame delay, so that framerate is consistent
-        BSR     FRAME_DELAY
-        JMP     LOOP
+        BRA     MAIN_MENU_LOOP
 
 
 ; loads in all notes into DirectX memory
@@ -167,46 +108,6 @@ NOTE_SET_UP
             MOVE.B  #74,D0
             TRAP    #15
         ENDF
-        RTS
-
-
-; loads in a two song files
-; loads the treble file into $10000
-; and the bass file into $20000
-LOAD_IN_SONG
-        MOVE.B  #51,D0
-        LEA     song_name,A1
-        ADD     #10,A1
-        MOVE.B  #84,(A1)
-        SUB     #10,A1
-        TRAP    #15
-
-        MOVE.B  #53,D0
-        LEA     TREBLE_FILE_CONTENTS,A1
-        MOVE.L  #$FFFFF,D2
-        TRAP    #15
-        MOVE.W  D2,treble_song_file_size
-        ; tells the program that this is the last byte
-        ADD.L   #1,D2
-        MOVE.B  #$FF,D2
-
-        MOVE.B  #51,D0
-        LEA     song_name,A1
-        ADD     #10,A1
-        MOVE.B  #66,(A1)
-        SUB     #10,A1
-        TRAP    #15
-
-        MOVE.B  #53,D0
-        LEA     BASS_FILE_CONTENTS,A1
-        MOVE.L  #$FFFFF,D2
-        TRAP    #15
-        ADD.L   #1,D2
-        MOVE.B  #$FF,D2
-
-        MOVE.B  #50,D0
-        TRAP    #15
-
         RTS
 
 
@@ -619,7 +520,130 @@ QOI_PUT_IN_PIXEL
         RTS
 
 
-LOOP
+MAIN_MENU_LOOP
+        LEA     main_menu_select_line,A2
+        LEA     player_1_moving,A2
+        MOVE.L  player_1_keymaps,D1
+        BSR     HANDLE_MOVEMENT
+
+        BSR     HANDLE_MENU_INPUT
+        BSR     DRAW_MAIN_MENU
+
+        BRA     MAIN_MENU_LOOP
+
+
+HANDLE_MENU_INPUT
+
+
+        RTS
+
+
+DRAW_MAIN_MENU
+
+
+        RTS
+
+
+GAME_START
+        ; turn on double buffering
+        ; avoids flickering
+		MOVE.L  #92,D0
+        MOVE.B  #17,D1
+		TRAP    #15
+
+
+		; store time in variables
+        MOVE.W  #8,D0
+        TRAP    #15
+        MOVE.L  D1,last_frame_time
+        MOVE.L  D1,last_treble_path_change_time
+        MOVE.L  D1,last_bass_path_change_time
+        MOVE.L  D1,last_object_time
+        MOVE.L  D1,last_note_spawn_time
+        MOVE.L  D1,player_1_last_beat_change_time
+        MOVE.L  D1,player_2_last_beat_change_time
+        ; stores the time as starting seed
+        MOVE.L  D1,random_value
+
+        ; sets lane for the note paths
+        MOVE.B  two_player,D1
+        SUB.B   D1,treble_note_path_index
+        ADD.B   D1,bass_note_path_index
+
+        ; sets the players' positions
+        MOVE.W  #50,player_1_position
+        MOVE.W  #50,player_2_position
+        MOVE.B  treble_note_path_index,player_1_lane_number
+        MOVE.B  bass_note_path_index,player_2_lane_number
+
+        LEA     player_1_position,A0
+        LEA     player_1_lane_number,A1
+        BSR     CHANGE_PLAYER_Y_POSITION
+        LEA     player_2_position,A0
+        LEA     player_2_lane_number,A1
+        BSR     CHANGE_PLAYER_Y_POSITION
+
+        ; sets the index to the start
+        MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
+        MOVE.L  #BASS_FILE_CONTENTS,bass_song_file_index
+
+        ; checks if $10000 has been accidentally used
+        IF.L TREBLE_FILE_CONTENTS <NE> #$FFFFFFFF  THEN
+            ILLEGAL
+        ENDI
+        BSR     LOAD_IN_SONG
+
+        ; sets the game speed
+        MOVE.B  song_difficulty,D0
+        LSR.B   #1,D0
+        MOVEQ   #20,D1
+        SUB.B   D0,D1
+        MOVE.W  D1,notes_speed
+        
+        BSR     FRAME_DELAY
+        BRA     GAME_LOOP
+
+
+; loads in two song files
+; loads the treble file into $10000
+; and the bass file into $20000
+LOAD_IN_SONG
+        MOVE.B  #51,D0
+        LEA     song_name,A1
+        ADD     #10,A1
+        MOVE.B  #84,(A1)
+        SUB     #10,A1
+        TRAP    #15
+
+        MOVE.B  #53,D0
+        LEA     TREBLE_FILE_CONTENTS,A1
+        MOVE.L  #$FFFFF,D2
+        TRAP    #15
+        MOVE.W  D2,treble_song_file_size
+        ; tells the program that this is the last byte
+        ADD.L   #1,D2
+        MOVE.B  #$FF,D2
+
+        MOVE.B  #51,D0
+        LEA     song_name,A1
+        ADD     #10,A1
+        MOVE.B  #66,(A1)
+        SUB     #10,A1
+        TRAP    #15
+
+        MOVE.B  #53,D0
+        LEA     BASS_FILE_CONTENTS,A1
+        MOVE.L  #$FFFFF,D2
+        TRAP    #15
+        ADD.L   #1,D2
+        MOVE.B  #$FF,D2
+
+        MOVE.B  #50,D0
+        TRAP    #15
+        RTS
+
+
+GAME_LOOP
         ; frame delay, so that framerate is consistent
         BSR     FRAME_DELAY
 
@@ -719,7 +743,7 @@ LOOP
             SUB.B   #1,render_skip_amount
         ENDI
 
-        JMP     LOOP
+        BRA     GAME_LOOP
 
 
 FRAME_DELAY
@@ -1069,11 +1093,13 @@ HANDLE_INPUT
         LEA     player_1_charge_amount,A3
         BSR     HANDLE_CHARGE
 
-        LEA     player_1_position,A0
         LEA     player_1_lane_number,A1
         LEA     player_1_moving,A2
         MOVE.L  player_1_keymaps,D1
         BSR     HANDLE_MOVEMENT
+
+        LEA     player_1_position,A0
+        BSR     CHANGE_PLAYER_Y_POSITION
 
         IF.B two_player <EQ> #1 THEN
             LEA     player_2_last_beat_change_time,A0
@@ -1089,11 +1115,13 @@ HANDLE_INPUT
             LEA     player_2_charge_amount,A3
             BSR     HANDLE_CHARGE
 
-            LEA     player_2_position,A0
             LEA     player_2_lane_number,A1
             LEA     player_2_moving,A2
             MOVE.L  player_2_keymaps,D1
             BSR     HANDLE_MOVEMENT
+
+            LEA     player_2_position,A0
+            BSR     CHANGE_PLAYER_Y_POSITION
         ENDI
         RTS
 
@@ -1213,7 +1241,6 @@ HANDLE_CHARGE
         RTS
 
 
-; A0 must conatin player position
 ; A1 must contain player lane number
 ; A2 must contain player moving
 ; D1 must contain player keymaps
@@ -1254,8 +1281,6 @@ HANDLE_MOVEMENT
         ELSE
             BCLR.B  #1,(A2)
         ENDI
-
-        BSR     CHANGE_PLAYER_Y_POSITION
         RTS
 
 
@@ -1903,9 +1928,9 @@ DRAW_BEAT_LINE
         TRAP    #15
 
         MOVE.W  #BEAT_LINE_X,D1
-        MOVE.W  #BORDER_SIZE+1,D2
+        MOVE.W  #21,D2
         MOVE.W  #BEAT_LINE_X,D3
-        MOVE.W  #SCREEN_HEIGHT-BORDER_SIZE-1,D4
+        MOVE.W  #SCREEN_HEIGHT-19,D4
         BSR     DRAW_LINE
         RTS
 
@@ -2449,7 +2474,7 @@ NOTES_NAMES_8           DC.B    '8cn'
 ; 20 - easy,
 ; 16 - medium,
 ; 12 - hard
-song_difficulty             DC.B    16
+song_difficulty             DC.B    20      ; stores the notes spawning difficulty
 treble_quater_beat_count    DC.B    128     ; stores the count of quarter beats played
 bass_quater_beat_count      DC.B    128     ; stores the count of quarter beats played
 treble_last_note_success    DC.B    0       ; stores whether the last hit note was correct
@@ -2517,6 +2542,11 @@ lanes_notes_hit_animations      DCB.L   5,$00000000
 
 score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
+
+
+main_menu_select_line           DC.B    0               ; stores the main_menu_select_line
+
+
 
         END    START
 
