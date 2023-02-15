@@ -64,16 +64,8 @@ START   ORG    $1000
         MOVE.L  #2,D1
         TRAP    #15
 
-        ; sets up the player keymaps
-        LEA     player_1_colour_keymaps,A0
-        ; space
-        MOVE.B  #$20,3(A0)
-
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
-        ; keypad 1, 5, 3 and 0
-        ;MOVE.L  #$230C222D,player_2_colour_keymaps
-        MOVE.L  #$51525654,player_2_colour_keymaps
 
         ; sets up notes
         BSR     NOTE_SET_UP
@@ -526,14 +518,58 @@ MAIN_MENU_LOOP
         MOVE.L  player_1_keymaps,D1
         BSR     HANDLE_MOVEMENT
 
-        BSR     HANDLE_MENU_INPUT
+        BSR     HANDLE_DIFFICULTY_INPUT
         BSR     DRAW_MAIN_MENU
 
         BRA     MAIN_MENU_LOOP
 
 
-HANDLE_MENU_INPUT
+HANDLE_DIFFICULTY_INPUT
+        ; check for keys
+        MOVE.W  #19,D0
+        ; 1 2 3
+        MOVE.L  #$31323300,D1
+        TRAP    #15
 
+        ; checks 1
+        BTST.L  #24,D1
+        IF  <NE>    then
+            MOVE.B  #0,main_menu_difficulty
+        ENDI
+        ; checks 2
+        BTST.L  #16,D1
+        IF  <NE>    then
+            MOVE.B  #1,main_menu_difficulty
+        ENDI
+        ; checks 3
+        BTST.L  #8,D1
+        IF  <NE>    then
+            MOVE.B  #2,main_menu_difficulty
+        ENDI
+
+        ; check for keys
+        MOVE.W  #19,D0
+        ; 4 5 6
+        MOVE.L  #$34353600,D1
+        TRAP    #15
+
+        ; checks 4
+        BTST.L  #24,D1
+        IF  <NE>    then
+            MOVE.B  #0,two_player
+        ENDI
+        ; checks 5
+        BTST.L  #16,D1
+        IF  <NE>    then
+            MOVE.B  #1,two_player
+            MOVE.B  #1,coop_mode
+        ENDI
+        ; checks 6
+        BTST.L  #8,D1
+        IF  <NE>    then
+            MOVE.B  #1,two_player
+            MOVE.B  #0,coop_mode
+        ENDI
 
         RTS
 
@@ -2395,7 +2431,7 @@ player_1_moving         DC.B    0       ; stores whether the player is moving up
 player_1_action_pressed DC.B    0       ; stores whether any action buttons are pressed
 player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
 player_1_action_colour  DC.B    0       ; stores the player action colour
-player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player changing colours
+player_1_colour_keymaps DC.L    'HUK '  ; stores the keymaps for the player changing colours
 player_1_charge_amount  DC.B    0       ; stores the charge amount
 player_1_life_amount    DC.W    200     ; stores the life amount
 player_1_punching_index DC.B    0       ; stores whether player is punching
@@ -2405,9 +2441,9 @@ player_2_position       DS.W    2       ; stores the top right player position x
 player_2_lane_number    DS.B    3       ; stores the lane number
 player_2_moving         DC.B    0       ; stores whether the player is moving up or down
 player_2_action_pressed DC.B    0       ; stores whether any action buttons are pressed
-player_2_keymaps        DC.L    'AA'    ; stores the movement keys of player
+player_2_keymaps        DC.L    'RF'    ; stores the movement keys of player
 player_2_action_colour  DC.B    0       ; stores the player action colour
-player_2_colour_keymaps DC.L    'AAAA'  ; stores the keymaps for the player changing colours
+player_2_colour_keymaps DC.L    'CGBX'  ; stores the keymaps for the player changing colours
 player_2_charge_amount  DC.B    0       ; stores the charge amount
 player_2_life_amount    DC.W    200     ; stores the life amount
 player_2_punching_index DC.B    0       ; stores whether player is punching
@@ -2442,7 +2478,7 @@ bass_song_file_index    DC.L    0       ; stores the byte index that the song is
 treble_song_file_size   DC.W    0       ; stores the total length of the treble song file
 
 two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
-coop_mode               DC.B    0       ; stores whether two player is coop 1 or versus 0
+coop_mode               DC.B    1       ; stores whether two player is coop 1 or versus 0
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -2544,7 +2580,8 @@ score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
 
 
-main_menu_select_line           DC.B    0               ; stores the main_menu_select_line
+main_menu_select_line           DC.B    0               ; stores the select line
+main_menu_difficulty            DC.B    0               ; stores the difficulty
 
 
 
