@@ -30,6 +30,7 @@
 * increase notes moving speed on new song
 * song_playing_type needs to change whether another song is put in
 * song name needs to be set
+* time is an issue when pausing
 * 
 
 ; set constants
@@ -535,6 +536,7 @@ MAIN_MENU_LOOP
                 ENDI
             ENDI
         ENDI
+        CLR.B   player_1_action_colour
 
         BSR     HANDLE_DIFFICULTY_INPUT
         BSR     DRAW_MAIN_MENU
@@ -553,7 +555,6 @@ HANDLE_MENU_SELECT
 
         ; resets the punching index
         CLR.B   player_1_punching_index
-        CLR.B   player_1_action_colour
         RTS
 
 
@@ -706,6 +707,7 @@ LOAD_SCREEN_LOOP
             BSR     FRAME_DELAY
             BRA     GAME_LOOP
         ENDI
+        CLR.B   player_1_action_colour
 
         BSR     DRAW_LOAD_SCREEN
         BRA     LOAD_SCREEN_LOOP
@@ -1208,7 +1210,7 @@ HANDLE_PAUSE
         TRAP    #15
 
         ; checks esc
-        BTST.L  #24,D2
+        BTST.L  #24,D1
         IF  <NE>    THEN
             BRA     PAUSE_MENU_LOOP
         ENDI
@@ -1225,6 +1227,7 @@ PAUSE_MENU_LOOP
                 BRA     MAIN_MENU_LOOP
             ENDI
         ENDI
+        CLR.B   player_1_action_colour
 
         BSR     DRAW_PAUSE_MENU
         BRA     PAUSE_MENU_LOOP
@@ -2445,6 +2448,7 @@ GAME_OVER_LOOP
                 BRA     GAME_START
             ENDI
         ENDI
+        CLR.B   player_1_action_colour
 
         BSR     DRAW_GAME_OVER
         BRA     GAME_OVER_LOOP
@@ -2684,8 +2688,6 @@ song_playing_type               DC.B    1               ; stores whether practic
 game_over_status                DC.B    0               ; stores whether game over 0 or a player won 1 or 2
 
         END    START
-
-
 
 *~Font name~Courier New~
 *~Font size~10~
