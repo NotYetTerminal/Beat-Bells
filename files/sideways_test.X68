@@ -7,7 +7,6 @@
 
 * TODO
 * 
-* OPTIMISE USING THE COUNTER
 * decrement notes times slow
 * 
 * Warnings
@@ -19,17 +18,19 @@
 * Error
 * Players can play the other's tracks if they are on the same line
 * 
-* Menu
-* tutorial menu
-* load in song name
-* load in song difficulty
-* make it so there is a delay before ending the game and returns to menu
+* Drawing
+* loading menu
+* main menu
+* select menu
+* pause menu
+* game over screen
+* practice win screen
 * 
-* Variables
-* song difficulty
-* song file name
-* one or two player
-* notes moving speed
+* calculate song difficulty
+* increase notes moving speed on new song
+* song_playing_type needs to change whether another song is put in
+* song name needs to be set
+* 
 
 ; set constants
 SCREEN_WIDTH            EQU     1920
@@ -82,7 +83,6 @@ START   ORG    $1000
         MOVE.L  #$060E0000,D2
         TRAP    #15
 
-        BRA     GAME_START
         BRA     MAIN_MENU_LOOP
 
 
@@ -514,15 +514,14 @@ QOI_PUT_IN_PIXEL
 
 
 MAIN_MENU_LOOP
-;CHANGE THIS
-        BSR     HANDLE_COLOUR_CHANGE
+        BSR     HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
-            ;BRA     SELECT_SONG_MENU_LOOP
+            BRA     SELECT_SONG_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 MOVE.B  #1,song_playing_type
-                ;BRA     LOAD_SCREEN_LOOP
+                BRA     GAME_START
             ELSE
                 IF.B player_1_action_colour <EQ> #3 THEN
                     BRA     EXIT_PROGRAM
@@ -541,6 +540,21 @@ MAIN_MENU_LOOP
         BSR     DRAW_MAIN_MENU
 
         BRA     MAIN_MENU_LOOP
+
+
+HANDLE_MENU_SELECT
+        LEA     player_1_last_beat_change_time,A0
+        LEA     player_1_action_pressed,A1
+        LEA     player_1_action_colour,A2
+        LEA     player_1_punching_colour,A3
+        LEA     player_1_punching_index,A4
+        MOVE.L  player_1_colour_keymaps,D1
+        BSR     HANDLE_COLOUR_CHANGE
+
+        ; resets the punching index
+        CLR.B   player_1_punching_index
+        CLR.B   player_1_action_colour
+        RTS
 
 
 HANDLE_DIFFICULTY_INPUT
@@ -569,6 +583,19 @@ HANDLE_DIFFICULTY_INPUT
 
 
 DRAW_MAIN_MENU
+
+
+        RTS
+
+
+SELECT_SONG_MENU_LOOP
+
+        BSR     DRAW_SELECT_SONG_MENU
+
+        BRA     SELECT_SONG_MENU_LOOP
+
+
+DRAW_SELECT_SONG_MENU
 
 
         RTS
@@ -629,9 +656,8 @@ GAME_START
         MOVEQ   #20,D1
         SUB.B   D0,D1
         MOVE.W  D1,notes_speed
-        
-        BSR     FRAME_DELAY
-        BRA     GAME_LOOP
+
+        BRA     LOAD_SCREEN_LOOP
 
 
 ; loads in two song files
@@ -670,6 +696,24 @@ LOAD_IN_SONG
 
         MOVE.B  #50,D0
         TRAP    #15
+        RTS
+
+
+LOAD_SCREEN_LOOP
+        BSR     HANDLE_MENU_SELECT
+
+        IF.B player_1_action_colour <EQ> #4 THEN
+            BSR     FRAME_DELAY
+            BRA     GAME_LOOP
+        ENDI
+
+        BSR     DRAW_LOAD_SCREEN
+        BRA     LOAD_SCREEN_LOOP
+
+
+DRAW_LOAD_SCREEN
+
+
         RTS
 
 
@@ -1172,18 +1216,30 @@ HANDLE_PAUSE
 
 
 PAUSE_MENU_LOOP
-;CHANGE THIS
-        BSR     HANDLE_COLOUR_CHANGE
+        BSR     HANDLE_MENU_SELECT
 
-        ;BSR     DRAW_PAUSE_MENU
+        IF.B player_1_action_colour <EQ> #1 THEN
+            BRA     GAME_LOOP
+        ELSE
+            IF.B player_1_action_colour <EQ> #2 THEN
+                BRA     MAIN_MENU_LOOP
+            ENDI
+        ENDI
 
+        BSR     DRAW_PAUSE_MENU
         BRA     PAUSE_MENU_LOOP
+
+
+DRAW_PAUSE_MENU
+
+
+        RTS
 
 
 ; A0 must contain player last beat change time
 ; A1 must contain player action pressed
 ; A2 must contain player action colour
-; A2 must contain player punching colour
+; A3 must contain player punching colour
 ; A4 must conatin the player punching index
 ; D1 must contain player colour keymaps
 HANDLE_COLOUR_CHANGE
@@ -1703,6 +1759,7 @@ DECREMENT_NOTES_TIMES
             IF.B (A0) <EQ> #$FF AND.B (A1) <EQ> #$FF    THEN
                 BSR     CHECK_LANES_EMPTY
                 IF.B D0 <EQ> #1 THEN
+                    ; load in new song or show victory screen with percentage hit
                     BSR     EXIT_PROGRAM
                 ENDI
             ENDI
@@ -2354,23 +2411,46 @@ CHECK_LIFE_AMOUNTS
         IF.B two_player <EQ> #1 THEN
             IF.B coop_mode <EQ> #0  THEN
                 IF.W player_1_life_amount <LT> #1   THEN
-                    BSR     EXIT_PROGRAM
+                    MOVE.B  #2,game_over_status
+                    BRA     GAME_OVER_LOOP
                 ENDI
                 IF.W player_2_life_amount <LT> #1   THEN
-                    BSR     EXIT_PROGRAM
+                    MOVE.B  #1,game_over_status
+                    BRA     GAME_OVER_LOOP
                 ENDI
             ELSE
                 MOVE.W  player_1_life_amount,D0
                 ADD.W   player_2_life_amount,D0
                 IF.W D0 <LT> #1 THEN
-                    BSR     EXIT_PROGRAM
+                    CLR.B   game_over_status
+                    BRA     GAME_OVER_LOOP
                 ENDI
             ENDI
         ELSE
             IF.W player_1_life_amount <LT> #1   THEN
-                BSR     EXIT_PROGRAM
+                CLR.B   game_over_status
+                BRA     GAME_OVER_LOOP
             ENDI
         ENDI
+        RTS
+
+
+GAME_OVER_LOOP
+        BSR HANDLE_MENU_SELECT
+
+        IF.B player_1_action_colour <EQ> #1 THEN
+            BRA     MAIN_MENU_LOOP
+        ELSE
+            IF.B player_1_action_colour <EQ> #2 THEN
+                BRA     GAME_START
+            ENDI
+        ENDI
+
+        BSR     DRAW_GAME_OVER
+        BRA     GAME_OVER_LOOP
+
+
+DRAW_GAME_OVER
 
 
         RTS
@@ -2439,8 +2519,8 @@ last_treble_path_change_time    DS.L    1       ; stores the time when the trebl
 last_bass_path_change_time      DS.L    1       ; stores the time when the bass path index last changed
 last_object_time        DS.L    1       ; stores the time when the notes where moved
 last_note_spawn_time    DS.L    1       ; stores the time when note was last spawned
-player_1_last_beat_change_time  DS.L    1       ; stores the time when beat was last checked and put back into white
-player_2_last_beat_change_time  DS.L    1       ; stores the time when beat was last checked and put back into white
+player_1_last_beat_change_time  DC.L    0       ; stores the time when beat was last checked and put back into white
+player_2_last_beat_change_time  DC.L    0       ; stores the time when beat was last checked and put back into white
 
 player_1_position       DS.W    2       ; stores the top right player position x,y
 player_1_lane_number    DS.B    1       ; stores the lane number
@@ -2601,7 +2681,7 @@ main_menu_difficulty            DC.B    0               ; stores the difficulty
 menu_screen_game_type           DC.B    0               ; stores whether single player 0 versus 1 or coop 2
 
 song_playing_type               DC.B    1               ; stores whether practice 0 or endless 1
-
+game_over_status                DC.B    0               ; stores whether game over 0 or a player won 1 or 2
 
         END    START
 
