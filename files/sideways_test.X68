@@ -7,8 +7,6 @@
 
 * TODO
 * 
-* Punching animation
-* 
 * OPTIMISE USING THE COUNTER
 * decrement notes times slow
 * 
@@ -689,6 +687,12 @@ LOOP
                 ADDQ.B  #1,player_1_punching_index
             ENDI
 
+            IF.B two_player <EQ> #1 THEN
+                IF.B player_2_punching_index <NE> #0 AND.B player_2_punching_index <NE> #8  THEN
+                    ADDQ.B  #1,player_2_punching_index
+                ENDI
+            ENDI
+
             ADD.L   #1,score
 
             MOVE.W  #8,D0
@@ -838,11 +842,11 @@ CHECK_COLLISIONS
                             IF.B 6(A1) <EQ> #0  THEN
                                 CLR.B   treble_last_note_success
                                 CLR.B   player_1_charge_amount
-                                SUB.W   #200,player_1_life_amount
+                                SUB.W   #199,player_1_life_amount
                             ELSE
                                 CLR.B   bass_last_note_success
                                 CLR.B   player_2_charge_amount
-                                SUB.W   #200,player_2_life_amount
+                                SUB.W   #199,player_2_life_amount
                             ENDI
                             LEA     lanes_colours,A3
                             MOVE.L  D5,D7
@@ -1055,6 +1059,7 @@ HANDLE_INPUT
         LEA     player_1_last_beat_change_time,A0
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
+        LEA     player_1_punching_colour,A3
         LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
         BSR     HANDLE_COLOUR_CHANGE
@@ -1074,6 +1079,7 @@ HANDLE_INPUT
             LEA     player_2_last_beat_change_time,A0
             LEA     player_2_action_pressed,A1
             LEA     player_2_action_colour,A2
+            LEA     player_2_punching_colour,A3
             LEA     player_2_punching_index,A4
             MOVE.L  player_2_colour_keymaps,D1
             BSR     HANDLE_COLOUR_CHANGE
@@ -1095,6 +1101,7 @@ HANDLE_INPUT
 ; A0 must contain player last beat change time
 ; A1 must contain player action pressed
 ; A2 must contain player action colour
+; A2 must contain player punching colour
 ; A4 must conatin the player punching index
 ; D1 must contain player colour keymaps
 HANDLE_COLOUR_CHANGE
@@ -1110,9 +1117,11 @@ HANDLE_COLOUR_CHANGE
                 BTST.B  #7,(A1)
                 IF  <EQ>    THEN
                     MOVE.B  #1,(A2)
+                    MOVE.B  #1,(A3)
                     BSET.B  #7,(A1)
                     MOVE.W  #8,D0
                     TRAP    #15
+                    MOVE.B  #1,(A4)
                 ENDI
             ELSE
                 BCLR.B  #7,(A1)
@@ -1122,9 +1131,11 @@ HANDLE_COLOUR_CHANGE
                 BTST.B  #6,(A1)
                 IF  <EQ>    THEN
                     MOVE.B  #2,(A2)
+                    MOVE.B  #2,(A3)
                     BSET.B  #6,(A1)
                     MOVE.W  #8,D0
                     TRAP    #15
+                    MOVE.B  #1,(A4)
                 ENDI
             ELSE
                 BCLR.B  #6,(A1)
@@ -1134,9 +1145,11 @@ HANDLE_COLOUR_CHANGE
                 BTST.B  #5,(A1)
                 IF  <EQ>    THEN
                     MOVE.B  #3,(A2)
+                    MOVE.B  #3,(A3)
                     BSET.B  #5,(A1)
                     MOVE.W  #8,D0
                     TRAP    #15
+                    MOVE.B  #1,(A4)
                 ENDI
             ELSE
                 BCLR.B  #5,(A1)
@@ -1147,15 +1160,16 @@ HANDLE_COLOUR_CHANGE
                 BTST.B  #4,(A1)
                 IF  <EQ>    THEN
                     MOVE.B  #4,(A2)
+                    MOVE.B  #4,(A3)
                     BSET.B  #4,(A1)
                     MOVE.W  #8,D0
                     TRAP    #15
+                    MOVE.B  #1,(A4)
                 ENDI
             ELSE
                 BCLR.B  #4,(A1)
             ENDI
             MOVE.L  D1,(A0)
-            MOVE.B  #1,(A4)
         ELSE
             BCLR.B  #7,(A1)
             BCLR.B  #6,(A1)
@@ -1187,7 +1201,7 @@ HANDLE_CHARGE
                     MOVE.B  #80,(A3)
                 ENDI
             ENDI
-            IF.B (A4) <EQ> #8   THEN
+            IF.B (A4) <HS> #7   THEN
                 CLR.B   (A4)
             ENDI
         ELSE
@@ -1657,17 +1671,17 @@ DRAW_PLAYERS
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
+        CLR.L   D0
         LEA     player_1_position,A1
-        MOVE.B  player_1_action_colour,D0
         CLR.L   D1
         IF.B player_1_punching_index <EQ> #8    THEN
             MOVE.L  player_1_start_sprite,A0
+            MOVE.B  player_1_action_colour,D0
             MOVE.B  sprite_gif_index,D1
         ELSE
             MOVE.L  punching_1_start_sprite,A0
-            IF.B player_1_punching_index <EQ> #0    THEN
-                CLR.L   D0
-            ELSE
+            IF.B player_1_punching_index <NE> #0    THEN
+                MOVE.B  player_1_punching_colour,D0
                 MOVE.B  player_1_punching_index,D1
             ENDI
         ENDI
@@ -1675,18 +1689,16 @@ DRAW_PLAYERS
 
         IF.B two_player <EQ> #1 THEN
             CLR.L   D0
-
             LEA     player_2_position,A1
-            MOVE.B  player_2_action_colour,D0
             CLR.L   D1
             IF.B player_2_punching_index <EQ> #8    THEN
                 MOVE.L  player_2_start_sprite,A0
+                MOVE.B  player_2_action_colour,D0
                 MOVE.B  sprite_gif_index,D1
             ELSE
                 MOVE.L  punching_2_start_sprite,A0
-                IF.B player_2_punching_index <EQ> #0    THEN
-                    CLR.L   D0
-                ELSE
+                IF.B player_2_punching_index <NE> #0    THEN
+                    MOVE.B  player_2_punching_colour,D0
                     MOVE.B  player_2_punching_index,D1
                 ENDI
             ENDI
@@ -2156,6 +2168,8 @@ DRAW_LIFE_BARS
 
             IF.W player_1_life_amount <GT> #0   THEN
                 ADD.W   player_1_life_amount,D3
+            ELSE
+                ADD.W   #1,D3
             ENDI
 
             IF.W player_1_life_amount <EQ> #400    THEN
@@ -2179,6 +2193,8 @@ DRAW_LIFE_BARS
 
                 IF.W player_1_life_amount <GT> #0   THEN
                     ADD.W   player_1_life_amount,D3
+                ELSE
+                    ADD.W   #1,D3
                 ENDI
 
                 IF.W player_1_life_amount <EQ> #400    THEN
@@ -2201,6 +2217,8 @@ DRAW_LIFE_BARS
 
                 IF.W player_2_life_amount <GT> #0   THEN
                     ADD.W   player_2_life_amount,D3
+                ELSE
+                    ADD.W   #1,D3
                 ENDI
 
                 IF.W player_2_life_amount <EQ> #400    THEN
@@ -2356,6 +2374,7 @@ player_1_colour_keymaps DC.L    'HUKA'  ; stores the keymaps for the player chan
 player_1_charge_amount  DC.B    0       ; stores the charge amount
 player_1_life_amount    DC.W    200     ; stores the life amount
 player_1_punching_index DC.B    0       ; stores whether player is punching
+player_1_punching_colour    DC.B    0       ; stores player punching colour
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
 player_2_lane_number    DS.B    3       ; stores the lane number
@@ -2367,6 +2386,7 @@ player_2_colour_keymaps DC.L    'AAAA'  ; stores the keymaps for the player chan
 player_2_charge_amount  DC.B    0       ; stores the charge amount
 player_2_life_amount    DC.W    200     ; stores the life amount
 player_2_punching_index DC.B    0       ; stores whether player is punching
+player_2_punching_colour    DC.B    0       ; stores player punching colour
 
 ; stores the number of objects in the arrays
 lane_0_object_count     DC.W    0
@@ -2499,6 +2519,7 @@ score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
 
         END    START
+
 
 
 
