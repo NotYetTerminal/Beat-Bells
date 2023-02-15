@@ -9,7 +9,6 @@
 * 
 * GAMEPLAY
 * Score counter
-* Life bar
 * 
 * OPTIMISE USING THE COUNTER
 * decrement notes times slow
@@ -137,7 +136,7 @@ START   ORG    $1000
         BSR     LOAD_IN_SPRITES
 
         ; sets the song difficulty
-        MOVE.B  #6,song_difficulty
+        MOVE.B  #20,song_difficulty
 
         MOVE.B  song_difficulty,D0
         LSR.B   #1,D0
@@ -587,13 +586,13 @@ LOOP
             BSR     CHECK_BOTH_PLAYER_COLLISIONS
 
             ADD.W   #1,player_1_life_amount
-            IF.W player_1_life_amount <HI> #400 THEN
+            IF.W player_1_life_amount <GT> #400 THEN
                 MOVE.W  #400,player_1_life_amount
             ENDI
 
             IF.B two_player <EQ> #1 THEN
                 ADD.W   #1,player_2_life_amount
-                IF.W player_2_life_amount <HI> #400 THEN
+                IF.W player_2_life_amount <GT> #400 THEN
                     MOVE.W  #400,player_2_life_amount
                 ENDI
             ENDI
@@ -781,11 +780,11 @@ CHECK_COLLISIONS
                             IF.B 6(A1) <EQ> #0  THEN
                                 CLR.B   treble_last_note_success
                                 CLR.B   player_1_charge_amount
-                                SUB.W   #100,player_1_life_amount
+                                SUB.W   #200,player_1_life_amount
                             ELSE
                                 CLR.B   bass_last_note_success
                                 CLR.B   player_2_charge_amount
-                                SUB.W   #100,player_1_life_amount
+                                SUB.W   #200,player_2_life_amount
                             ENDI
                             LEA     lanes_colours,A3
                             MOVE.L  D5,D7
@@ -2035,20 +2034,20 @@ DRAW_LIFE_BARS
         MOVE.B  #1,D1
         TRAP    #15
 
+        ; sets pen colour
+        MOVE.B  #80,D0
+        MOVE.L  #WHITE,D1
+        TRAP    #15
+
+        ; draw border
+        MOVE.W  #90,D0
+        MOVE.W  #800,D1
+        MOVE.W  #35,D2
+        MOVE.W  #1200,D3
+        MOVE.W  #60,D4
+        TRAP    #15
+
         IF.B two_player <EQ> #0 THEN
-            ; sets pen and fill colour
-            MOVE.B  #80,D0
-            MOVE.L  #WHITE,D1
-            TRAP    #15
-
-            ; draw border
-            MOVE.W  #90,D0
-            MOVE.W  #800,D1
-            MOVE.W  #35,D2
-            MOVE.W  #1200,D3
-            MOVE.W  #60,D4
-            TRAP    #15
-
             ; sets pen and fill colour to red
             MOVE.B  #80,D0
             MOVE.L  #RED,D1
@@ -2070,25 +2069,56 @@ DRAW_LIFE_BARS
             TRAP    #15
         ELSE
             IF.B coop_mode <EQ> #0  THEN
+                ; sets pen and fill colour to red
+                MOVE.B  #80,D0
+                MOVE.L  #RED,D1
+                TRAP    #15
+                MOVE.W  #81,D0
+                TRAP    #15
+
+                MOVE.W  #87,D0
+                MOVE.W  #801,D1
+                MOVE.W  #800,D3
+                ADD.W   #1,D2
+                SUB.W   #13,D4
+
+                ADD.W   player_1_life_amount,D3
+
+                IF.W player_1_life_amount <EQ> #400    THEN
+                    SUB.W   #1,D3
+                ENDI
+                TRAP    #15
+
+                ; sets pen and fill colour to red
+                MOVE.B  #80,D0
+                MOVE.L  #LIME,D1
+                TRAP    #15
+                MOVE.W  #81,D0
+                TRAP    #15
+
+                MOVE.W  #87,D0
+                MOVE.W  #801,D1
+                MOVE.W  #800,D3
+                ADD.W   #13,D2
+                MOVE.W  #59 ,D4
+
+                ADD.W   player_2_life_amount,D3
+
+                IF.W player_2_life_amount <EQ> #400    THEN
+                    SUB.W   #1,D3
+                ENDI
+                TRAP    #15
 
             ELSE
-                ; sets pen and fill colour
-                MOVE.B  #80,D0
-                MOVE.L  #WHITE,D1
-                TRAP    #15
-
-                ; draw border
-                MOVE.W  #90,D0
-                MOVE.W  #800,D1
-                MOVE.W  #35,D2
-                MOVE.W  #1200,D3
-                MOVE.W  #60,D4
-                TRAP    #15
-                
                 MOVE.W  player_1_life_amount,D7
                 ADD.W   player_2_life_amount,D7
                 LSR.W   #1,D7
+                SUB.W   #25,D7
                 CLR.B   D6
+
+                ADD.W   #1,D2
+                SUB.W   #1,D4
+
                 FOR.W D5 = #0 TO D7 BY #25  DO
                     IF.B D6 <EQ> #0 THEN
                         MOVE.L  #RED,D1
@@ -2096,7 +2126,7 @@ DRAW_LIFE_BARS
                     ELSE
                         MOVE.L  #LIME,D1
                         CLR.B   D6
-                    EDNI
+                    ENDI
                     ; sets pen and fill colour
                     MOVE.B  #80,D0
                     TRAP    #15
@@ -2104,8 +2134,12 @@ DRAW_LIFE_BARS
                     TRAP    #15
 
                     MOVE.W  #801,D1
-                    MOVE.W  D5,D0
-                    WORK HERE
+                    ADD.W   D5,D1
+                    IF.W D7 <EQ> #375 THEN
+                        SUB.W   #1,D1
+                    ENDI
+                    MOVE.W  D1,D3
+                    ADD.W   #25,D3
 
                     MOVE.W  #87,D0
                     TRAP    #15
@@ -2229,8 +2263,8 @@ treble_song_file_index  DC.L    0       ; stores the byte index that the song is
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 treble_song_file_size   DC.W    0       ; stores the total length of the treble song file
 
-two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
-coop_mode               DC.B    1       ; stores whether two player is coop 1 or versus 0
+two_player              DC.B    1       ; stores the player count, 0 = one player, 1 = two players
+coop_mode               DC.B    0       ; stores whether two player is coop 1 or versus 0
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
@@ -2329,6 +2363,8 @@ lanes_notes_hit_animations      DCB.L   5,$00000000
 score_text                      DC.B    'Score: ',0
 
         END    START
+
+
 
 
 
