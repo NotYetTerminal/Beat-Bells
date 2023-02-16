@@ -32,6 +32,8 @@
 * song name needs to be set
 * time is an issue when pausing
 * set all dcs back to normal
+* lose charge power after punch
+* player 2 charge orange dosen't work
 * 
 
 ; set constants
@@ -115,14 +117,16 @@ LOAD_IN_SPRITES
 
 
 LOAD_IN_PLAYER_SPRITES
+        ; load player 1
         MOVE.L  next_free_slot_address,player_1_start_sprite
-        FOR D5 = #0 TO #7   DO
-            ; load player 1
-            LEA     PLAYER_SPRITES_BASIC_PATH,A1
-            ; put in a
-            MOVE.B  #97,15(A1)
+        LEA     PLAYER_SPRITES_BASIC_PATH,A1
+        ; put in a
+        MOVE.B  #97,15(A1)
 
-            MOVE.L  D5,D6
+        FOR D5 = #0 TO #7   DO
+            LEA     PLAYER_SPRITES_BASIC_PATH,A1
+
+            MOVE.B  D5,D6
             ; modulus 8
             AND.B   #7,D6
             ADD.B   #48,D6
@@ -131,12 +135,15 @@ LOAD_IN_PLAYER_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
+
+        ; load player 2
         MOVE.L  next_free_slot_address,player_2_start_sprite
+        LEA     PLAYER_SPRITES_BASIC_PATH,A1
+        ; put in b
+        MOVE.B  #98,15(A1)
+
         FOR D5 = #0 TO #7   DO
-            ; load player 2
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
-            ; put in b
-            MOVE.B  #98,15(A1)
 
             MOVE.B  D5,D6
             ; modulus 8
@@ -151,12 +158,14 @@ LOAD_IN_PLAYER_SPRITES
 
 
 LOAD_IN_PUNCHING_SPRITES
+        ; load punching 1
         MOVE.L  next_free_slot_address,punching_1_start_sprite
+        LEA     PUNCHING_SPRITES_BASIC_PATH,A1
+        ; put in a
+        MOVE.B  #97,17(A1)
+
         FOR D5 = #0 TO #39   DO
-            ; load punching 1
             LEA     PUNCHING_SPRITES_BASIC_PATH,A1
-            ; put in a
-            MOVE.B  #97,17(A1)
 
             MOVE.L  D5,D6
             ; divide by 8
@@ -164,7 +173,7 @@ LOAD_IN_PUNCHING_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,18(A1)
 
-            MOVE.L  D5,D6
+            MOVE.B  D5,D6
             ; modulus 8
             AND.B   #7,D6
             ADD.B   #48,D6
@@ -173,12 +182,15 @@ LOAD_IN_PUNCHING_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
+
+        ; load punching 2
         MOVE.L  next_free_slot_address,punching_2_start_sprite
+        LEA     PUNCHING_SPRITES_BASIC_PATH,A1
+        ; put in b
+        MOVE.B  #98,17(A1)
+
         FOR D5 = #0 TO #39   DO
-            ; load punching 2
             LEA     PUNCHING_SPRITES_BASIC_PATH,A1
-            ; put in b
-            MOVE.B  #98,17(A1)
 
             MOVE.B  D5,D6
             ; divide by 8
@@ -198,17 +210,18 @@ LOAD_IN_PUNCHING_SPRITES
         RTS
 
 
-; check if this would be better without as many moves
 LOAD_IN_FILLED_NOTES_SPRITES
+        ; load notes 1
         MOVE.L  next_free_slot_address,filled_notes_1_start_sprite
         ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
-        FOR D5 = #8 TO #39   DO
-            ; load notes 1
-            LEA     FILLED_NOTES_BASIC_PATH,A1
-            ; put in a
-            MOVE.B  #97,21(A1)
+        LEA     FILLED_NOTES_BASIC_PATH,A1
+        ; put in a
+        MOVE.B  #97,21(A1)
 
-            MOVE.L  D5,D6
+        FOR D5 = #8 TO #39   DO
+            LEA     FILLED_NOTES_BASIC_PATH,A1
+
+            MOVE.B  D5,D6
             ; divide by 8
             LSR.B   #3,D6
             ADD.B   #48,D6
@@ -223,13 +236,16 @@ LOAD_IN_FILLED_NOTES_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
+
+        ; load notes 2
         MOVE.L  next_free_slot_address,filled_notes_2_start_sprite
         ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+        LEA     FILLED_NOTES_BASIC_PATH,A1
+        ; put in b
+        MOVE.B  #98,21(A1)
+
         FOR D5 = #8 TO #39   DO
-            ; load notes 2
             LEA     FILLED_NOTES_BASIC_PATH,A1
-            ; put in b
-            MOVE.B  #98,21(A1)
 
             MOVE.B  D5,D6
             ; divide by 8
@@ -249,17 +265,18 @@ LOAD_IN_FILLED_NOTES_SPRITES
         RTS
 
 
-; check if this would be better without as many moves
 LOAD_IN_UNFILLED_NOTES_SPRITES
+        ; load notes 1
         MOVE.L  next_free_slot_address,unfilled_notes_1_start_sprite
         ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
-        FOR D5 = #8 TO #39   DO
-            ; load notes 1
-            LEA     UNFILLED_NOTES_BASIC_PATH,A1
-            ; put in a
-            MOVE.B  #97,23(A1)
+        LEA     UNFILLED_NOTES_BASIC_PATH,A1
+        ; put in a
+        MOVE.B  #97,23(A1)
 
-            MOVE.L  D5,D6
+        FOR D5 = #8 TO #39   DO
+            LEA     UNFILLED_NOTES_BASIC_PATH,A1
+
+            MOVE.B  D5,D6
             ; divide by 8
             LSR.B   #3,D6
             ADD.B   #48,D6
@@ -274,13 +291,15 @@ LOAD_IN_UNFILLED_NOTES_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
+        ; load notes 2
         MOVE.L  next_free_slot_address,unfilled_notes_2_start_sprite
         ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+        LEA     UNFILLED_NOTES_BASIC_PATH,A1
+        ; put in b
+        MOVE.B  #98,23(A1)
+
         FOR D5 = #8 TO #39   DO
-            ; load notes 2
             LEA     UNFILLED_NOTES_BASIC_PATH,A1
-            ; put in b
-            MOVE.B  #98,23(A1)
 
             MOVE.B  D5,D6
             ; divide by 8
