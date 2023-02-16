@@ -29,7 +29,6 @@
 * increase notes moving speed on new song
 * song_playing_type needs to change whether another song is put in
 * song name needs to be set
-* time is an issue when pausing
 * set all dcs back to normal
 * 
 
@@ -914,8 +913,6 @@ MOVE_OBJECTS
                     ADD.W   #2,A2
                     ; moves the notes
                     MOVE.W  notes_speed,D2
-                    ADD.W   D1,D2
-                    ADD.W   D1,D2
                     SUB.W   D2,(A2)
                     ADD.W   #2,A1
                 UNLESS.W (A1) <NE> #$FFFF
