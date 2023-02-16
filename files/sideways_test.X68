@@ -136,30 +136,28 @@ LOAD_IN_PLAYER_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
-        IF.B two_player <EQ> #1 THEN
-            MOVE.L  next_free_slot_address,player_2_start_sprite
-            FOR D5 = #0 TO #39   DO
-                ; load player 2
-                LEA     PLAYER_SPRITES_BASIC_PATH,A1
-                ; put in b
-                MOVE.B  #98,15(A1)
+        MOVE.L  next_free_slot_address,player_2_start_sprite
+        FOR D5 = #0 TO #39   DO
+            ; load player 2
+            LEA     PLAYER_SPRITES_BASIC_PATH,A1
+            ; put in b
+            MOVE.B  #98,15(A1)
 
-                MOVE.B  D5,D6
-                ; divide by 8
-                LSR.B   #3,D6
-                ADD.B   #48,D6
-                MOVE.B  D6,16(A1)
+            MOVE.B  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,16(A1)
 
-                MOVE.B  D5,D6
-                ; modulus 8
-                AND.B   #7,D6
-                ADD.B   #48,D6
-                MOVE.B  D6,17(A1)
+            MOVE.B  D5,D6
+            ; modulus 8
+            AND.B   #7,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,17(A1)
 
-                BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-                BSR     QOI_DECODE
-            ENDF
-        ENDI
+            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            BSR     QOI_DECODE
+        ENDF
         RTS
 
 
@@ -186,30 +184,28 @@ LOAD_IN_PUNCHING_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
-        IF.B two_player <EQ> #1 THEN
-            MOVE.L  next_free_slot_address,punching_2_start_sprite
-            FOR D5 = #0 TO #39   DO
-                ; load punching 2
-                LEA     PUNCHING_SPRITES_BASIC_PATH,A1
-                ; put in b
-                MOVE.B  #98,17(A1)
+        MOVE.L  next_free_slot_address,punching_2_start_sprite
+        FOR D5 = #0 TO #39   DO
+            ; load punching 2
+            LEA     PUNCHING_SPRITES_BASIC_PATH,A1
+            ; put in b
+            MOVE.B  #98,17(A1)
 
-                MOVE.B  D5,D6
-                ; divide by 8
-                LSR.B   #3,D6
-                ADD.B   #48,D6
-                MOVE.B  D6,18(A1)
+            MOVE.B  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,18(A1)
 
-                MOVE.B  D5,D6
-                ; modulus 8
-                AND.B   #7,D6
-                ADD.B   #48,D6
-                MOVE.B  D6,19(A1)
+            MOVE.B  D5,D6
+            ; modulus 8
+            AND.B   #7,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,19(A1)
 
-                BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-                BSR     QOI_DECODE
-            ENDF
-        ENDI
+            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            BSR     QOI_DECODE
+        ENDF
         RTS
 
 
@@ -238,31 +234,29 @@ LOAD_IN_FILLED_NOTES_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
-        IF.B two_player <EQ> #1 THEN
-            MOVE.L  next_free_slot_address,filled_notes_2_start_sprite
-            ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
-            FOR D5 = #8 TO #39   DO
-                ; load notes 2
-                LEA     FILLED_NOTES_BASIC_PATH,A1
-                ; put in b
-                MOVE.B  #98,21(A1)
+        MOVE.L  next_free_slot_address,filled_notes_2_start_sprite
+        ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+        FOR D5 = #8 TO #39   DO
+            ; load notes 2
+            LEA     FILLED_NOTES_BASIC_PATH,A1
+            ; put in b
+            MOVE.B  #98,21(A1)
 
-                MOVE.B  D5,D6
-                ; divide by 8
-                LSR.B   #3,D6
-                ADD.B   #48,D6
-                MOVE.B  D6,22(A1)
+            MOVE.B  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,22(A1)
 
-                MOVE.B  D5,D6
-                ; modulus 8
-                AND.B   #7,D6
-                ADD.B   #48,D6
-                MOVE.B  D6,23(A1)
+            MOVE.B  D5,D6
+            ; modulus 8
+            AND.B   #7,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,23(A1)
 
-                BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-                BSR     QOI_DECODE
-            ENDF
-        ENDI
+            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            BSR     QOI_DECODE
+        ENDF
         RTS
 
 
@@ -291,31 +285,29 @@ LOAD_IN_UNFILLED_NOTES_SPRITES
             BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             BSR     QOI_DECODE
         ENDF
-        IF.B two_player <EQ> #1 THEN
-            MOVE.L  next_free_slot_address,unfilled_notes_2_start_sprite
-            ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
-            FOR D5 = #8 TO #39   DO
-                ; load notes 2
-                LEA     UNFILLED_NOTES_BASIC_PATH,A1
-                ; put in b
-                MOVE.B  #98,23(A1)
+        MOVE.L  next_free_slot_address,unfilled_notes_2_start_sprite
+        ADD.L   #SPRITES_PIXEL_LENGTH*8,next_free_slot_address
+        FOR D5 = #8 TO #39   DO
+            ; load notes 2
+            LEA     UNFILLED_NOTES_BASIC_PATH,A1
+            ; put in b
+            MOVE.B  #98,23(A1)
 
-                MOVE.B  D5,D6
-                ; divide by 8
-                LSR.B   #3,D6
-                ADD.B   #48,D6
-                MOVE.B  D6,24(A1)
+            MOVE.B  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,24(A1)
 
-                MOVE.B  D5,D6
-                ; modulus 8
-                AND.B   #7,D6
-                ADD.B   #48,D6
-                MOVE.B  D6,25(A1)
+            MOVE.B  D5,D6
+            ; modulus 8
+            AND.B   #7,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,25(A1)
 
-                BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-                BSR     QOI_DECODE
-            ENDF
-        ENDI
+            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            BSR     QOI_DECODE
+        ENDF
         RTS
 
 
@@ -613,7 +605,6 @@ GAME_START
         MOVE.B  #17,D1
 		TRAP    #15
 
-
 		; store time in variables
         MOVE.W  #8,D0
         TRAP    #15
@@ -626,6 +617,22 @@ GAME_START
         MOVE.L  D1,player_2_last_beat_change_time
         ; stores the time as starting seed
         MOVE.L  D1,random_value
+
+        ; sets up the game type
+        IF.B menu_screen_game_type <EQ> #0 THEN
+            CLR.B   two_player
+            CLR.B   coop_mode
+        ELSE
+            IF.B menu_screen_game_type <EQ> #1 THEN
+                MOVE.B  #1,two_player
+                MOVE.B  #1,coop_mode
+            ELSE
+                IF.B menu_screen_game_type <EQ> #2 THEN
+                    MOVE.B  #1,two_player
+                    CLR.B   coop_mode
+                ENDI
+            ENDI
+        ENDI
 
         ; sets lane for the note paths
         MOVE.B  two_player,D1
@@ -654,6 +661,22 @@ GAME_START
             ILLEGAL
         ENDI
         BSR     LOAD_IN_SONG
+
+        ; calculates game difficulty
+        MOVEQ   #20,D0
+        CLR.L   D1
+        MOVE.B  main_menu_difficulty,D1
+        IF.B two_player <EQ> #0 THEN
+            LSL.B   #3,D1
+        ELSE
+            LSL.B   #2,D1
+        ENDI
+        SUB.B   D1,D0
+        IF.B D0 <EQ> #4 THEN
+            MOVE.B  #6,song_difficulty
+        ELSE
+            MOVE.B  D0,song_difficulty
+        ENDI
 
         ; sets the game speed
         MOVE.B  song_difficulty,D0
@@ -709,7 +732,6 @@ LOAD_SCREEN_LOOP
 
         IF.B player_1_action_colour <EQ> #4 THEN
             CLR.B   player_1_action_colour
-            BSR     FRAME_DELAY
             BRA     GAME_LOOP
         ENDI
         CLR.B   player_1_action_colour
@@ -840,7 +862,6 @@ FRAME_DELAY
         MOVE.W  #8,D0
         TRAP    #15
         MOVE.L  D1,last_frame_time
-
         RTS
 
 
@@ -1773,7 +1794,7 @@ DECREMENT_NOTES_TIMES
                     IF.B song_playing_type <EQ> #0  THEN
                         BSR     GAME_WON_MENU_LOOP
                     ELSE
-                        BSR     LOAD_IN_NEW_SONG
+                        ;BSR     LOAD_IN_NEW_SONG
                     ENDI
                 ENDI
             ENDI
@@ -2426,24 +2447,24 @@ CHECK_LIFE_AMOUNTS
             IF.B coop_mode <EQ> #0  THEN
                 IF.W player_1_life_amount <LT> #1   THEN
                     MOVE.B  #2,game_over_status
-                    BRA     GAME_OVER_LOOP
+                    ;BRA     GAME_OVER_LOOP
                 ENDI
                 IF.W player_2_life_amount <LT> #1   THEN
                     MOVE.B  #1,game_over_status
-                    BRA     GAME_OVER_LOOP
+                    ;BRA     GAME_OVER_LOOP
                 ENDI
             ELSE
                 MOVE.W  player_1_life_amount,D0
                 ADD.W   player_2_life_amount,D0
                 IF.W D0 <LT> #1 THEN
                     CLR.B   game_over_status
-                    BRA     GAME_OVER_LOOP
+                    ;BRA     GAME_OVER_LOOP
                 ENDI
             ENDI
         ELSE
             IF.W player_1_life_amount <LT> #1   THEN
                 CLR.B   game_over_status
-                BRA     GAME_OVER_LOOP
+                ;BRA     GAME_OVER_LOOP
             ENDI
         ENDI
         RTS
@@ -2725,6 +2746,7 @@ song_playing_type               DC.B    1               ; stores whether practic
 game_over_status                DC.B    0               ; stores whether game over 0 or a player won 1 or 2
 
         END    START
+
 
 *~Font name~Courier New~
 *~Font size~10~
