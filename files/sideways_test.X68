@@ -115,7 +115,7 @@ LOAD_IN_SPRITES
 
 LOAD_IN_PLAYER_SPRITES
         MOVE.L  next_free_slot_address,player_1_start_sprite
-        FOR D5 = #0 TO #39   DO
+        FOR D5 = #0 TO #7   DO
             ; load player 1
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
             ; put in a
@@ -137,7 +137,7 @@ LOAD_IN_PLAYER_SPRITES
             BSR     QOI_DECODE
         ENDF
         MOVE.L  next_free_slot_address,player_2_start_sprite
-        FOR D5 = #0 TO #39   DO
+        FOR D5 = #0 TO #7   DO
             ; load player 2
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
             ; put in b
@@ -541,10 +541,8 @@ MAIN_MENU_LOOP
 
 
 HANDLE_MENU_SELECT
-        LEA     player_1_last_beat_change_time,A0
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
-        LEA     player_1_punching_colour,A3
         LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
         BSR     HANDLE_COLOUR_CHANGE
@@ -613,8 +611,6 @@ GAME_START
         MOVE.L  D1,last_bass_path_change_time
         MOVE.L  D1,last_object_time
         MOVE.L  D1,last_note_spawn_time
-        MOVE.L  D1,player_1_last_beat_change_time
-        MOVE.L  D1,player_2_last_beat_change_time
         ; stores the time as starting seed
         MOVE.L  D1,random_value
 
@@ -777,27 +773,6 @@ GAME_LOOP
             MOVE.L  D1,last_object_time
         ENDI
 
-        ; checks for cooldown time
-        IF.L player_1_last_beat_change_time <NE> #0  THEN
-            MOVE.W  #8,D0
-            TRAP    #15
-            SUB.L   player_1_last_beat_change_time,D1
-            IF.L #30 <LE> D1    THEN
-                CLR.B   player_1_action_colour
-                CLR.L   player_1_last_beat_change_time
-            ENDI
-        ENDI
-
-        IF.B two_player <EQ> #1 AND.L player_2_last_beat_change_time <NE> #0  THEN
-            MOVE.W  #8,D0
-            TRAP    #15
-            SUB.L   player_2_last_beat_change_time,D1
-            IF.L #20 <LE> D1    THEN
-                CLR.B   player_2_action_colour
-                CLR.L   player_2_last_beat_change_time
-            ENDI
-        ENDI
-
         ; spawn new notes
         MOVE.W  #8,D0
         TRAP    #15
@@ -812,11 +787,17 @@ GAME_LOOP
 
             IF.B player_1_punching_index <NE> #0 AND.B player_1_punching_index <NE> #8  THEN
                 ADDQ.B  #1,player_1_punching_index
+                IF.B player_1_punching_index <EQ> #8    THEN
+                    CLR.B   player_1_action_colour
+                ENDI
             ENDI
 
             IF.B two_player <EQ> #1 THEN
                 IF.B player_2_punching_index <NE> #0 AND.B player_2_punching_index <NE> #8  THEN
                     ADDQ.B  #1,player_2_punching_index
+                    IF.B player_2_punching_index <EQ> #8    THEN
+                        CLR.B   player_2_action_colour
+                    ENDI
                 ENDI
             ENDI
 
@@ -1184,10 +1165,8 @@ LANE_LEFT_SHIFT
 HANDLE_INPUT
         BSR     HANDLE_PAUSE
 
-        LEA     player_1_last_beat_change_time,A0
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
-        LEA     player_1_punching_colour,A3
         LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
         BSR     HANDLE_COLOUR_CHANGE
@@ -1206,10 +1185,8 @@ HANDLE_INPUT
         BSR     CHANGE_PLAYER_Y_POSITION
 
         IF.B two_player <EQ> #1 THEN
-            LEA     player_2_last_beat_change_time,A0
             LEA     player_2_action_pressed,A1
             LEA     player_2_action_colour,A2
-            LEA     player_2_punching_colour,A3
             LEA     player_2_punching_index,A4
             MOVE.L  player_2_colour_keymaps,D1
             BSR     HANDLE_COLOUR_CHANGE
@@ -1267,10 +1244,8 @@ DRAW_PAUSE_MENU
         RTS
 
 
-; A0 must contain player last beat change time
 ; A1 must contain player action pressed
 ; A2 must contain player action colour
-; A3 must contain player punching colour
 ; A4 must conatin the player punching index
 ; D1 must contain player colour keymaps
 HANDLE_COLOUR_CHANGE
@@ -1279,17 +1254,13 @@ HANDLE_COLOUR_CHANGE
 
         IF.L #0 <NE> D1 THEN
             MOVE.L  D1,D2
-            MOVE.L  (A0),D1
             ; change colours
             BTST.L  #24,D2
             IF  <NE>    THEN
                 BTST.B  #7,(A1)
                 IF  <EQ>    THEN
                     MOVE.B  #1,(A2)
-                    MOVE.B  #1,(A3)
                     BSET.B  #7,(A1)
-                    MOVE.W  #8,D0
-                    TRAP    #15
                     MOVE.B  #1,(A4)
                 ENDI
             ELSE
@@ -1300,10 +1271,7 @@ HANDLE_COLOUR_CHANGE
                 BTST.B  #6,(A1)
                 IF  <EQ>    THEN
                     MOVE.B  #2,(A2)
-                    MOVE.B  #2,(A3)
                     BSET.B  #6,(A1)
-                    MOVE.W  #8,D0
-                    TRAP    #15
                     MOVE.B  #1,(A4)
                 ENDI
             ELSE
@@ -1314,10 +1282,7 @@ HANDLE_COLOUR_CHANGE
                 BTST.B  #5,(A1)
                 IF  <EQ>    THEN
                     MOVE.B  #3,(A2)
-                    MOVE.B  #3,(A3)
                     BSET.B  #5,(A1)
-                    MOVE.W  #8,D0
-                    TRAP    #15
                     MOVE.B  #1,(A4)
                 ENDI
             ELSE
@@ -1329,16 +1294,12 @@ HANDLE_COLOUR_CHANGE
                 BTST.B  #4,(A1)
                 IF  <EQ>    THEN
                     MOVE.B  #4,(A2)
-                    MOVE.B  #4,(A3)
                     BSET.B  #4,(A1)
-                    MOVE.W  #8,D0
-                    TRAP    #15
                     MOVE.B  #1,(A4)
                 ENDI
             ELSE
                 BCLR.B  #4,(A1)
             ENDI
-            MOVE.L  D1,(A0)
         ELSE
             BCLR.B  #7,(A1)
             BCLR.B  #6,(A1)
@@ -1348,6 +1309,7 @@ HANDLE_COLOUR_CHANGE
         RTS
 
 
+; A2 contains the player action colour
 ; A3 contains the player charge address
 ; A4 contains the player punching index
 ; D1 must contain player shift/control keycode
@@ -1376,6 +1338,7 @@ HANDLE_CHARGE
             CLR.B   (A3)
             IF.B (A4) <EQ> #0   THEN
                 MOVE.B  #8,(A4)
+                CLR.B   (A2)
             ENDI
         ENDI
         RTS
@@ -1851,7 +1814,8 @@ DRAW_PLAYERS
         ELSE
             MOVE.L  punching_1_start_sprite,A0
             IF.B player_1_punching_index <NE> #0    THEN
-                MOVE.B  player_1_punching_colour,D0
+                ;MOVE.B  player_1_punching_colour,D0
+                MOVE.B  player_1_action_colour,D0
                 MOVE.B  player_1_punching_index,D1
             ENDI
         ENDI
@@ -1868,7 +1832,8 @@ DRAW_PLAYERS
             ELSE
                 MOVE.L  punching_2_start_sprite,A0
                 IF.B player_2_punching_index <NE> #0    THEN
-                    MOVE.B  player_2_punching_colour,D0
+                    ;MOVE.B  player_2_punching_colour,D0
+                    MOVE.B  player_2_action_colour,D0
                     MOVE.B  player_2_punching_index,D1
                 ENDI
             ENDI
@@ -2581,8 +2546,6 @@ last_treble_path_change_time    DS.L    1       ; stores the time when the trebl
 last_bass_path_change_time      DS.L    1       ; stores the time when the bass path index last changed
 last_object_time        DS.L    1       ; stores the time when the notes where moved
 last_note_spawn_time    DS.L    1       ; stores the time when note was last spawned
-player_1_last_beat_change_time  DC.L    0       ; stores the time when beat was last checked and put back into white
-player_2_last_beat_change_time  DC.L    0       ; stores the time when beat was last checked and put back into white
 
 player_1_position       DS.W    2       ; stores the top right player position x,y
 player_1_lane_number    DS.B    1       ; stores the lane number
@@ -2594,7 +2557,7 @@ player_1_colour_keymaps DC.L    'HUK '  ; stores the keymaps for the player chan
 player_1_charge_amount  DC.B    0       ; stores the charge amount
 player_1_life_amount    DC.W    200     ; stores the life amount
 player_1_punching_index DC.B    0       ; stores whether player is punching
-player_1_punching_colour    DC.B    0       ; stores player punching colour
+;player_1_punching_colour    DC.B    0       ; stores player punching colour
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
 player_2_lane_number    DS.B    3       ; stores the lane number
@@ -2606,7 +2569,7 @@ player_2_colour_keymaps DC.L    'CGBX'  ; stores the keymaps for the player chan
 player_2_charge_amount  DC.B    0       ; stores the charge amount
 player_2_life_amount    DC.W    200     ; stores the life amount
 player_2_punching_index DC.B    0       ; stores whether player is punching
-player_2_punching_colour    DC.B    0       ; stores player punching colour
+;player_2_punching_colour    DC.B    0       ; stores player punching colour
 
 ; stores the number of objects in the arrays
 lane_0_object_count     DC.W    0
@@ -2746,7 +2709,6 @@ song_playing_type               DC.B    1               ; stores whether practic
 game_over_status                DC.B    0               ; stores whether game over 0 or a player won 1 or 2
 
         END    START
-
 
 *~Font name~Courier New~
 *~Font size~10~
