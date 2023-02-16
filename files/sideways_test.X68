@@ -123,12 +123,6 @@ LOAD_IN_PLAYER_SPRITES
             MOVE.B  #97,15(A1)
 
             MOVE.L  D5,D6
-            ; divide by 8
-            LSR.B   #3,D6
-            ADD.B   #48,D6
-            MOVE.B  D6,16(A1)
-
-            MOVE.L  D5,D6
             ; modulus 8
             AND.B   #7,D6
             ADD.B   #48,D6
@@ -143,12 +137,6 @@ LOAD_IN_PLAYER_SPRITES
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
             ; put in b
             MOVE.B  #98,15(A1)
-
-            MOVE.B  D5,D6
-            ; divide by 8
-            LSR.B   #3,D6
-            ADD.B   #48,D6
-            MOVE.B  D6,16(A1)
 
             MOVE.B  D5,D6
             ; modulus 8
@@ -762,33 +750,6 @@ GAME_LOOP
         ; frame delay, so that framerate is consistent
         BSR     FRAME_DELAY
 
-        ; moves the enemies and notes
-        ; input + change position
-        MOVE.W  #8,D0
-        TRAP    #15
-        SUB.L   last_object_time,D1
-        IF.L #2 <LE> D1    THEN
-            BSR     MOVE_OBJECTS
-            BSR     HANDLE_INPUT
-            BSR     CHECK_BOTH_PLAYER_COLLISIONS
-
-            ADD.W   #1,player_1_life_amount
-            IF.W player_1_life_amount <GT> #400 THEN
-                MOVE.W  #400,player_1_life_amount
-            ENDI
-
-            IF.B two_player <EQ> #1 THEN
-                ADD.W   #1,player_2_life_amount
-                IF.W player_2_life_amount <GT> #400 THEN
-                    MOVE.W  #400,player_2_life_amount
-                ENDI
-            ENDI
-
-            MOVE.W  #8,D0
-            TRAP    #15
-            MOVE.L  D1,last_object_time
-        ENDI
-
         ; spawn new notes
         MOVE.W  #8,D0
         TRAP    #15
@@ -822,6 +783,33 @@ GAME_LOOP
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_note_spawn_time
+        ENDI
+
+        ; moves the enemies and notes
+        ; input + change position
+        MOVE.W  #8,D0
+        TRAP    #15
+        SUB.L   last_object_time,D1
+        IF.L #2 <LE> D1    THEN
+            BSR     MOVE_OBJECTS
+            BSR     HANDLE_INPUT
+            BSR     CHECK_BOTH_PLAYER_COLLISIONS
+
+            ADD.W   #1,player_1_life_amount
+            IF.W player_1_life_amount <GT> #400 THEN
+                MOVE.W  #400,player_1_life_amount
+            ENDI
+
+            IF.B two_player <EQ> #1 THEN
+                ADD.W   #1,player_2_life_amount
+                IF.W player_2_life_amount <GT> #400 THEN
+                    MOVE.W  #400,player_2_life_amount
+                ENDI
+            ENDI
+
+            MOVE.W  #8,D0
+            TRAP    #15
+            MOVE.L  D1,last_object_time
         ENDI
 
         ; render screen
@@ -2692,7 +2680,7 @@ SPRITES_PIXEL_LENGTH        EQU     $400        ; size of sprites is 16x16x4
 MULTIPLIER_SIZE             EQU     8           ; the size to multiply the sprites by
 
 
-PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/aaa.qoi',0
+PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/a0a.qoi',0
 PUNCHING_SPRITES_BASIC_PATH DC.B    'punching_sprites/aaa.qoi',0
 FILLED_NOTES_BASIC_PATH     DC.B    'filled_notes_sprites/aaa.qoi',0
 UNFILLED_NOTES_BASIC_PATH   DC.B    'unfilled_notes_sprites/aaa.qoi',0
