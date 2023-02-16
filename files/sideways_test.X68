@@ -26,14 +26,11 @@
 * game over screen
 * practice win screen
 * 
-* calculate song difficulty
 * increase notes moving speed on new song
 * song_playing_type needs to change whether another song is put in
 * song name needs to be set
 * time is an issue when pausing
 * set all dcs back to normal
-* lose charge power after punch
-* player 2 charge orange dosen't work
 * 
 
 ; set constants
@@ -555,6 +552,7 @@ MAIN_MENU_LOOP
 HANDLE_MENU_SELECT
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
+        LEA     player_1_charge_amount,A3
         LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
         BSR     HANDLE_COLOUR_CHANGE
@@ -679,11 +677,7 @@ GAME_START
         ENDI
 
         ; sets the game speed
-        MOVE.B  song_difficulty,D0
-        LSR.B   #1,D0
-        MOVEQ   #20,D1
-        SUB.B   D0,D1
-        MOVE.W  D1,notes_speed
+        MOVE.W  #8,notes_speed
 
         BRA     LOAD_SCREEN_LOOP
 
@@ -785,6 +779,7 @@ GAME_LOOP
                 ADDQ.B  #1,player_1_punching_index
                 IF.B player_1_punching_index <EQ> #8    THEN
                     CLR.B   player_1_action_colour
+                    CLR.B   player_1_charge_amount
                 ENDI
             ENDI
 
@@ -793,6 +788,7 @@ GAME_LOOP
                     ADDQ.B  #1,player_2_punching_index
                     IF.B player_2_punching_index <EQ> #8    THEN
                         CLR.B   player_2_action_colour
+                        CLR.B   player_2_charge_amount
                     ENDI
                 ENDI
             ENDI
@@ -843,11 +839,13 @@ GAME_LOOP
             TRAP    #15
             SUB.L   previous_render_time,D1
             LSR.B   #1,D1
-            MOVE.B  D1,render_skip_amount
+            IF.B D1 <NE> #0 THEN
+                MOVE.B  #1,render_skip_amount
+            ENDI
 
             BSR     CHECK_LIFE_AMOUNTS
         ELSE
-            SUB.B   #1,render_skip_amount
+            CLR.B   render_skip_amount
         ENDI
 
         BRA     GAME_LOOP
@@ -1225,13 +1223,13 @@ HANDLE_INPUT
 
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
+        LEA     player_1_charge_amount,A3
         LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
         BSR     HANDLE_COLOUR_CHANGE
 
         ; shift
         MOVE.L  #$10000000,D1
-        LEA     player_1_charge_amount,A3
         BSR     HANDLE_CHARGE
 
         LEA     player_1_lane_number,A1
@@ -1245,13 +1243,13 @@ HANDLE_INPUT
         IF.B two_player <EQ> #1 THEN
             LEA     player_2_action_pressed,A1
             LEA     player_2_action_colour,A2
+            LEA     player_2_charge_amount,A3
             LEA     player_2_punching_index,A4
             MOVE.L  player_2_colour_keymaps,D1
             BSR     HANDLE_COLOUR_CHANGE
 
             ; control
             MOVE.L  #$11000000,D1
-            LEA     player_2_charge_amount,A3
             BSR     HANDLE_CHARGE
 
             LEA     player_2_lane_number,A1
@@ -1303,6 +1301,7 @@ PAUSE_MENU_LOOP
 
 ; A1 must contain player action pressed
 ; A2 must contain player action colour
+; A3 must contain the player charge amount
 ; A4 must conatin the player punching index
 ; D1 must contain player colour keymaps
 HANDLE_COLOUR_CHANGE
@@ -2605,7 +2604,7 @@ player_2_moving         DC.B    0       ; stores whether the player is moving up
 player_2_action_pressed DC.B    0       ; stores whether any action buttons are pressed
 player_2_keymaps        DC.L    'RF'    ; stores the movement keys of player
 player_2_action_colour  DC.B    0       ; stores the player action colour
-player_2_colour_keymaps DC.L    'CGBX'  ; stores the keymaps for the player changing colours
+player_2_colour_keymaps DC.L    'XCVZ'  ; stores the keymaps for the player changing colours
 player_2_charge_amount  DC.B    0       ; stores the charge amount
 player_2_life_amount    DC.W    200     ; stores the life amount
 player_2_punching_index DC.B    0       ; stores whether player is punching
