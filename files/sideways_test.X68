@@ -31,6 +31,7 @@
 * song_playing_type needs to change whether another song is put in
 * song name needs to be set
 * time is an issue when pausing
+* set all dcs back to normal
 * 
 
 ; set constants
@@ -537,6 +538,10 @@ MAIN_MENU_LOOP
         BSR     HANDLE_DIFFICULTY_INPUT
         BSR     DRAW_MAIN_MENU
 
+        ; delay
+        MOVEQ   #23,D0
+        MOVEQ   #1,D1
+        TRAP    #15
         BRA     MAIN_MENU_LOOP
 
 
@@ -577,23 +582,15 @@ HANDLE_DIFFICULTY_INPUT
         RTS
 
 
-DRAW_MAIN_MENU
-
-
-        RTS
-
-
 SELECT_SONG_MENU_LOOP
 
         BSR     DRAW_SELECT_SONG_MENU
 
+        ; delay
+        MOVEQ   #23,D0
+        MOVEQ   #1,D1
+        TRAP    #15
         BRA     SELECT_SONG_MENU_LOOP
-
-
-DRAW_SELECT_SONG_MENU
-
-
-        RTS
 
 
 GAME_START
@@ -723,6 +720,10 @@ LOAD_IN_SONG
         RTS
 
 
+LOAD_IN_NEW_SONG
+        BSR     EXIT_PROGRAM
+
+
 LOAD_SCREEN_LOOP
         BSR     HANDLE_MENU_SELECT
 
@@ -733,12 +734,27 @@ LOAD_SCREEN_LOOP
         CLR.B   player_1_action_colour
 
         BSR     DRAW_LOAD_SCREEN
+        
+        ; delay
+        MOVEQ   #23,D0
+        MOVEQ   #1,D1
+        TRAP    #15
         BRA     LOAD_SCREEN_LOOP
 
 
-DRAW_LOAD_SCREEN
-
-
+FRAME_DELAY
+        ; gets the time
+        MOVE.W  #8,D0
+        TRAP    #15
+        ; subtracts the two times
+        SUB.L   last_frame_time,D1
+        ; n number of centiseconds have passed
+        CMP.L   #2,D1
+        BLO     FRAME_DELAY
+        ; save time
+        MOVE.W  #8,D0
+        TRAP    #15
+        MOVE.L  D1,last_frame_time
         RTS
 
 
@@ -830,20 +846,55 @@ GAME_LOOP
         BRA     GAME_LOOP
 
 
-FRAME_DELAY
-        ; gets the time
-        MOVE.W  #8,D0
-        TRAP    #15
-        ; subtracts the two times
-        SUB.L   last_frame_time,D1
-        ; n number of centiseconds have passed
-        CMP.L   #2,D1
-        BLO     FRAME_DELAY
-        ; save time
-        MOVE.W  #8,D0
-        TRAP    #15
-        MOVE.L  D1,last_frame_time
+CHECK_LIFE_AMOUNTS
+        IF.B two_player <EQ> #1 THEN
+            IF.B coop_mode <EQ> #0  THEN
+                IF.W player_1_life_amount <LT> #1   THEN
+                    MOVE.B  #2,game_over_status
+                    ;BRA     GAME_OVER_LOOP
+                ENDI
+                IF.W player_2_life_amount <LT> #1   THEN
+                    MOVE.B  #1,game_over_status
+                    ;BRA     GAME_OVER_LOOP
+                ENDI
+            ELSE
+                MOVE.W  player_1_life_amount,D0
+                ADD.W   player_2_life_amount,D0
+                IF.W D0 <LT> #1 THEN
+                    CLR.B   game_over_status
+                    ;BRA     GAME_OVER_LOOP
+                ENDI
+            ENDI
+        ELSE
+            IF.W player_1_life_amount <LT> #1   THEN
+                CLR.B   game_over_status
+                ;BRA     GAME_OVER_LOOP
+            ENDI
+        ENDI
         RTS
+
+
+GAME_OVER_LOOP
+        BSR HANDLE_MENU_SELECT
+
+        IF.B player_1_action_colour <EQ> #1 THEN
+            CLR.B   player_1_action_colour
+            BRA     MAIN_MENU_LOOP
+        ELSE
+            IF.B player_1_action_colour <EQ> #2 THEN
+                CLR.B   player_1_action_colour
+                BRA     GAME_START
+            ENDI
+        ENDI
+        CLR.B   player_1_action_colour
+
+        BSR     DRAW_GAME_OVER
+
+        ; delay
+        MOVEQ   #23,D0
+        MOVEQ   #1,D1
+        TRAP    #15
+        BRA     GAME_OVER_LOOP
 
 
 MOVE_OBJECTS
@@ -1235,13 +1286,12 @@ PAUSE_MENU_LOOP
         CLR.B   player_1_action_colour
 
         BSR     DRAW_PAUSE_MENU
+        
+        ; delay
+        MOVEQ   #23,D0
+        MOVEQ   #1,D1
+        TRAP    #15
         BRA     PAUSE_MENU_LOOP
-
-
-DRAW_PAUSE_MENU
-
-
-        RTS
 
 
 ; A1 must contain player action pressed
@@ -1757,7 +1807,7 @@ DECREMENT_NOTES_TIMES
                     IF.B song_playing_type <EQ> #0  THEN
                         BSR     GAME_WON_MENU_LOOP
                     ELSE
-                        ;BSR     LOAD_IN_NEW_SONG
+                        BSR     LOAD_IN_NEW_SONG
                     ENDI
                 ENDI
             ENDI
@@ -1777,6 +1827,29 @@ CHECK_LANES_EMPTY
         ENDF
         MOVEQ   #1,D0
         RTS
+
+
+GAME_WON_MENU_LOOP
+        BSR HANDLE_MENU_SELECT
+
+        IF.B player_1_action_colour <EQ> #1 THEN
+            CLR.B   player_1_action_colour
+            BRA     MAIN_MENU_LOOP
+        ELSE
+            IF.B player_1_action_colour <EQ> #2 THEN
+                CLR.B   player_1_action_colour
+                BRA     GAME_START
+            ENDI
+        ENDI
+        CLR.B   player_1_action_colour
+
+        BSR     DRAW_GAME_WON_MENU
+        
+        ; delay
+        MOVEQ   #23,D0
+        MOVEQ   #1,D1
+        TRAP    #15
+        BRA     GAME_WON_MENU_LOOP
 
 
 RENDER_SCREEN
@@ -2407,50 +2480,22 @@ DRAW_LIFE_BARS
         RTS
 
 
-CHECK_LIFE_AMOUNTS
-        IF.B two_player <EQ> #1 THEN
-            IF.B coop_mode <EQ> #0  THEN
-                IF.W player_1_life_amount <LT> #1   THEN
-                    MOVE.B  #2,game_over_status
-                    ;BRA     GAME_OVER_LOOP
-                ENDI
-                IF.W player_2_life_amount <LT> #1   THEN
-                    MOVE.B  #1,game_over_status
-                    ;BRA     GAME_OVER_LOOP
-                ENDI
-            ELSE
-                MOVE.W  player_1_life_amount,D0
-                ADD.W   player_2_life_amount,D0
-                IF.W D0 <LT> #1 THEN
-                    CLR.B   game_over_status
-                    ;BRA     GAME_OVER_LOOP
-                ENDI
-            ENDI
-        ELSE
-            IF.W player_1_life_amount <LT> #1   THEN
-                CLR.B   game_over_status
-                ;BRA     GAME_OVER_LOOP
-            ENDI
-        ENDI
+DRAW_MAIN_MENU
+
+
         RTS
 
 
-GAME_OVER_LOOP
-        BSR HANDLE_MENU_SELECT
+DRAW_SELECT_SONG_MENU
 
-        IF.B player_1_action_colour <EQ> #1 THEN
-            CLR.B   player_1_action_colour
-            BRA     MAIN_MENU_LOOP
-        ELSE
-            IF.B player_1_action_colour <EQ> #2 THEN
-                CLR.B   player_1_action_colour
-                BRA     GAME_START
-            ENDI
-        ENDI
-        CLR.B   player_1_action_colour
 
-        BSR     DRAW_GAME_OVER
-        BRA     GAME_OVER_LOOP
+        RTS
+
+
+DRAW_LOAD_SCREEN
+
+
+        RTS
 
 
 DRAW_GAME_OVER
@@ -2459,21 +2504,9 @@ DRAW_GAME_OVER
         RTS
 
 
-GAME_WON_MENU_LOOP
-        BSR HANDLE_MENU_SELECT
+DRAW_PAUSE_MENU
 
-        IF.B player_1_action_colour <EQ> #1 THEN
-            CLR.B   player_1_action_colour
-            BRA     MAIN_MENU_LOOP
-        ELSE
-            IF.B player_1_action_colour <EQ> #2 THEN
-                CLR.B   player_1_action_colour
-                BRA     GAME_START
-            ENDI
-        ENDI
-        CLR.B   player_1_action_colour
 
-        BSR     DRAW_GAME_WON_MENU
         RTS
 
 
