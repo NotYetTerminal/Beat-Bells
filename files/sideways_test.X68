@@ -47,15 +47,28 @@ BEAT_LINE_X             EQU     200
 NOTE_SIZE               EQU     40
 
 NOTE_OBJECT_SIZE        EQU     48
-LANE_ADDRESSES_SIZE     EQU     55
+LANE_ADDRESSES_SIZE     EQU     56
+
+NUMBER_OF_SONGS         EQU     2
 
 
 ; program start
 START   ORG    $1000
+        ; checks if $10000 has been accidentally used
+        IF.L TREBLE_FILE_CONTENTS <NE> #$FFFFFFFF  THEN
+            ILLEGAL
+        ENDI
+
         ; turn off input echo
         MOVE.L  #12,D0
         CLR.B   D1
         TRAP    #15
+        
+        ; turn on double buffering
+        ; avoids flickering
+		MOVE.L  #92,D0
+        MOVE.B  #17,D1
+		TRAP    #15
 
         ; sets the screen size
         MOVE.L  #33,D0
@@ -598,12 +611,6 @@ SELECT_SONG_MENU_LOOP
 
 
 GAME_START
-        ; turn on double buffering
-        ; avoids flickering
-		MOVE.L  #92,D0
-        MOVE.B  #17,D1
-		TRAP    #15
-
 		; store time in variables
         MOVE.W  #8,D0
         TRAP    #15
@@ -653,11 +660,12 @@ GAME_START
         MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
         MOVE.L  #BASS_FILE_CONTENTS,bass_song_file_index
 
-        ; checks if $10000 has been accidentally used
-        IF.L TREBLE_FILE_CONTENTS <NE> #$FFFFFFFF  THEN
-            ILLEGAL
+        ; practice
+        IF.B song_playing_type <EQ> #0  THEN
+            BSR     LOAD_IN_SONG
+        ELSE
+            BSR     LOAD_IN_RANDOM_NEW_SONG
         ENDI
-        BSR     LOAD_IN_SONG
 
         ; calculates game difficulty
         MOVEQ   #20,D0
@@ -699,7 +707,7 @@ LOAD_IN_SONG
         MOVE.W  D2,treble_song_file_size
         ; tells the program that this is the last byte
         ADD.L   #1,D2
-        MOVE.B  #$FF,D2
+        MOVE.B  #$FF,(A1,D2)
 
         MOVE.B  #51,D0
         LEA     song_name,A1
@@ -713,15 +721,67 @@ LOAD_IN_SONG
         MOVE.L  #$FFFFF,D2
         TRAP    #15
         ADD.L   #1,D2
-        MOVE.B  #$FF,D2
+        MOVE.B  #$FF,(A1,D2)
 
         MOVE.B  #50,D0
         TRAP    #15
         RTS
 
 
-LOAD_IN_NEW_SONG
-        BSR     EXIT_PROGRAM
+LOAD_IN_RANDOM_NEW_SONG
+        BSR     CHECK_AVAILABLE_SONGS
+        BSR     GET_RANDOM_SONG_INDEX
+        BSR     LOAD_SONG_FILE_NAME
+        BSR     LOAD_IN_SONG
+        RTS
+
+
+CHECK_AVAILABLE_SONGS
+        LEA     available_songs_array,A0
+        IF.B number_of_available_songs <EQ> #0  THEN
+            FOR D5 = #0 TO #NUMBER_OF_SONGS-1   DO
+                MOVE.B  D5,(A0,D5)
+            ENDF
+            MOVE.B  #NUMBER_OF_SONGS,number_of_available_songs
+        ENDI
+        RTS
+
+; A0 contains the available songs array address
+; Returns song index in D0
+GET_RANDOM_SONG_INDEX
+        CLR.W   D3
+        MOVE.B  number_of_available_songs,D3
+        BSR     GET_RANDOM_VALUE
+        SUB.B   #1,number_of_available_songs
+        MOVE.B  (A0,D2.W),D0
+
+        FOR.W D5 = D2 TO #NUMBER_OF_SONGS-1 DO
+            MOVE.B  1(A0,D5),(A0,D5)
+        ENDF
+        RTS
+
+
+LOAD_SONG_FILE_NAME
+        LEA     ALL_SONG_FILE_NAMES,A0
+        CLR.L   D5
+        WHILE.B D0 <NE> #0  DO
+            IF.B (A0,D5) <EQ> #0    THEN
+                ADDQ.L  #1,D5
+                ADD.L   D5,A0
+                SUBQ.B  #1,D0
+            ENDI
+            ADDQ.L  #1,D5
+        ENDW
+
+        LEA     song_name,A1
+        ADDQ    #6,A1
+        CLR.B   D5
+        WHILE.B (A0,D5) <NE> #0    DO
+            MOVE.B  (A0,D5),(A1,D5)
+            ADDQ.B  #1,D5
+        ENDW
+        CLR.B   (A1,D5)
+        RTS
 
 
 LOAD_SCREEN_LOOP
@@ -855,24 +915,24 @@ CHECK_LIFE_AMOUNTS
             IF.B coop_mode <EQ> #0  THEN
                 IF.W player_1_life_amount <LT> #1   THEN
                     MOVE.B  #2,game_over_status
-                    ;BRA     GAME_OVER_LOOP
+                    BRA     GAME_OVER_LOOP
                 ENDI
                 IF.W player_2_life_amount <LT> #1   THEN
                     MOVE.B  #1,game_over_status
-                    ;BRA     GAME_OVER_LOOP
+                    BRA     GAME_OVER_LOOP
                 ENDI
             ELSE
                 MOVE.W  player_1_life_amount,D0
                 ADD.W   player_2_life_amount,D0
                 IF.W D0 <LT> #1 THEN
                     CLR.B   game_over_status
-                    ;BRA     GAME_OVER_LOOP
+                    BRA     GAME_OVER_LOOP
                 ENDI
             ENDI
         ELSE
             IF.W player_1_life_amount <LT> #1   THEN
                 CLR.B   game_over_status
-                ;BRA     GAME_OVER_LOOP
+                BRA     GAME_OVER_LOOP
             ENDI
         ENDI
         RTS
@@ -902,7 +962,7 @@ GAME_OVER_LOOP
 
 
 MOVE_OBJECTS
-        LEA     lane_0_object_addresses,A0
+        LEA     lane_object_addresses,A0
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
             MOVE.L  A0,A1
@@ -948,7 +1008,7 @@ CHECK_BOTH_PLAYER_COLLISIONS
 ; A5 must contain the player action colour
 ; A6 must contain the player charge amount
 CHECK_COLLISIONS
-        LEA     lane_0_object_addresses,A0
+        LEA     lane_object_addresses,A0
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
             IF.W (A0) <NE> #$FFFF   THEN
@@ -1635,7 +1695,7 @@ LOAD_NOTE_DATA
         CLR.L   D1
         MOVE.B  (A3),D1
         MULU    #(LANE_ADDRESSES_SIZE*2)+2,D1
-        LEA     lane_0_object_addresses,A0
+        LEA     lane_object_addresses,A0
         ADD     D1,A0
         SUB.W   #4,A2
         BSR     ENQUEUE_OBJECT_TO_LANE
@@ -1810,7 +1870,7 @@ DECREMENT_NOTES_TIMES
                     IF.B song_playing_type <EQ> #0  THEN
                         BSR     GAME_WON_MENU_LOOP
                     ELSE
-                        BSR     LOAD_IN_NEW_SONG
+                        BSR     LOAD_IN_RANDOM_NEW_SONG
                     ENDI
                 ENDI
             ENDI
@@ -1819,7 +1879,7 @@ DECREMENT_NOTES_TIMES
 
 
 CHECK_LANES_EMPTY
-        LEA     lane_0_object_addresses,A0
+        LEA     lane_object_addresses,A0
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
             ; loops until encounters an empty position
@@ -1965,7 +2025,7 @@ DRAW_NOTES
         MOVE.B  #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        LEA     lane_0_object_addresses,A3
+        LEA     lane_object_addresses,A3
         ; loops through the five lanes
         FOR A4 = #0 TO #4   DO
             MOVE.L  A3,A2
@@ -2593,7 +2653,6 @@ player_1_colour_keymaps DC.L    'HUK '  ; stores the keymaps for the player chan
 player_1_charge_amount  DC.B    0       ; stores the charge amount
 player_1_life_amount    DC.W    200     ; stores the life amount
 player_1_punching_index DC.B    0       ; stores whether player is punching
-;player_1_punching_colour    DC.B    0       ; stores player punching colour
 
 player_2_position       DS.W    2       ; stores the top right player position x,y
 player_2_lane_number    DS.B    3       ; stores the lane number
@@ -2605,21 +2664,10 @@ player_2_colour_keymaps DC.L    'XCVZ'  ; stores the keymaps for the player chan
 player_2_charge_amount  DC.B    0       ; stores the charge amount
 player_2_life_amount    DC.W    200     ; stores the life amount
 player_2_punching_index DC.B    0       ; stores whether player is punching
-;player_2_punching_colour    DC.B    0       ; stores player punching colour
 
-; stores the number of objects in the arrays
-lane_0_object_count     DC.W    0
 ; stores the addresses of objects in the rows
 ; these are queues
-lane_0_object_addresses DS.W    LANE_ADDRESSES_SIZE
-lane_1_object_count     DC.W    0
-lane_1_object_addresses DS.W    LANE_ADDRESSES_SIZE
-lane_2_object_count     DC.W    0
-lane_2_object_addresses DS.W    LANE_ADDRESSES_SIZE
-lane_3_object_count     DC.W    0
-lane_3_object_addresses DS.W    LANE_ADDRESSES_SIZE
-lane_4_object_count     DC.W    0
-lane_4_object_addresses DS.W    LANE_ADDRESSES_SIZE
+lane_object_addresses   DS.W    LANE_ADDRESSES_SIZE*5
 
 note_objects            DS.W    NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2    ; stores the notes objects data
 ;   note object structure:
@@ -2640,7 +2688,9 @@ coop_mode               DC.B    1       ; stores whether two player is coop 1 or
 
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
-song_name               DC.B    'songs/RIT9T.txt',0
+song_name               DC.B    'songs/'
+                        DS.B    26
+
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
 ; IT IS ILLEGAL AND RAISES AN ERROR
@@ -2744,7 +2794,14 @@ menu_screen_game_type           DC.B    0               ; stores whether single 
 song_playing_type               DC.B    1               ; stores whether practice 0 or endless 1
 game_over_status                DC.B    0               ; stores whether game over 0 or a player won 1 or 2
 
+number_of_available_songs       DC.B    0
+available_songs_array           DS.B    NUMBER_OF_SONGS
+ALL_SONG_FILE_NAMES             DC.B    'Running in the 90s',0,'Running in the 90s',0
+
+
         END    START
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
