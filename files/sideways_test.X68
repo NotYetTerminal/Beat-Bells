@@ -689,7 +689,7 @@ GAME_START
         ENDI
 
         ; sets the game speed
-        MOVE.W  #8,notes_speed
+        MOVE.B  #8,notes_speed
 
         ; sets starting variables
         CLR.B   player_1_moving
@@ -720,6 +720,20 @@ GAME_START
         LEA     lanes_notes_hit_animations,A0
         FOR D5 = #0 TO #4   DO
             CLR.L   (A0)+
+        ENDF
+
+        LEA     lane_object_addresses,A0
+        FOR D5 = #0 TO #4   DO
+            CLR.W   -2(A0)
+            MOVE.L  A0,A1
+            DBLOOP D6 = #LANE_ADDRESSES_SIZE-1
+                    MOVE.W  (A1),A2
+                    ADD.W   #2,A2
+                    ; moves the notes
+                    MOVE.B  notes_speed,D2
+                    SUB.W   D2,(A2)
+                    ADD.W   #2,A1
+            UNLESS.W (A1) <NE> #$FFFF
         ENDF
 
         CLR.L   score
@@ -1001,6 +1015,7 @@ GAME_OVER_LOOP
 
 MOVE_OBJECTS
         LEA     lane_object_addresses,A0
+        CLR.W   D2
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
             MOVE.L  A0,A1
@@ -1010,7 +1025,7 @@ MOVE_OBJECTS
                     MOVE.W  (A1),A2
                     ADD.W   #2,A2
                     ; moves the notes
-                    MOVE.W  notes_speed,D2
+                    MOVE.B  notes_speed,D2
                     SUB.W   D2,(A2)
                     ADD.W   #2,A1
                 UNLESS.W (A1) <NE> #$FFFF
@@ -1909,6 +1924,7 @@ DECREMENT_NOTES_TIMES
                         BSR     GAME_WON_MENU_LOOP
                     ELSE
                         BSR     LOAD_IN_RANDOM_NEW_SONG
+                        ADDQ.B  #2,notes_speed
                     ENDI
                 ENDI
             ENDI
@@ -2825,7 +2841,7 @@ unfilled_notes_2_start_sprite   DS.L    1
 
 previous_render_time            DS.L    1
 render_skip_amount              DC.B    0
-notes_speed                     DC.W    8
+notes_speed                     DC.B    8
 
 lanes_colours                   DCB.L   6,WHITE
 lanes_notes_hit_animations      DCB.L   5,$00000000
