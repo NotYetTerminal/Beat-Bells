@@ -26,7 +26,6 @@
 * game over screen
 * practice win screen
 * 
-* increase notes moving speed on new song
 * song_playing_type needs to change whether another song is put in
 * 
 
@@ -617,6 +616,7 @@ GAME_START
         MOVE.L  D1,last_bass_path_change_time
         MOVE.L  D1,last_object_time
         MOVE.L  D1,last_note_spawn_time
+        MOVE.L  D1,last_notes_hit_index_change_time
         ; stores the time as starting seed
         MOVE.L  D1,random_value
 
@@ -685,7 +685,7 @@ GAME_START
         ENDI
 
         ; sets the game speed
-        MOVE.B  #8,notes_speed
+        MOVE.B  #12,notes_speed
 
         ; sets starting variables
         CLR.B   player_1_moving
@@ -884,7 +884,7 @@ GAME_LOOP
             ; increments and does modulus 8
             ADDQ.B  #1,sprite_gif_index
             AND.B   #7,sprite_gif_index
-
+            
             IF.B player_1_punching_index <NE> #0 AND.B player_1_punching_index <NE> #8  THEN
                 ADDQ.B  #1,player_1_punching_index
                 IF.B player_1_punching_index <EQ> #8    THEN
@@ -1183,6 +1183,7 @@ NOTE_HIT_DETECTION
                 ENDI
             ELSE
                 IF.B 6(A1) <EQ> #1  THEN
+                    CLR.L   D7
                     MOVE.B  player_2_lane_number,D7
                     IF.B (A4) <EQ> D7   THEN
                         MOVE.B  #1,bass_last_note_success
@@ -1332,13 +1333,13 @@ HANDLE_INPUT
 
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
-        LEA     player_1_charge_amount,A3
         LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
         BSR     HANDLE_COLOUR_CHANGE
 
         ; shift
         MOVE.L  #$10000000,D1
+        LEA     player_1_charge_amount,A3
         BSR     HANDLE_CHARGE
 
         LEA     player_1_lane_number,A1
@@ -1352,13 +1353,13 @@ HANDLE_INPUT
         IF.B two_player <EQ> #1 THEN
             LEA     player_2_action_pressed,A1
             LEA     player_2_action_colour,A2
-            LEA     player_2_charge_amount,A3
             LEA     player_2_punching_index,A4
             MOVE.L  player_2_colour_keymaps,D1
             BSR     HANDLE_COLOUR_CHANGE
 
             ; control
             MOVE.L  #$11000000,D1
+            LEA     player_2_charge_amount,A3
             BSR     HANDLE_CHARGE
 
             LEA     player_2_lane_number,A1
@@ -1410,7 +1411,6 @@ PAUSE_MENU_LOOP
 
 ; A1 must contain player action pressed
 ; A2 must contain player action colour
-; A3 must contain the player charge amount
 ; A4 must conatin the player punching index
 ; D1 must contain player colour keymaps
 HANDLE_COLOUR_CHANGE
@@ -1485,13 +1485,15 @@ HANDLE_CHARGE
         BTST.L  #24,D1
         IF  <NE>    THEN
             IF.B (A3) <LO> #80  THEN
-                MOVE.B  #40,D2
-                SUB.B  song_difficulty,D2
-                MOVE.B  D2,D0
-                LSR.B   #2,D0
-                LSR.B   #3,D2
-                ADD.B   D2,D0
-                ADD.B   D0,(A3)
+                MOVE.B  #15,D2
+                MOVE.B  song_difficulty,D0
+                ADD.B   #10,D0
+                LSR.B   #1,D0
+                SUB.B   D0,D2
+                MOVE.B  notes_speed,D0
+                LSR.B   #1,D0
+                ADD.B   D0,D2
+                ADD.B   D2,(A3)
                 IF.B (A3) <HI> #80  THEN
                     MOVE.B  #80,(A3)
                 ENDI
@@ -2314,6 +2316,11 @@ DRAW_METER
 
 DRAW_NOTES_HITS_ANIMATIONS
         LEA     lanes_notes_hit_animations,A1
+
+        MOVE.W  #8,D0
+        TRAP    #15
+        SUB.L   last_notes_hit_index_change_time,D1
+        MOVE.L  D1,D5
         
         ; sets pen width
         MOVE.B  #93,D0
@@ -2321,7 +2328,7 @@ DRAW_NOTES_HITS_ANIMATIONS
         TRAP    #15
 
         CLR.L   D2
-        FOR D5 = #0 TO #4   DO
+        FOR A0 = #0 TO #4   DO
             IF.B (A1) <NE> #0   THEN
                 ; sets pen colour
                 MOVE.B  #80,D0
@@ -2329,7 +2336,7 @@ DRAW_NOTES_HITS_ANIMATIONS
                 AND.L   #WHITE,D1
                 TRAP    #15
 
-                MOVE.W  D5,D2
+                MOVE.W  A0,D2
                 BSR     GET_LANE_Y_POSITION
                 MOVE.W  D3,D7
 
@@ -2342,11 +2349,18 @@ DRAW_NOTES_HITS_ANIMATIONS
                         BSR     LONG_DRAW
                     ENDI
                 ENDI
-                
-                SUB.B   #1,(A1)
+                IF.L #8 <LE> D5 THEN
+                    SUBQ.B  #1,(A1)
+                ENDI
             ENDI
             ADD.L   #4,A1
         ENDF
+
+        IF.L #8 <LE> D5 THEN
+            MOVE.W  #8,D0
+            TRAP    #15
+            MOVE.L  D1,last_notes_hit_index_change_time
+        ENDI
         RTS
 
 
@@ -2686,13 +2700,14 @@ EXIT_PROGRAM
 
 
 ; variables
-random_value            DS.L    1       ; stores a random variable
+random_value                    DS.L    1       ; stores a random variable
 
-last_frame_time         DS.L    1       ; stores the time at last frame
+last_frame_time                 DS.L    1       ; stores the time at last frame
 last_treble_path_change_time    DS.L    1       ; stores the time when the treble path index last changed
 last_bass_path_change_time      DS.L    1       ; stores the time when the bass path index last changed
-last_object_time        DS.L    1       ; stores the time when the notes where moved
-last_note_spawn_time    DS.L    1       ; stores the time when note was last spawned
+last_object_time                DS.L    1       ; stores the time when the notes where moved
+last_note_spawn_time            DS.L    1       ; stores the time when note was last spawned
+last_notes_hit_index_change_time    DS.L    1       ; stores when the sprite indexes were last changed
 
 player_1_position       DS.W    2       ; stores the top right player position x,y
 player_1_lane_number    DS.B    1       ; stores the lane number
@@ -2838,7 +2853,7 @@ unfilled_notes_2_start_sprite   DS.L    1
 
 previous_render_time            DS.L    1
 render_skip_amount              DC.B    0
-notes_speed                     DC.B    8
+notes_speed                     DC.B    12
 
 lanes_colours                   DCB.L   6,WHITE
 lanes_notes_hit_animations      DCB.L   5,$00000000
@@ -2860,9 +2875,7 @@ number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
 ALL_SONG_FILE_NAMES             DC.B    'Running in the 90s',0,'Running in the 90s',0
 
-
         END    START
-
 
 *~Font name~Courier New~
 *~Font size~10~
