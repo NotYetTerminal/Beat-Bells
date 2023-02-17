@@ -30,8 +30,6 @@
 * song_playing_type needs to change whether another song is put in
 * set all dcs back to normal
 * two player coop life graphics
-* hit animation may not the same for all notes
-* game should start on first note
 * 
 
 ; set constants
@@ -2004,6 +2002,7 @@ DRAW_PLAYERS
             MOVE.L  player_1_start_sprite,A0
             MOVE.B  player_1_action_colour,D0
             MOVE.B  sprite_gif_index,D1
+            BSR     DRAW_PLAYER
         ELSE
             MOVE.L  punching_1_start_sprite,A0
             IF.B player_1_punching_index <NE> #0    THEN
@@ -2011,8 +2010,10 @@ DRAW_PLAYERS
                 MOVE.B  player_1_action_colour,D0
                 MOVE.B  player_1_punching_index,D1
             ENDI
+            ADD.W   #6,(A1)
+            BSR     DRAW_PLAYER
+            SUB.W   #6,(A1)
         ENDI
-        BSR     DRAW_PLAYER
 
         IF.B two_player <EQ> #1 THEN
             CLR.L   D0
@@ -2022,6 +2023,7 @@ DRAW_PLAYERS
                 MOVE.L  player_2_start_sprite,A0
                 MOVE.B  player_2_action_colour,D0
                 MOVE.B  sprite_gif_index,D1
+                BSR     DRAW_PLAYER
             ELSE
                 MOVE.L  punching_2_start_sprite,A0
                 IF.B player_2_punching_index <NE> #0    THEN
@@ -2029,9 +2031,10 @@ DRAW_PLAYERS
                     MOVE.B  player_2_action_colour,D0
                     MOVE.B  player_2_punching_index,D1
                 ENDI
+                ADD.W   #6,(A1)
+                BSR     DRAW_PLAYER
+                SUB.W   #6,(A1)
             ENDI
-
-            BSR     DRAW_PLAYER
         ENDI
         RTS
 
