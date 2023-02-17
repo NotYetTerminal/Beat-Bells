@@ -671,7 +671,6 @@ GAME_START
 
         ; calculates game difficulty
         MOVEQ   #20,D0
-        CLR.L   D1
         MOVE.B  main_menu_difficulty,D1
         IF.B two_player <EQ> #0 THEN
             LSL.B   #3,D1
@@ -686,7 +685,19 @@ GAME_START
         ENDI
 
         ; sets the game speed
-        MOVE.B  #12,notes_speed
+        MOVEQ   #20,D0
+        SUB.B   song_difficulty,D0
+        LSR.B   #2,D0
+        ADD.B   #10,D0
+        MOVE.W  D0,notes_speed
+        MOVE.W  D0,previous_notes_speed
+        CLR.W   notes_speed_indexer
+
+        MOVE.W  #384,D0
+        CLR.W   D1
+        MOVE.B  song_difficulty,D1
+        DIVU    D1,D0
+        MOVE.W  D0,notes_speed_indexer_rollover
 
         ; sets starting variables
         CLR.B   player_1_moving
@@ -734,7 +745,8 @@ GAME_START
         CLR.L   score
         CLR.W   player_1_longest_streak
         CLR.W   player_2_longest_streak
-        CLR.W   total_notes
+        CLR.W   treble_total_notes
+        CLR.W   bass_total_notes
         CLR.W   player_1_notes_hit_count
         CLR.W   player_2_notes_hit_count
 
@@ -959,12 +971,12 @@ GAME_LOOP
             SUB.L   previous_render_time,D1
             LSR.B   #1,D1
             IF.B D1 <NE> #0 THEN
-                MOVE.B  #1,render_skip_amount
+                MOVE.B  D1,render_skip_amount
             ENDI
 
             BSR     CHECK_LIFE_AMOUNTS
         ELSE
-            CLR.B   render_skip_amount
+            SUBQ.B  #1,render_skip_amount
         ENDI
 
         BRA     GAME_LOOP
@@ -1021,9 +1033,12 @@ GAME_OVER_LOOP
         BRA     GAME_OVER_LOOP
 
 
+; D1 must contain the time calculated from last object time
 MOVE_NOTES
+        LSR.L   #1,D1
+        MULU    notes_speed,D1
+
         LEA     lane_notes_addresses,A0
-        CLR.W   D2
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
             MOVE.L  A0,A1
@@ -1033,8 +1048,7 @@ MOVE_NOTES
                     MOVE.W  (A1),A2
                     ADD.W   #2,A2
                     ; moves the notes
-                    MOVE.B  notes_speed,D2
-                    SUB.W   D2,(A2)
+                    SUB.W   D1,(A2)
                     ADD.W   #2,A1
                 UNLESS.W (A1) <NE> #$FFFF
             ENDI
@@ -1129,6 +1143,10 @@ CHECK_COLLISIONS
                                 CLR.B   player_2_charge_amount
                                 ;SUB.W   #199,player_2_life_amount
                             ENDI
+                            MOVE.W  previous_notes_speed,D0
+                            IF.W notes_speed <HI> D0    THEN
+                                SUB.W   #1,notes_speed
+                            ENDI
                             LEA     lanes_colours,A3
                             MOVE.L  D5,D7
                             LSL.L   #2,D7
@@ -1187,6 +1205,11 @@ NOTE_HIT_DETECTION
                     CLR.W   (A1)+
                     CLR.W   (A1)
                     CLR.B   (A6)
+                    IF.B two_player <EQ> #0 THEN
+                        ADDQ.W  #2,notes_speed_indexer
+                    ELSE
+                        ADDQ.W  #1,notes_speed_indexer
+                    ENDI
                 ELSE
                     ADD.W   #2,A1
                 ENDI
@@ -1228,6 +1251,11 @@ NOTE_HIT_DETECTION
                         CLR.W   (A1)+
                         CLR.W   (A1)
                         CLR.B   (A6)
+                        IF.B two_player <EQ> #0 THEN
+                            ADDQ.W  #2,notes_speed_indexer
+                        ELSE
+                            ADDQ.W  #1,notes_speed_indexer
+                        ENDI
                     ELSE
                         ADD.W   #2,A1
                     ENDI
@@ -1237,6 +1265,11 @@ NOTE_HIT_DETECTION
             ENDI
         ELSE
             ADD.W   #2,A1
+        ENDI
+        MOVE.W  notes_speed_indexer_rollover,D0
+        IF.W notes_speed_indexer <HS> D0    THEN
+            SUB.W   D0,notes_speed_indexer
+            ADDQ.W  #1,notes_speed
         ENDI
         RTS
 
@@ -1489,18 +1522,18 @@ HANDLE_COLOUR_CHANGE
 ; D1 must contain player shift/control keycode
 HANDLE_CHARGE
         ; check for shift/control pressed
-        MOVE.W  #19,D0
+        MOVEQ   #19,D0
         TRAP    #15
         BTST.L  #24,D1
         IF  <NE>    THEN
             IF.B (A3) <LO> #80  THEN
-                MOVE.B  #15,D2
+                MOVEQ   #15,D2
                 MOVE.B  song_difficulty,D0
                 ADD.B   #10,D0
                 LSR.B   #1,D0
                 SUB.B   D0,D2
-                MOVE.B  notes_speed,D0
-                LSR.B   #1,D0
+                MOVE.W  notes_speed,D0
+                LSR.W   #1,D0
                 ADD.B   D0,D2
                 ADD.B   D2,(A3)
                 IF.B (A3) <HI> #80  THEN
@@ -1612,10 +1645,13 @@ SPAWN_NEW_NOTE
                 LEA     treble_note_path_index,A3
                 BSR     LOAD_NOTE_DATA
 
-                ; check if teleporter
-                IF.W (A2) <EQ> #4   THEN
-                    BSR     PICK_RANDOM_PATH_INDEX
-                    MOVE.B  (A3),7(A2)
+                IF.W (A2) <NE> #0   THEN
+                    ADDQ.W  #1,treble_total_notes
+                    ; check if teleporter
+                    IF.W (A2) <EQ> #4   THEN
+                        BSR     PICK_RANDOM_PATH_INDEX
+                        MOVE.B  (A3),7(A2)
+                    ENDI
                 ENDI
                 MOVE.B  #0,6(A2)
                 
@@ -1664,10 +1700,13 @@ SPAWN_NEW_NOTE
                 IF.B two_player <EQ> #0 THEN
                     CLR.W   (A2)
                 ELSE
-                    ; check if teleporter
-                    IF.W (A2) <EQ> #4   THEN
-                        BSR     PICK_RANDOM_PATH_INDEX
-                        MOVE.B  (A3),7(A2)
+                    IF.W (A2) <NE> #0   THEN
+                        ADDQ.W  #1,bass_total_notes
+                        ; check if teleporter
+                        IF.W (A2) <EQ> #4   THEN
+                            BSR     PICK_RANDOM_PATH_INDEX
+                            MOVE.B  (A3),7(A2)
+                        ENDI
                     ENDI
                 ENDI
                 MOVE.B  two_player,6(A2)
@@ -1934,7 +1973,8 @@ DECREMENT_NOTES_TIMES
                         BSR     GAME_WON_MENU_LOOP
                     ELSE
                         BSR     LOAD_IN_RANDOM_NEW_SONG
-                        ADDQ.B  #2,notes_speed
+                        ADD.W   #2,previous_notes_speed
+                        MOVE.W  previous_notes_speed,notes_speed
                     ENDI
                 ENDI
             ENDI
@@ -2839,7 +2879,8 @@ score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
 player_1_longest_streak         DC.W    0               ; stores the streak of hitting notes
 player_2_longest_streak         DC.W    0               ; stores the streak of hitting notes
-total_notes                     DC.W    0               ; stores the total amount of visible notes spawned
+treble_total_notes              DC.W    0               ; stores the total amount of visible treble notes spawned
+bass_total_notes                DC.W    0               ; stores the total amount of visible bass notes spawned
 player_1_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
 player_2_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
 
@@ -2849,9 +2890,13 @@ menu_screen_game_type           DC.B    0               ; stores whether single 
 
 two_player                      DC.B    0               ; stores the player count, 0 = one player, 1 = two players
 coop_mode                       DC.B    1               ; stores whether two player is coop 1 or versus 0
-notes_speed                     DC.B    12              ; stores the speed at which notes move by
 song_playing_type               DC.B    1               ; stores whether practice 0 or endless 1
 game_over_status                DC.B    0               ; stores whether game over 0 or a player won 1 or 2
+
+notes_speed                     DC.W    8               ; stores the speed at which notes move by
+previous_notes_speed            DC.W    8               ; stores the previous song's starting speed
+notes_speed_indexer             DC.W    0               ; stores an index so the note speed in slowly increased
+notes_speed_indexer_rollover    DC.W    32              ; stores the value at which point the indexer adds to the notes speed
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
