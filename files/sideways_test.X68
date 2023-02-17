@@ -735,8 +735,8 @@ GAME_START
         ENDF
 
         LEA     note_objects,A0
-        FOR D5 = #0 TO #(NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2)-1 BY NOTE_OBJECT_SIZE  DO
-FIX THIS
+        FOR.L D5 = #0 TO #(NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2)-1 BY #NOTE_OBJECT_SIZE   DO
+            MOVE.W  #$FFFF,(A0,D5)
         ENDF
 
         CLR.L   score
