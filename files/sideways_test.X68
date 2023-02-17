@@ -695,13 +695,15 @@ GAME_START
         CLR.B   player_1_moving
         CLR.B   player_1_action_pressed
         CLR.B   player_1_action_colour
-        MOVE.W  #200,player_1_charge_amount
+        CLR.B   player_1_charge_amount
+        MOVE.W  #200,player_1_life_amount
         CLR.B   player_1_punching_index
 
         CLR.B   player_2_moving
         CLR.B   player_2_action_pressed
         CLR.B   player_2_action_colour
-        MOVE.W  #200,player_2_charge_amount
+        CLR.B   player_2_charge_amount
+        MOVE.W  #200,player_1_life_amount
         CLR.B   player_2_punching_index
 
         MOVE.B  #128,treble_quater_beat_count
@@ -727,13 +729,14 @@ GAME_START
             CLR.W   -2(A0)
             MOVE.L  A0,A1
             DBLOOP D6 = #LANE_ADDRESSES_SIZE-1
-                    MOVE.W  (A1),A2
-                    ADD.W   #2,A2
-                    ; moves the notes
-                    MOVE.B  notes_speed,D2
-                    SUB.W   D2,(A2)
-                    ADD.W   #2,A1
+                    MOVE.W  #$FFFF,(A1)+
             UNLESS.W (A1) <NE> #$FFFF
+            ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A0
+        ENDF
+
+        LEA     note_objects,A0
+        FOR D5 = #0 TO #(NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2)-1 BY NOTE_OBJECT_SIZE  DO
+FIX THIS
         ENDF
 
         CLR.L   score
