@@ -29,7 +29,7 @@
 * song_playing_type needs to change whether another song is put in
 * streak count
 * notes hit count
-* render problem
+* speed up rendering by not rerendering the whole screen
 * 
 
 ; set constants
@@ -688,7 +688,7 @@ GAME_START
         MOVEQ   #20,D0
         SUB.B   song_difficulty,D0
         LSR.B   #2,D0
-        ADD.B   #10,D0
+        ADD.B   #8,D0
         MOVE.W  D0,notes_speed
         MOVE.W  D0,previous_notes_speed
         CLR.W   notes_speed_indexer
@@ -697,6 +697,9 @@ GAME_START
         CLR.W   D1
         MOVE.B  song_difficulty,D1
         DIVU    D1,D0
+        IF.B two_player <EQ> #0 THEN
+            LSL.W   #1,D0
+        ENDI
         MOVE.W  D0,notes_speed_indexer_rollover
 
         ; sets starting variables
@@ -861,6 +864,9 @@ LOAD_SCREEN_LOOP
 
         IF.B player_1_action_colour <EQ> #4 THEN
             CLR.B   player_1_action_colour
+            MOVE.W  #8,D0
+            TRAP    #15
+            MOVE.L  D1,last_object_time
             BRA     GAME_LOOP
         ENDI
         CLR.B   player_1_action_colour
@@ -881,8 +887,13 @@ FRAME_DELAY
         ; subtracts the two times
         SUB.L   last_frame_time,D1
         ; n number of centiseconds have passed
-        CMP.L   #2,D1
-        BLO     FRAME_DELAY
+        CMP.L   #1,D1
+        IF  <LS>    THEN
+            MOVEQ   #23,D0
+            MOVEQ   #1,D1
+            TRAP    #15
+        ENDI
+        ;BLO     FRAME_DELAY
         ; save time
         MOVE.W  #8,D0
         TRAP    #15
@@ -971,7 +982,7 @@ GAME_LOOP
             SUB.L   previous_render_time,D1
             LSR.B   #1,D1
             IF.B D1 <NE> #0 THEN
-                MOVE.B  D1,render_skip_amount
+                MOVE.B  #1,render_skip_amount
             ENDI
 
             BSR     CHECK_LIFE_AMOUNTS
@@ -1035,7 +1046,9 @@ GAME_OVER_LOOP
 
 ; D1 must contain the time calculated from last object time
 MOVE_NOTES
-        LSR.L   #1,D1
+        MOVE.L  D1,D2
+        LSR.L   #2,D2
+        SUB.L   D2,D1
         MULU    notes_speed,D1
 
         LEA     lane_notes_addresses,A0
@@ -1205,11 +1218,7 @@ NOTE_HIT_DETECTION
                     CLR.W   (A1)+
                     CLR.W   (A1)
                     CLR.B   (A6)
-                    IF.B two_player <EQ> #0 THEN
-                        ADDQ.W  #2,notes_speed_indexer
-                    ELSE
-                        ADDQ.W  #1,notes_speed_indexer
-                    ENDI
+                    ADDQ.W  #1,notes_speed_indexer
                 ELSE
                     ADD.W   #2,A1
                 ENDI
@@ -1251,11 +1260,7 @@ NOTE_HIT_DETECTION
                         CLR.W   (A1)+
                         CLR.W   (A1)
                         CLR.B   (A6)
-                        IF.B two_player <EQ> #0 THEN
-                            ADDQ.W  #2,notes_speed_indexer
-                        ELSE
-                            ADDQ.W  #1,notes_speed_indexer
-                        ENDI
+                        ADDQ.W  #1,notes_speed_indexer
                     ELSE
                         ADD.W   #2,A1
                     ENDI
@@ -1433,6 +1438,9 @@ PAUSE_MENU_LOOP
 
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
+            MOVE.W  #8,D0
+            TRAP    #15
+            MOVE.L  D1,last_object_time
             BRA     GAME_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
@@ -2642,23 +2650,25 @@ DRAW_LIFE_BARS
                     TRAP    #15
                 ENDF
 
-                ; does one last draw for partial square
-                BTST    #0,D6
-                IF  <NE>    THEN
-                    MOVE.L  #RED,D1
-                ELSE
-                    MOVE.L  #LIME,D1
+                IF.W D7 <NE> #0 THEN
+                    ; does one last draw for partial square
+                    BTST    #0,D6
+                    IF  <NE>    THEN
+                        MOVE.L  #RED,D1
+                    ELSE
+                        MOVE.L  #LIME,D1
+                    ENDI
+                    ; sets pen and fill colour
+                    MOVE.B  #80,D0
+                    TRAP    #15
+                    MOVE.W  #81,D0
+                    TRAP    #15
+                    
+                    MOVE.W  #87,D0
+                    MOVE.W  D3,D1
+                    ADD.W   D7,D3
+                    TRAP    #15
                 ENDI
-                ; sets pen and fill colour
-                MOVE.B  #80,D0
-                TRAP    #15
-                MOVE.W  #81,D0
-                TRAP    #15
-                
-                MOVE.W  #87,D0
-                MOVE.W  D3,D1
-                ADD.W   D7,D3
-                TRAP    #15
             ENDI
         ENDI
         RTS
