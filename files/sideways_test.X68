@@ -27,6 +27,9 @@
 * practice win screen
 * 
 * song_playing_type needs to change whether another song is put in
+* streak count
+* notes hit count
+* render problem
 * 
 
 ; set constants
@@ -41,10 +44,12 @@ LEFT_BORDER_PADDING     EQU     20
 LANE_SIZE               EQU     (SCREEN_HEIGHT-TOP_BORDER_PADDING-BOTTOM_BORDER_PADDING)/5
 BEAT_LINE_X             EQU     200
 
-NOTE_SIZE               EQU     40
+NOTE_SIZE               EQU     80
 
 NOTE_OBJECT_SIZE        EQU     48
-LANE_ADDRESSES_SIZE     EQU     56
+LANE_ADDRESSES_SIZE     EQU     55
+
+LIFE_BAR_X              EQU     700
 
 NUMBER_OF_SONGS         EQU     2
 
@@ -656,10 +661,6 @@ GAME_START
         LEA     player_2_lane_number,A1
         BSR     CHANGE_PLAYER_Y_POSITION
 
-        ; sets the index to the start
-        MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
-        MOVE.L  #BASS_FILE_CONTENTS,bass_song_file_index
-
         ; practice
         IF.B song_playing_type <EQ> #0  THEN
             LEA     song_name,A2
@@ -702,14 +703,9 @@ GAME_START
         MOVE.W  #200,player_2_life_amount
         CLR.B   player_2_punching_index
 
-        MOVE.B  #128,treble_quater_beat_count
-        MOVE.B  #128,bass_quater_beat_count
-
-        MOVE.B  #1,treble_last_note_success
-        MOVE.B  #1,bass_last_note_success
-
         CLR.B   render_skip_amount
 
+        ; reset values in arrays
         LEA     lanes_colours,A0
         FOR D5 = #0 TO #5   DO
             MOVE.L  #WHITE,(A0)+
@@ -720,7 +716,7 @@ GAME_START
             CLR.L   (A0)+
         ENDF
 
-        LEA     lane_object_addresses,A0
+        LEA     lane_notes_addresses,A0
         FOR D5 = #0 TO #4   DO
             CLR.W   -2(A0)
             MOVE.L  A0,A1
@@ -736,6 +732,11 @@ GAME_START
         ENDF
 
         CLR.L   score
+        CLR.W   player_1_longest_streak
+        CLR.W   player_2_longest_streak
+        CLR.W   total_notes
+        CLR.W   player_1_notes_hit_count
+        CLR.W   player_2_notes_hit_count
 
         BRA     LOAD_SCREEN_LOOP
 
@@ -744,6 +745,14 @@ GAME_START
 ; loads the treble file into $10000
 ; and the bass file into $20000
 LOAD_IN_SONG
+        ; sets the index to the start
+        MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
+        MOVE.L  #BASS_FILE_CONTENTS,bass_song_file_index
+        MOVE.B  #128,treble_quater_beat_count
+        MOVE.B  #128,bass_quater_beat_count
+        MOVE.B  #1,treble_last_note_success
+        MOVE.B  #1,bass_last_note_success
+
         MOVEQ   #51,D0
         LEA     song_name,A1
         TRAP    #15
@@ -916,7 +925,7 @@ GAME_LOOP
         TRAP    #15
         SUB.L   last_object_time,D1
         IF.L #2 <LE> D1    THEN
-            BSR     MOVE_OBJECTS
+            BSR     MOVE_NOTES
             BSR     HANDLE_INPUT
             BSR     CHECK_BOTH_PLAYER_COLLISIONS
 
@@ -1012,8 +1021,8 @@ GAME_OVER_LOOP
         BRA     GAME_OVER_LOOP
 
 
-MOVE_OBJECTS
-        LEA     lane_object_addresses,A0
+MOVE_NOTES
+        LEA     lane_notes_addresses,A0
         CLR.W   D2
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
@@ -1060,7 +1069,7 @@ CHECK_BOTH_PLAYER_COLLISIONS
 ; A5 must contain the player action colour
 ; A6 must contain the player charge amount
 CHECK_COLLISIONS
-        LEA     lane_object_addresses,A0
+        LEA     lane_notes_addresses,A0
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
             IF.W (A0) <NE> #$FFFF   THEN
@@ -1098,7 +1107,7 @@ CHECK_COLLISIONS
                     ENDI
 
                     ; check collision with the beat line, ie too late
-                    IF.W (A1) <LS> #BEAT_LINE_X-NOTE_SIZE-NOTE_SIZE THEN
+                    IF.W (A1) <LS> #BEAT_LINE_X-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
                         IF.W -(A1) <EQ> #0  THEN
                             IF.B 6(A1) <EQ> #0  THEN
@@ -1749,7 +1758,7 @@ LOAD_NOTE_DATA
         CLR.L   D1
         MOVE.B  (A3),D1
         MULU    #(LANE_ADDRESSES_SIZE*2)+2,D1
-        LEA     lane_object_addresses,A0
+        LEA     lane_notes_addresses,A0
         ADD     D1,A0
         SUB.W   #4,A2
         BSR     ENQUEUE_OBJECT_TO_LANE
@@ -1934,7 +1943,7 @@ DECREMENT_NOTES_TIMES
 
 
 CHECK_LANES_EMPTY
-        LEA     lane_object_addresses,A0
+        LEA     lane_notes_addresses,A0
         ; loops through the five lanes
         FOR D5 = #0 TO #4   DO
             ; loops until encounters an empty position
@@ -1976,8 +1985,7 @@ RENDER_SCREEN
         BSR     DRAW_FOREGROUND
         BSR     DRAW_CHARGE_METERS
         BSR     DRAW_NOTES_HITS_ANIMATIONS
-        BSR     DRAW_SCORE
-        BSR     DRAW_LIFE_BARS
+        BSR     DRAW_INFO_HUD
 
         ; repaints screen
         MOVE.B  #94,D0
@@ -2085,7 +2093,7 @@ DRAW_NOTES
         MOVE.B  #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        LEA     lane_object_addresses,A3
+        LEA     lane_notes_addresses,A3
         ; loops through the five lanes
         FOR A4 = #0 TO #4   DO
             MOVE.L  A3,A2
@@ -2453,6 +2461,14 @@ LONG_DRAW
         RTS
 
 
+DRAW_INFO_HUD
+        BSR     DRAW_SCORE
+        BSR     DRAW_LIFE_BARS
+        BSR     DRAW_STREAKS
+        BSR     DRAW_SONG_NAME
+        RTS
+
+
 DRAW_SCORE
         ; sets pen fill to black
         MOVE.W  #81,D0
@@ -2489,9 +2505,9 @@ DRAW_LIFE_BARS
 
         ; draw border
         MOVE.W  #90,D0
-        MOVE.W  #800,D1
+        MOVE.W  #LIFE_BAR_X,D1
         MOVE.W  #35,D2
-        MOVE.W  #1202,D3
+        MOVE.W  #LIFE_BAR_X+402,D3
         MOVE.W  #60,D4
         TRAP    #15
 
@@ -2507,8 +2523,8 @@ DRAW_LIFE_BARS
             TRAP    #15
 
             MOVE.W  #87,D0
-            MOVE.W  #801,D1
-            MOVE.W  #801,D3
+            MOVE.W  #LIFE_BAR_X+1,D1
+            MOVE.W  #LIFE_BAR_X+1,D3
 
             IF.W player_1_life_amount <GT> #0   THEN
                 ADD.W   player_1_life_amount,D3
@@ -2524,8 +2540,8 @@ DRAW_LIFE_BARS
                 TRAP    #15
 
                 MOVE.W  #87,D0
-                MOVE.W  #801,D1
-                MOVE.W  #801,D3
+                MOVE.W  #LIFE_BAR_X+1,D1
+                MOVE.W  #LIFE_BAR_X+1,D3
                 SUB.W   #12,D4
 
                 IF.W player_1_life_amount <GT> #0   THEN
@@ -2541,8 +2557,8 @@ DRAW_LIFE_BARS
                 TRAP    #15
 
                 MOVE.W  #87,D0
-                MOVE.W  #801,D1
-                MOVE.W  #801,D3
+                MOVE.W  #LIFE_BAR_X+1,D1
+                MOVE.W  #LIFE_BAR_X+1,D3
                 ADD.W   #12,D2
                 ADD.W   #12,D4
 
@@ -2565,7 +2581,7 @@ DRAW_LIFE_BARS
                 SWAP    D7
                 SUBQ.B  #1,D6
                 
-                MOVE.W  #801,D3
+                MOVE.W  #LIFE_BAR_X+1,D3
 
                 FOR.B D5 = #0 TO D6 DO
                     BTST    #0,D5
@@ -2605,6 +2621,14 @@ DRAW_LIFE_BARS
                 TRAP    #15
             ENDI
         ENDI
+        RTS
+
+
+DRAW_STREAKS
+        RTS
+
+
+DRAW_SONG_NAME
         RTS
 
 
@@ -2731,11 +2755,11 @@ player_2_charge_amount  DC.B    0       ; stores the charge amount
 player_2_life_amount    DC.W    200     ; stores the life amount
 player_2_punching_index DC.B    0       ; stores whether player is punching
 
-; stores the number of objects in the arrays
+; stores the number of notes in the arrays
                         DC.W    0
-; stores the addresses of objects in the rows
+; stores the addresses of notes in the rows
 ; these are queues
-lane_object_addresses   DS.W    LANE_ADDRESSES_SIZE
+lane_notes_addresses    DS.W    LANE_ADDRESSES_SIZE
                         DC.W    0
                         DS.W    LANE_ADDRESSES_SIZE
                         DC.W    0
@@ -2759,14 +2783,15 @@ treble_song_file_index  DC.L    0       ; stores the byte index that the song is
 bass_song_file_index    DC.L    0       ; stores the byte index that the song is at
 treble_song_file_size   DC.W    0       ; stores the total length of the treble song file
 
-two_player              DC.B    0       ; stores the player count, 0 = one player, 1 = two players
-coop_mode               DC.B    1       ; stores whether two player is coop 1 or versus 0
-
 notes_times_array       DS.B    102     ; contains the times for each note that needs to be hold
 
 song_name_last_index    DS.B    1
 song_name               DC.B    'songs/'
                         DS.B    26
+
+number_of_available_songs       DC.B    0
+available_songs_array           DS.B    NUMBER_OF_SONGS
+ALL_SONG_FILE_NAMES             DC.B    'Running in the 90s',0,'Running in the 90s',0
 
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
@@ -2801,10 +2826,37 @@ bass_quater_beat_count      DC.B    128     ; stores the count of quarter beats 
 treble_last_note_success    DC.B    1       ; stores whether the last hit note was correct
 bass_last_note_success      DC.B    1       ; stores whether the last hit note was correct
 
+previous_render_time            DS.L    1
+render_skip_amount              DC.B    0
+
+lanes_colours                   DCB.L   6,WHITE
+lanes_notes_hit_animations      DCB.L   5,$00000000
+; stores the status of lane hit animations
+; first byte is used as an index
+; other three are the coolour BGR
+
+score                           DC.L    0               ; stores the score
+score_text                      DC.B    'Score: ',0
+player_1_longest_streak         DC.W    0               ; stores the streak of hitting notes
+player_2_longest_streak         DC.W    0               ; stores the streak of hitting notes
+total_notes                     DC.W    0               ; stores the total amount of visible notes spawned
+player_1_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
+player_2_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
+
+select_song_line                DC.B    0               ; stores the select line
+main_menu_difficulty            DC.B    0               ; stores the difficulty
+menu_screen_game_type           DC.B    0               ; stores whether single player 0 versus 1 or coop 2
+
+two_player                      DC.B    0               ; stores the player count, 0 = one player, 1 = two players
+coop_mode                       DC.B    1               ; stores whether two player is coop 1 or versus 0
+notes_speed                     DC.B    12              ; stores the speed at which notes move by
+song_playing_type               DC.B    1               ; stores whether practice 0 or endless 1
+game_over_status                DC.B    0               ; stores whether game over 0 or a player won 1 or 2
+
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
 ; the bass notes are going to be aqua, lime, and orange
-; teleport is goin to be purple2
+; teleport is going to be purple2
 BLUE            EQU     $00FF0000       ; Treble A, D
 RED             EQU     $000000FF       ; Treble B, E
 YELLOW          EQU     $0000FFFF       ; Treble C, F
@@ -2814,13 +2866,11 @@ LIME            EQU     $0000FF00       ; Bass C, F
 PURPLE2         EQU     $00FF0080       ; Teleport
 WHITE           EQU     $00FFFFFF
 
-
 ; QOI decoding
 SPRITES_LOADING             EQU     $28000      ; address where the qoi file is loaded
 SPRITES_PIXEL_LENGTH        EQU     $400        ; size of sprites is 16x16x4
 
 MULTIPLIER_SIZE             EQU     8           ; the size to multiply the sprites by
-
 
 PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/a0a.qoi',0
 PUNCHING_SPRITES_BASIC_PATH DC.B    'punching_sprites/aaa.qoi',0
@@ -2850,30 +2900,6 @@ filled_notes_1_start_sprite     DS.L    1
 filled_notes_2_start_sprite     DS.L    1
 unfilled_notes_1_start_sprite   DS.L    1
 unfilled_notes_2_start_sprite   DS.L    1
-
-previous_render_time            DS.L    1
-render_skip_amount              DC.B    0
-notes_speed                     DC.B    12
-
-lanes_colours                   DCB.L   6,WHITE
-lanes_notes_hit_animations      DCB.L   5,$00000000
-; stores the status of lane hit animations
-; first byte is used as an index
-; other three are the coolour BGR
-
-score                           DC.L    0               ; stores the score
-score_text                      DC.B    'Score: ',0
-
-select_song_line                DC.B    0               ; stores the select line
-main_menu_difficulty            DC.B    0               ; stores the difficulty
-menu_screen_game_type           DC.B    0               ; stores whether single player 0 versus 1 or coop 2
-
-song_playing_type               DC.B    1               ; stores whether practice 0 or endless 1
-game_over_status                DC.B    0               ; stores whether game over 0 or a player won 1 or 2
-
-number_of_available_songs       DC.B    0
-available_songs_array           DS.B    NUMBER_OF_SONGS
-ALL_SONG_FILE_NAMES             DC.B    'Running in the 90s',0,'Running in the 90s',0
 
         END    START
 
