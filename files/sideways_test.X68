@@ -28,8 +28,6 @@
 * 
 * increase notes moving speed on new song
 * song_playing_type needs to change whether another song is put in
-* set all dcs back to normal
-* two player coop life graphics
 * 
 
 ; set constants
@@ -701,7 +699,7 @@ GAME_START
         CLR.B   player_2_action_pressed
         CLR.B   player_2_action_colour
         CLR.B   player_2_charge_amount
-        MOVE.W  #200,player_1_life_amount
+        MOVE.W  #200,player_2_life_amount
         CLR.B   player_2_punching_index
 
         MOVE.B  #128,treble_quater_beat_count
@@ -1116,11 +1114,11 @@ CHECK_COLLISIONS
                             IF.B 6(A1) <EQ> #0  THEN
                                 CLR.B   treble_last_note_success
                                 CLR.B   player_1_charge_amount
-                                SUB.W   #199,player_1_life_amount
+                                ;SUB.W   #199,player_1_life_amount
                             ELSE
                                 CLR.B   bass_last_note_success
                                 CLR.B   player_2_charge_amount
-                                SUB.W   #199,player_2_life_amount
+                                ;SUB.W   #199,player_2_life_amount
                             ENDI
                             LEA     lanes_colours,A3
                             MOVE.L  D5,D7
@@ -2479,9 +2477,12 @@ DRAW_LIFE_BARS
         MOVE.W  #90,D0
         MOVE.W  #800,D1
         MOVE.W  #35,D2
-        MOVE.W  #1200,D3
+        MOVE.W  #1202,D3
         MOVE.W  #60,D4
         TRAP    #15
+
+        ADDQ.W  #1,D2
+        SUBQ.W  #1,D4
 
         IF.B two_player <EQ> #0 THEN
             ; sets pen and fill colour to red
@@ -2493,18 +2494,10 @@ DRAW_LIFE_BARS
 
             MOVE.W  #87,D0
             MOVE.W  #801,D1
-            MOVE.W  #800,D3
-            ADD.W   #1,D2
-            SUB.W   #1,D4
+            MOVE.W  #801,D3
 
             IF.W player_1_life_amount <GT> #0   THEN
                 ADD.W   player_1_life_amount,D3
-            ELSE
-                ADD.W   #1,D3
-            ENDI
-
-            IF.W player_1_life_amount <EQ> #400    THEN
-                SUB.W   #1,D3
             ENDI
             TRAP    #15
         ELSE
@@ -2518,18 +2511,11 @@ DRAW_LIFE_BARS
 
                 MOVE.W  #87,D0
                 MOVE.W  #801,D1
-                MOVE.W  #800,D3
-                ADD.W   #1,D2
-                SUB.W   #13,D4
+                MOVE.W  #801,D3
+                SUB.W   #12,D4
 
                 IF.W player_1_life_amount <GT> #0   THEN
                     ADD.W   player_1_life_amount,D3
-                ELSE
-                    ADD.W   #1,D3
-                ENDI
-
-                IF.W player_1_life_amount <EQ> #400    THEN
-                    SUB.W   #1,D3
                 ENDI
                 TRAP    #15
 
@@ -2542,62 +2528,67 @@ DRAW_LIFE_BARS
 
                 MOVE.W  #87,D0
                 MOVE.W  #801,D1
-                MOVE.W  #800,D3
-                ADD.W   #13,D2
-                MOVE.W  #59 ,D4
+                MOVE.W  #801,D3
+                ADD.W   #12,D2
+                ADD.W   #12,D4
 
                 IF.W player_2_life_amount <GT> #0   THEN
                     ADD.W   player_2_life_amount,D3
-                ELSE
-                    ADD.W   #1,D3
-                ENDI
-
-                IF.W player_2_life_amount <EQ> #400    THEN
-                    SUB.W   #1,D3
                 ENDI
                 TRAP    #15
-
             ELSE
                 MOVE.W  player_1_life_amount,D7
                 ADD.W   player_2_life_amount,D7
 
                 IF.W D7 <GT> #0   THEN
                     LSR.W   #1,D7
-                    SUB.W   #25,D7
                 ELSE
                     CLR.W   D7
                 ENDI
 
-                CLR.B   D6
+                DIVU    #25,D7
+                MOVE.B  D7,D6
+                SWAP    D7
+                SUBQ.B  #1,D6
+                
+                MOVE.W  #801,D3
 
-                ADD.W   #1,D2
-                SUB.W   #1,D4
-
-                FOR.W D5 = #0 TO D7 BY #25  DO
-                    IF.B D6 <EQ> #0 THEN
-                        MOVE.L  #RED,D1
-                        MOVEQ   #1,D6
-                    ELSE
+                FOR.B D5 = #0 TO D6 DO
+                    BTST    #0,D5
+                    IF  <NE>    THEN
                         MOVE.L  #LIME,D1
-                        CLR.B   D6
+                    ELSE
+                        MOVE.L  #RED,D1
                     ENDI
                     ; sets pen and fill colour
                     MOVE.B  #80,D0
                     TRAP    #15
                     MOVE.W  #81,D0
                     TRAP    #15
-
-                    MOVE.W  #801,D1
-                    ADD.W   D5,D1
-                    IF.W D7 <EQ> #375 THEN
-                        SUB.W   #1,D1
-                    ENDI
-                    MOVE.W  D1,D3
-                    ADD.W   #25,D3
-
+                    
                     MOVE.W  #87,D0
+                    MOVE.W  D3,D1
+                    ADD.W   #25,D3
                     TRAP    #15
                 ENDF
+
+                ; does one last draw for partial square
+                BTST    #0,D6
+                IF  <NE>    THEN
+                    MOVE.L  #RED,D1
+                ELSE
+                    MOVE.L  #LIME,D1
+                ENDI
+                ; sets pen and fill colour
+                MOVE.B  #80,D0
+                TRAP    #15
+                MOVE.W  #81,D0
+                TRAP    #15
+                
+                MOVE.W  #87,D0
+                MOVE.W  D3,D1
+                ADD.W   D7,D3
+                TRAP    #15
             ENDI
         ENDI
         RTS
@@ -2871,6 +2862,7 @@ ALL_SONG_FILE_NAMES             DC.B    'Running in the 90s',0,'Running in the 9
 
 
         END    START
+
 
 *~Font name~Courier New~
 *~Font size~10~
