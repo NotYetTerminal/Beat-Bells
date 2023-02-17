@@ -27,9 +27,10 @@
 * practice win screen
 * 
 * song_playing_type needs to change whether another song is put in
-* streak count
-* notes hit count
 * speed up rendering by not rerendering the whole screen
+* make top border smaller and bottom bigger
+* show song name
+* show both streaks
 * 
 
 ; set constants
@@ -95,7 +96,7 @@ START   ORG    $1000
         ; set font properties
         MOVEQ   #21,D0
         MOVE.L  #WHITE,D1
-        MOVE.L  #$060E0000,D2
+        MOVE.L  #$06120000,D2
         TRAP    #15
 
         BRA     MAIN_MENU_LOOP
@@ -1150,10 +1151,12 @@ CHECK_COLLISIONS
                             IF.B 6(A1) <EQ> #0  THEN
                                 CLR.B   treble_last_note_success
                                 CLR.B   player_1_charge_amount
+                                CLR.W   player_1_longest_streak
                                 ;SUB.W   #199,player_1_life_amount
                             ELSE
                                 CLR.B   bass_last_note_success
                                 CLR.B   player_2_charge_amount
+                                CLR.W   player_2_longest_streak
                                 ;SUB.W   #199,player_2_life_amount
                             ENDI
                             MOVE.W  previous_notes_speed,D0
@@ -1219,6 +1222,8 @@ NOTE_HIT_DETECTION
                     CLR.W   (A1)
                     CLR.B   (A6)
                     ADDQ.W  #1,notes_speed_indexer
+                    ADDQ.W  #1,player_1_longest_streak
+                    ADDQ.W  #1,player_1_notes_hit_count
                 ELSE
                     ADD.W   #2,A1
                 ENDI
@@ -1261,6 +1266,8 @@ NOTE_HIT_DETECTION
                         CLR.W   (A1)
                         CLR.B   (A6)
                         ADDQ.W  #1,notes_speed_indexer
+                        ADDQ.W  #1,player_2_longest_streak
+                        ADDQ.W  #1,player_2_notes_hit_count
                     ELSE
                         ADD.W   #2,A1
                     ENDI
@@ -2525,7 +2532,7 @@ DRAW_SCORE
 
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$1802,D1
+        MOVE.L  #$1801,D1
         TRAP    #15
 
         ; show text
@@ -2675,6 +2682,26 @@ DRAW_LIFE_BARS
 
 
 DRAW_STREAKS
+        ; sets pen fill to black
+        MOVE.W  #81,D0
+        CLR.L   D1
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$6002,D1
+        TRAP    #15
+
+        ; show text
+        MOVEQ   #14,D0
+        LEA     streak_text,A1
+        TRAP    #15
+
+        ; show number
+        MOVEQ   #3,D0
+        CLR.L   D1
+        MOVE.W  player_1_longest_streak,D1
+        TRAP    #15
         RTS
 
 
@@ -2889,6 +2916,7 @@ score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
 player_1_longest_streak         DC.W    0               ; stores the streak of hitting notes
 player_2_longest_streak         DC.W    0               ; stores the streak of hitting notes
+streak_text                     DC.B    'Streak: ',0
 treble_total_notes              DC.W    0               ; stores the total amount of visible treble notes spawned
 bass_total_notes                DC.W    0               ; stores the total amount of visible bass notes spawned
 player_1_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
