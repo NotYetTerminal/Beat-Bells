@@ -60,22 +60,22 @@ START   ORG    $1000
         ENDI
 
         ; turn off input echo
-        MOVE.L  #12,D0
+        MOVEQ   #12,D0
         CLR.B   D1
         TRAP    #15
         
         ; turn on double buffering
         ; avoids flickering
-		MOVE.L  #92,D0
-        MOVE.B  #17,D1
+		MOVEQ   #92,D0
+        MOVEQ   #17,D1
 		TRAP    #15
 
         ; sets the screen size
-        MOVE.L  #33,D0
+        MOVEQ   #33,D0
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        MOVE.L  #2,D1
+        MOVEQ   #2,D1
         TRAP    #15
 
         ; up and down arrow keys
@@ -102,7 +102,7 @@ START   ORG    $1000
 ; loads in all notes into DirectX memory
 NOTE_SET_UP
         LEA     NOTES_BASIC_PATH,A1
-        LEA     NOTES_NAMES_0,A2
+        LEA     NOTES_NAMES,A2
         FOR D1 = #0 TO #101  DO
             FOR D2 = #0 TO #2   DO
                 MOVE.L  A1,A3
@@ -111,7 +111,7 @@ NOTE_SET_UP
                 MOVE.B  (A2),(A3)
                 ADD.W   #1,A2
             ENDF
-            MOVE.B  #74,D0
+            MOVEQ   #74,D0
             TRAP    #15
         ENDF
         RTS
@@ -355,7 +355,7 @@ QOI_DECODE
         ; starting file index
         ; skips start stuff
         ; D4 could be an Address registry
-        MOVE.L  #14,D4
+        MOVEQ   #14,D4
 
         MOVE.L  #SPRITES_LOADING,A0
         MOVE.L  next_free_slot_address,A1
@@ -553,10 +553,11 @@ MAIN_MENU_LOOP
 
         BSR     HANDLE_DIFFICULTY_INPUT
         BSR     DRAW_MAIN_MENU
+        BSR     REPAINT_SCREEN
 
         ; delay
         MOVEQ   #23,D0
-        MOVEQ   #1,D1
+        MOVEQ   #10,D1
         TRAP    #15
         BRA     MAIN_MENU_LOOP
 
@@ -602,6 +603,7 @@ HANDLE_DIFFICULTY_INPUT
 SELECT_SONG_MENU_LOOP
 
         BSR     DRAW_SELECT_SONG_MENU
+        BSR     REPAINT_SCREEN
 
         ; delay
         MOVEQ   #23,D0
@@ -873,6 +875,7 @@ LOAD_SCREEN_LOOP
         CLR.B   player_1_action_colour
 
         BSR     DRAW_LOAD_SCREEN
+        BSR     REPAINT_SCREEN
         
         ; delay
         MOVEQ   #23,D0
@@ -1037,6 +1040,7 @@ GAME_OVER_LOOP
         CLR.B   player_1_action_colour
 
         BSR     DRAW_GAME_OVER
+        BSR     REPAINT_SCREEN
 
         ; delay
         MOVEQ   #23,D0
@@ -1302,7 +1306,7 @@ PLAY_MUSIC_ON_HIT
             IF #0 <NE> D3   THEN
                 ADD.B   #1,D6
                 MOVE.B  (A1,D6),D4
-                LEA     NOTES_NAMES_0,A3
+                LEA     NOTES_NAMES,A3
 
                 ; if not 0
                 IF #48 <NE> D4  THEN
@@ -1348,8 +1352,8 @@ PLAY_MUSIC_ON_HIT
                 
                 ; stops a note playing if it is
                 IF.B (A2,D1) <NE> #$FF   THEN
-                    MOVE.L  #77,D0
-                    MOVE.L  #2,D2
+                    MOVEQ   #77,D0
+                    MOVEQ   #2,D2
                     TRAP    #15
                 ENDI
 
@@ -1358,7 +1362,7 @@ PLAY_MUSIC_ON_HIT
                 MOVE.B  D3,(A2,D1)
 
                 ; D1 needed here
-                MOVE.B  #75,D0
+                MOVEQ   #75,D0
                 TRAP    #15
             ELSE
                 SUB.W   #8,A1
@@ -1373,7 +1377,7 @@ PLAY_MUSIC_ON_HIT
 LANE_LEFT_SHIFT
         MOVE.W  A0,A2
         SUB.W   #2,-(A2)
-        MOVE.L  #2,D7
+        MOVEQ   #2,D7
         FOR.W D6 = #0 TO (A2) BY #2 DO
             MOVE.W  (A0,D7),(A0,D6)
             ADD.B   #2,D7
@@ -1428,7 +1432,7 @@ HANDLE_INPUT
 
 
 HANDLE_PAUSE
-        MOVE.B  #19,D0
+        MOVEQ   #19,D0
         MOVE.L  #$1B000000,D1
         TRAP    #15
 
@@ -1458,6 +1462,7 @@ PAUSE_MENU_LOOP
         CLR.B   player_1_action_colour
 
         BSR     DRAW_PAUSE_MENU
+        BSR     REPAINT_SCREEN
         
         ; delay
         MOVEQ   #23,D0
@@ -1471,7 +1476,7 @@ PAUSE_MENU_LOOP
 ; A4 must conatin the player punching index
 ; D1 must contain player colour keymaps
 HANDLE_COLOUR_CHANGE
-        MOVE.B  #19,D0
+        MOVEQ   #19,D0
         TRAP    #15
 
         IF.L #0 <NE> D1 THEN
@@ -1970,8 +1975,8 @@ DECREMENT_NOTES_TIMES
                 IF.B (A1,D5) <EQ> #0    THEN
                     ; stops a note playing
                     MOVE.B  D5,D1
-                    MOVE.L  #2,D2
-                    MOVE.L  #77,D0
+                    MOVEQ   #2,D2
+                    MOVEQ   #77,D0
                     TRAP    #15
                     MOVE.B  #$FF,(A1,D5)
                 ENDI
@@ -2026,6 +2031,7 @@ GAME_WON_MENU_LOOP
         CLR.B   player_1_action_colour
 
         BSR     DRAW_GAME_WON_MENU
+        BSR     REPAINT_SCREEN
         
         ; delay
         MOVEQ   #23,D0
@@ -2042,13 +2048,7 @@ RENDER_SCREEN
         BSR     DRAW_NOTES_HITS_ANIMATIONS
         BSR     DRAW_INFO_HUD
 
-        ; repaints screen
-        MOVE.B  #94,D0
-		TRAP    #15
-		; clears buffer
-		MOVE.B  #11,D0
-		MOVE.W  #$FF00,D1
-		TRAP    #15
+        BSR     REPAINT_SCREEN
         RTS
 
 
@@ -2130,7 +2130,7 @@ DRAW_PLAYER
                 TRAP    #15
 
                 ; draw rectangle
-                MOVEQ   #87,D0
+                MOVEQ   #90,D0
                 MOVE.W  D3,D1
                 TRAP    #15
 
@@ -2144,8 +2144,8 @@ DRAW_PLAYER
 
 DRAW_NOTES
         ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #MULTIPLIER_SIZE,D1
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
         LEA     lane_notes_addresses,A3
@@ -2214,7 +2214,7 @@ DRAW_NOTE
                 TRAP    #15
 
                 ; draw rectangle
-                MOVEQ   #87,D0
+                MOVEQ   #90,D0
                 MOVE.W  D3,D1
                 TRAP    #15
 
@@ -2234,12 +2234,12 @@ DRAW_FOREGROUND
 
 DRAW_LANE_LINES
         ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #3,D1
+        MOVEQ   #93,D0
+        MOVEQ   #3,D1
         TRAP    #15
         
         ; sets pen colour to grey
-        MOVE.B  #80,D0
+        MOVEQ   #80,D0
         MOVE.L  #$00444444,D1
         TRAP    #15
 
@@ -2270,7 +2270,7 @@ DRAW_LANE_LINES
         LEA     lanes_colours,A0
         FOR D5 = #0 TO #5   DO
             ; sets pen colour
-            MOVE.B  #80,D0
+            MOVEQ   #80,D0
             MOVE.L  (A0)+,D1
             TRAP    #15
 
@@ -2287,12 +2287,12 @@ DRAW_LANE_LINES
 
 DRAW_BEAT_LINE
         ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #5,D1
+        MOVEQ   #93,D0
+        MOVEQ   #5,D1
         TRAP    #15
 
         ; sets pen and fill colour to white
-        MOVE.B  #80,D0
+        MOVEQ   #80,D0
         MOVE.L  #WHITE,D1
         TRAP    #15
 
@@ -2306,15 +2306,15 @@ DRAW_BEAT_LINE
 
 ; line from D1.W,D2.W TO D3.W,D4.W
 DRAW_LINE
-        MOVE.B  #84,D0
+        MOVEQ   #84,D0
         TRAP    #15
         RTS
 
 
 DRAW_CHARGE_METERS
         ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #1,D1
+        MOVEQ   #93,D0
+        MOVEQ   #1,D1
         TRAP    #15
 
         LEA     player_1_position,A0
@@ -2331,7 +2331,7 @@ DRAW_CHARGE_METERS
 DRAW_METER
         IF.B D5 <NE> #0 THEN
             ; sets pen colour to white
-            MOVE.B  #80,D0
+            MOVEQ   #80,D0
             MOVE.L  #WHITE,D1
             TRAP    #15
             MOVE.W  #81,D0
@@ -2352,7 +2352,7 @@ DRAW_METER
             ; draw charge meter inside
             IF.B D5 <NE> #80    THEN
                 ; sets pen and fill colour to grey
-                MOVE.B  #80,D0
+                MOVEQ   #80,D0
                 MOVE.L  #$00444444,D1
                 TRAP    #15
                 MOVE.W  #81,D0
@@ -2386,15 +2386,15 @@ DRAW_NOTES_HITS_ANIMATIONS
         MOVE.L  D1,D5
         
         ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #5,D1
+        MOVEQ   #93,D0
+        MOVEQ   #5,D1
         TRAP    #15
 
         CLR.L   D2
         FOR A0 = #0 TO #4   DO
             IF.B (A1) <NE> #0   THEN
                 ; sets pen colour
-                MOVE.B  #80,D0
+                MOVEQ   #80,D0
                 MOVE.L  (A1),D1
                 AND.L   #WHITE,D1
                 TRAP    #15
@@ -2556,12 +2556,12 @@ DRAW_SCORE
 
 DRAW_LIFE_BARS
         ; sets pen width
-        MOVE.B  #93,D0
-        MOVE.B  #1,D1
+        MOVEQ   #93,D0
+        MOVEQ   #1,D1
         TRAP    #15
 
         ; sets pen colour
-        MOVE.B  #80,D0
+        MOVEQ   #80,D0
         MOVE.L  #WHITE,D1
         TRAP    #15
 
@@ -2578,7 +2578,7 @@ DRAW_LIFE_BARS
 
         IF.B two_player <EQ> #0 THEN
             ; sets pen and fill colour to red
-            MOVE.B  #80,D0
+            MOVEQ   #80,D0
             MOVE.L  #RED,D1
             TRAP    #15
             MOVE.W  #81,D0
@@ -2595,7 +2595,7 @@ DRAW_LIFE_BARS
         ELSE
             IF.B coop_mode <EQ> #0  THEN
                 ; sets pen and fill colour to red
-                MOVE.B  #80,D0
+                MOVEQ   #80,D0
                 MOVE.L  #RED,D1
                 TRAP    #15
                 MOVE.W  #81,D0
@@ -2612,7 +2612,7 @@ DRAW_LIFE_BARS
                 TRAP    #15
 
                 ; sets pen and fill colour to lime
-                MOVE.B  #80,D0
+                MOVEQ   #80,D0
                 MOVE.L  #LIME,D1
                 TRAP    #15
                 MOVE.W  #81,D0
@@ -2653,7 +2653,7 @@ DRAW_LIFE_BARS
                         MOVE.L  #RED,D1
                     ENDI
                     ; sets pen and fill colour
-                    MOVE.B  #80,D0
+                    MOVEQ   #80,D0
                     TRAP    #15
                     MOVE.W  #81,D0
                     TRAP    #15
@@ -2673,7 +2673,7 @@ DRAW_LIFE_BARS
                         MOVE.L  #LIME,D1
                     ENDI
                     ; sets pen and fill colour
-                    MOVE.B  #80,D0
+                    MOVEQ   #80,D0
                     TRAP    #15
                     MOVE.W  #81,D0
                     TRAP    #15
@@ -2768,8 +2768,64 @@ DRAW_STREAKS
 
 
 DRAW_MAIN_MENU
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06180000,D2
+        TRAP    #15
 
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$300E,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        LEA     main_menu_select_text,A1
+        TRAP    #15
+        
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$3012,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #14,A1
+        TRAP    #15
+        
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$3016,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #12,A1
+        TRAP    #15
 
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
+        TRAP    #15
+
+        ; draw blue bell
+        MOVE.L  filled_notes_1_start_sprite,A0
+        LEA     main_menu_bell_positions,A1
+        MOVEQ   #1,D0
+        BSR     DRAW_NOTE
+
+        ; draw red bell
+        MOVE.L  filled_notes_1_start_sprite,A0
+        ADD.L   #4,A1
+        MOVEQ   #2,D0
+        BSR     DRAW_NOTE
+
+        ; draw yellow bell
+        MOVE.L  filled_notes_1_start_sprite,A0
+        ADD.L   #4,A1
+        MOVEQ   #3,D0
+        BSR     DRAW_NOTE
+
+        ADDQ.B  #1,sprite_gif_index
+        AND.B   #7,sprite_gif_index
         RTS
 
 
@@ -2800,6 +2856,17 @@ DRAW_PAUSE_MENU
 DRAW_GAME_WON_MENU
 
 
+        RTS
+
+
+REPAINT_SCREEN
+        ; repaints screen
+        MOVEQ   #94,D0
+		TRAP    #15
+		; clears buffer
+		MOVEQ   #11,D0
+		MOVE.W  #$FF00,D1
+		TRAP    #15
         RTS
 
 
@@ -2847,7 +2914,7 @@ DIVIDE_NUMBER
 ; uses BTST to get result, sets the Z flag
 RANDOM_2
         ; get time
-        MOVE.B  #8,D0
+        MOVEQ   #8,D0
         TRAP    #15
         BTST    #0,D1
         RTS
@@ -2936,15 +3003,15 @@ BASS_FILE_CONTENTS      EQU     $20000
 
 ; notes names
 NOTES_BASIC_PATH        DC.B    'notes/aaa.wav',0
-NOTES_NAMES_0           DC.B    '0an0bn0as'
-NOTES_NAMES_1           DC.B    '1an1bn1cn1dn1en1fn1gn1as1bs1cs1ds1es1fs1gs'
-NOTES_NAMES_2           DC.B    '2an2bn2cn2dn2en2fn2gn2as2bs2cs2ds2es2fs2gs'
-NOTES_NAMES_3           DC.B    '3an3bn3cn3dn3en3fn3gn3as3bs3cs3ds3es3fs3gs'
-NOTES_NAMES_4           DC.B    '4an4bn4cn4dn4en4fn4gn4as4bs4cs4ds4es4fs4gs'
-NOTES_NAMES_5           DC.B    '5an5bn5cn5dn5en5fn5gn5as5bs5cs5ds5es5fs5gs'
-NOTES_NAMES_6           DC.B    '6an6bn6cn6dn6en6fn6gn6as6bs6cs6ds6es6fs6gs'
-NOTES_NAMES_7           DC.B    '7an7bn7cn7dn7en7fn7gn7as7bs7cs7ds7es7fs7gs'
-NOTES_NAMES_8           DC.B    '8cn'
+NOTES_NAMES             DC.B    '0an0bn0as'
+                        DC.B    '1an1bn1cn1dn1en1fn1gn1as1bs1cs1ds1es1fs1gs'
+                        DC.B    '2an2bn2cn2dn2en2fn2gn2as2bs2cs2ds2es2fs2gs'
+                        DC.B    '3an3bn3cn3dn3en3fn3gn3as3bs3cs3ds3es3fs3gs'
+                        DC.B    '4an4bn4cn4dn4en4fn4gn4as4bs4cs4ds4es4fs4gs'
+                        DC.B    '5an5bn5cn5dn5en5fn5gn5as5bs5cs5ds5es5fs5gs'
+                        DC.B    '6an6bn6cn6dn6en6fn6gn6as6bs6cs6ds6es6fs6gs'
+                        DC.B    '7an7bn7cn7dn7en7fn7gn7as7bs7cs7ds7es7fs7gs'
+                        DC.B    '8cn'
 
 ; stores the difficulty of the song playing
 ; one player
@@ -2994,6 +3061,13 @@ notes_speed                     DC.W    8               ; stores the speed at wh
 previous_notes_speed            DC.W    8               ; stores the previous song's starting speed
 notes_speed_indexer             DC.W    0               ; stores an index so the note speed in slowly increased
 notes_speed_indexer_rollover    DC.W    32              ; stores the value at which point the indexer adds to the notes speed
+
+main_menu_difficulty_text       DC.B    'Easy',0,'Medium',0,'Hard',0
+main_menu_player_type_text      DC.B    '1 Player ',0,'2 Player ',0,'Coop ',0,'Versus'
+main_menu_select_text           DC.B    'Practice Song',0,'Endless Run',0,'Exit',0
+main_menu_bell_positions        DC.L    $03000200
+                                DC.L    $03000290
+                                DC.L    $03000320
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
