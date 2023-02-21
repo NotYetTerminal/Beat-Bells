@@ -13,10 +13,11 @@
 * if in the piano sheet there is a held note with lines then it won't play the full thing
 * this is an issue of the transcriber and not the assembly code
 * when reading in the sound files the program won't find any B or E sharps, the warnings
-* can be ignored these don't exist
+* can be ignored, these don't exist
+* will get a similar error with sprites
 * 
 * Error
-* Players can play the other's tracks if they are on the same line
+* Players can play the other's notes if they are on the same line
 * 
 * Drawing
 * loading menu
@@ -28,6 +29,7 @@
 * 
 * song_playing_type needs to change whether another song is put in
 * speed up rendering by not rerendering the whole screen
+* change loading screen continue
 * 
 
 ; set constants
@@ -2774,9 +2776,38 @@ DRAW_MAIN_MENU
         MOVE.L  #$06180000,D2
         TRAP    #15
 
+
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$300E,D1
+        MOVE.L  #$2A08,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        LEA     main_menu_difficulty_text,A1
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$3006,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #5,A1
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$3808,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #7,A1
+        TRAP    #15
+
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$3010,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -2785,7 +2816,7 @@ DRAW_MAIN_MENU
         
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$3012,D1
+        MOVE.L  #$3014,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -2794,7 +2825,7 @@ DRAW_MAIN_MENU
         
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$3016,D1
+        MOVE.L  #$3018,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -2806,21 +2837,28 @@ DRAW_MAIN_MENU
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        ; draw blue bell
+        ; draw purple2 bell
         MOVE.L  filled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
+        MOVE.L  #$030001B0,(A1)
+        MOVEQ   #4,D0
+        BSR     DRAW_NOTE
+
+        ; draw blue bell
+        MOVE.L  filled_notes_1_start_sprite,A0
+        ADD.L   #$90,(A1)
         MOVEQ   #1,D0
         BSR     DRAW_NOTE
 
         ; draw red bell
         MOVE.L  filled_notes_1_start_sprite,A0
-        ADD.L   #4,A1
+        ADD.L   #$90,(A1)
         MOVEQ   #2,D0
         BSR     DRAW_NOTE
 
         ; draw yellow bell
         MOVE.L  filled_notes_1_start_sprite,A0
-        ADD.L   #4,A1
+        ADD.L   #$90,(A1)
         MOVEQ   #3,D0
         BSR     DRAW_NOTE
 
@@ -3065,9 +3103,7 @@ notes_speed_indexer_rollover    DC.W    32              ; stores the value at wh
 main_menu_difficulty_text       DC.B    'Easy',0,'Medium',0,'Hard',0
 main_menu_player_type_text      DC.B    '1 Player ',0,'2 Player ',0,'Coop ',0,'Versus'
 main_menu_select_text           DC.B    'Practice Song',0,'Endless Run',0,'Exit',0
-main_menu_bell_positions        DC.L    $03000200
-                                DC.L    $03000290
-                                DC.L    $03000320
+main_menu_bell_positions        DC.L    0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
@@ -3118,6 +3154,7 @@ unfilled_notes_1_start_sprite   DS.L    1
 unfilled_notes_2_start_sprite   DS.L    1
 
         END    START
+
 
 *~Font name~Courier New~
 *~Font size~10~
