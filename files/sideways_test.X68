@@ -28,18 +28,15 @@
 * 
 * song_playing_type needs to change whether another song is put in
 * speed up rendering by not rerendering the whole screen
-* make top border smaller and bottom bigger
-* show song name
-* show both streaks
 * 
 
 ; set constants
 SCREEN_WIDTH            EQU     1920
 SCREEN_HEIGHT           EQU     1080
 
-TOP_BORDER_PADDING      EQU     100
+TOP_BORDER_PADDING      EQU     80
 RIGHT_BORDER_PADDING    EQU     20
-BOTTOM_BORDER_PADDING   EQU     50
+BOTTOM_BORDER_PADDING   EQU     60
 LEFT_BORDER_PADDING     EQU     20
 
 LANE_SIZE               EQU     (SCREEN_HEIGHT-TOP_BORDER_PADDING-BOTTOM_BORDER_PADDING)/5
@@ -78,8 +75,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        * MOVE.L  #2,D1
-        * TRAP    #15
+        MOVE.L  #2,D1
+        TRAP    #15
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
@@ -798,6 +795,9 @@ LOAD_IN_SONG
 
         MOVEQ   #50,D0
         TRAP    #15
+
+        LEA     song_name,A1
+        MOVE.B  #0,(A1,D3)
         RTS
 
 
@@ -2517,19 +2517,26 @@ LONG_DRAW
 
 
 DRAW_INFO_HUD
-        BSR     DRAW_SCORE
+        ; set font colour
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06120000,D2
+        TRAP    #15
+
         BSR     DRAW_LIFE_BARS
-        BSR     DRAW_STREAKS
-        BSR     DRAW_SONG_NAME
-        RTS
 
-
-DRAW_SCORE
         ; sets pen fill to black
         MOVE.W  #81,D0
         CLR.L   D1
         TRAP    #15
 
+        BSR     DRAW_SCORE
+        BSR     DRAW_SONG_NAME
+        BSR     DRAW_STREAKS
+        RTS
+
+
+DRAW_SCORE
         ; sets the cursor position
         MOVEQ   #11,D0
         MOVE.L  #$1801,D1
@@ -2561,9 +2568,9 @@ DRAW_LIFE_BARS
         ; draw border
         MOVE.W  #90,D0
         MOVE.W  #LIFE_BAR_X,D1
-        MOVE.W  #35,D2
+        MOVE.W  #30,D2
         MOVE.W  #LIFE_BAR_X+402,D3
-        MOVE.W  #60,D4
+        MOVE.W  #55,D4
         TRAP    #15
 
         ADDQ.W  #1,D2
@@ -2604,7 +2611,7 @@ DRAW_LIFE_BARS
                 ENDI
                 TRAP    #15
 
-                ; sets pen and fill colour to red
+                ; sets pen and fill colour to lime
                 MOVE.B  #80,D0
                 MOVE.L  #LIME,D1
                 TRAP    #15
@@ -2681,20 +2688,57 @@ DRAW_LIFE_BARS
         RTS
 
 
-DRAW_STREAKS
-        ; sets pen fill to black
-        MOVE.W  #81,D0
-        CLR.L   D1
-        TRAP    #15
-
+DRAW_SONG_NAME
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$6002,D1
+        MOVE.L  #$3025,D1
+        TRAP    #15
+
+        ; show text
+        MOVEQ   #14,D0
+        LEA     song_name_text,A1
+        TRAP    #15
+
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06120002,D2
+        TRAP    #15
+
+        ; show song name
+        MOVEQ   #14,D0
+        LEA     song_name,A1
+        ADD.L   #6,A1
+        TRAP    #15
+        RTS
+
+
+DRAW_STREAKS
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$6801,D1
+        TRAP    #15
+
+        ; set font colour
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06120000,D2
         TRAP    #15
 
         ; show text
         MOVEQ   #14,D0
         LEA     streak_text,A1
+        TRAP    #15
+        
+        ; set font colour
+        MOVEQ   #21,D0
+        MOVE.L  #RED,D1
+        MOVE.L  #$06120002,D2
+        TRAP    #15
+
+        ; show x
+        MOVEQ   #14,D0
+        ADD.L   #8,A1
         TRAP    #15
 
         ; show number
@@ -2702,10 +2746,24 @@ DRAW_STREAKS
         CLR.L   D1
         MOVE.W  player_1_longest_streak,D1
         TRAP    #15
-        RTS
 
+        IF.B two_player <EQ> #1 THEN
+            ; set pen colour
+            MOVEQ   #21,D0
+            MOVE.L  #LIME,D1
+            MOVE.L  #$06120002,D2
+            TRAP    #15
 
-DRAW_SONG_NAME
+            ; show x
+            MOVEQ   #14,D0
+            TRAP    #15
+
+            ; show number
+            MOVEQ   #3,D0
+            CLR.L   D1
+            MOVE.W  player_2_longest_streak,D1
+            TRAP    #15
+        ENDI
         RTS
 
 
@@ -2916,11 +2974,12 @@ score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
 player_1_longest_streak         DC.W    0               ; stores the streak of hitting notes
 player_2_longest_streak         DC.W    0               ; stores the streak of hitting notes
-streak_text                     DC.B    'Streak: ',0
+streak_text                     DC.B    'Streak:',0,' x',0
 treble_total_notes              DC.W    0               ; stores the total amount of visible treble notes spawned
 bass_total_notes                DC.W    0               ; stores the total amount of visible bass notes spawned
 player_1_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
 player_2_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
+song_name_text                  DC.B    'Currently playing: ',0
 
 select_song_line                DC.B    0               ; stores the select line
 main_menu_difficulty            DC.B    0               ; stores the difficulty
