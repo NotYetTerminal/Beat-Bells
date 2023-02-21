@@ -77,8 +77,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        MOVEQ   #2,D1
-        TRAP    #15
+        * MOVEQ   #2,D1
+        * TRAP    #15
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
@@ -2776,7 +2776,15 @@ DRAW_MAIN_MENU
         MOVE.L  #$06180000,D2
         TRAP    #15
 
-
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #$06180000,D2
+        IF.B main_menu_difficulty <EQ> #0  THEN
+            MOVE.L  #LIME,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
         MOVE.L  #$2A08,D1
@@ -2786,6 +2794,15 @@ DRAW_MAIN_MENU
         LEA     main_menu_difficulty_text,A1
         TRAP    #15
 
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #$06180000,D2
+        IF.B main_menu_difficulty <EQ> #1  THEN
+            MOVE.L  #ORANGE,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
         MOVE.L  #$3006,D1
@@ -2795,6 +2812,15 @@ DRAW_MAIN_MENU
         ADD.L   #5,A1
         TRAP    #15
 
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #$06180000,D2
+        IF.B main_menu_difficulty <EQ> #2  THEN
+            MOVE.L  #RED,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
         MOVE.L  #$3808,D1
@@ -2804,6 +2830,80 @@ DRAW_MAIN_MENU
         ADD.L   #7,A1
         TRAP    #15
 
+        ; draw cross icon
+        
+
+
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #$06180000,D2
+        IF.B menu_screen_game_type <EQ> #0  THEN
+            MOVE.L  #RED,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$300C,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        LEA     main_menu_player_type_text,A1
+        TRAP    #15
+
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #$06180000,D2
+        IF.B menu_screen_game_type <NE> #0  THEN
+            MOVE.L  #LIME,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$300D,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #10,A1
+        TRAP    #15
+
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #$06180000,D2
+        IF.B menu_screen_game_type <EQ> #1  THEN
+            MOVE.L  #ORANGE,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #10,A1
+        TRAP    #15
+
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #$06180000,D2
+        IF.B menu_screen_game_type <EQ> #2  THEN
+            MOVE.L  #AQUA,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #6,A1
+        TRAP    #15
+
+        
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06180000,D2
+        TRAP    #15
 
         ; sets the cursor position
         MOVEQ   #11,D0
@@ -2840,7 +2940,7 @@ DRAW_MAIN_MENU
         ; draw purple2 bell
         MOVE.L  filled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
-        MOVE.L  #$030001B0,(A1)
+        MOVE.L  #$030001C0,(A1)
         MOVEQ   #4,D0
         BSR     DRAW_NOTE
 
@@ -3101,7 +3201,7 @@ notes_speed_indexer             DC.W    0               ; stores an index so the
 notes_speed_indexer_rollover    DC.W    32              ; stores the value at which point the indexer adds to the notes speed
 
 main_menu_difficulty_text       DC.B    'Easy',0,'Medium',0,'Hard',0
-main_menu_player_type_text      DC.B    '1 Player ',0,'2 Player ',0,'Coop ',0,'Versus'
+main_menu_player_type_text      DC.B    '1 Player ',0,'2 Player ',0,'Coop ',0,'Versus',0
 main_menu_select_text           DC.B    'Practice Song',0,'Endless Run',0,'Exit',0
 main_menu_bell_positions        DC.L    0
 
