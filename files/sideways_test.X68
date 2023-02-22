@@ -3138,14 +3138,42 @@ CHANGE_COLOUR
 
 
 DRAW_SELECT_SONG_MENU
-
-
         BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_LOAD_SCREEN
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06180000,D2
+        TRAP    #15
 
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$220E,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        LEA     loading_screen_text,A1
+        TRAP    #15
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$2C10,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #39,A1
+        TRAP    #15
+
+        ; draw red bell
+        MOVE.L  unfilled_notes_1_start_sprite,A0
+        LEA     main_menu_bell_positions,A1
+        MOVE.L  #$038002E0,(A1)
+        MOVEQ   #2,D0
+        BSR     DRAW_NOTE
+        ;BSR     DRAW_PLAYER
+        ;BSR     DRAW_METER
 
         BSR     DRAW_CONTROL_BUTTONS
         RTS
@@ -3529,6 +3557,8 @@ main_menu_title_colour          DC.L    0
 
 cross_short_length              DC.W    20
 cross_long_length               DC.W    30
+
+loading_screen_text             DC.B    'Charge punches against shielded bells!',0,'Charge shoulder buttons to continue',0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
