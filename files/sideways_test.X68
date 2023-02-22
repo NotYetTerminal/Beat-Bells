@@ -2535,7 +2535,7 @@ DRAW_INFO_HUD
         CLR.L   D1
         TRAP    #15
 
-        BSR     DRAW_SCORE
+        BSR     DRAW_SCORE_AND_LIFE_TEXT
         BSR     DRAW_SONG_NAME
         BSR     DRAW_STREAKS
 
@@ -2543,7 +2543,7 @@ DRAW_INFO_HUD
         RTS
 
 
-DRAW_SCORE
+DRAW_SCORE_AND_LIFE_TEXT
         ; sets the cursor position
         MOVEQ   #11,D0
         MOVE.L  #$1801,D1
@@ -2557,6 +2557,16 @@ DRAW_SCORE
         ; show number
         MOVEQ   #3,D0
         MOVE.L  score,D1
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$3001,D1
+        TRAP    #15
+
+        ; show text
+        MOVEQ   #14,D0
+        LEA     life_text,A1
         TRAP    #15
         RTS
 
@@ -3483,6 +3493,7 @@ lanes_notes_hit_animations      DCB.L   5,$00000000
 ; first byte is used as an index
 ; other three are the coolour BGR
 
+; gui stuff
 score                           DC.L    0               ; stores the score
 score_text                      DC.B    'Score: ',0
 player_1_longest_streak         DC.W    0               ; stores the streak of hitting notes
@@ -3493,6 +3504,7 @@ bass_total_notes                DC.W    0               ; stores the total amoun
 player_1_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
 player_2_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
 song_name_text                  DC.B    'Currently playing: ',0
+life_text                       DC.B    'Life:',0
 
 select_song_line                DC.B    0               ; stores the select line
 main_menu_difficulty            DC.B    0               ; stores the difficulty
