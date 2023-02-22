@@ -28,7 +28,7 @@
 * 
 * song_playing_type needs to change whether another song is put in
 * speed up rendering by not rerendering the whole screen
-* change loading screen continue
+* pause screen insta quit bug
 * 
 
 ; set constants
@@ -76,8 +76,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        MOVEQ   #2,D1
-        TRAP    #15
+        * MOVEQ   #2,D1
+        * TRAP    #15
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
@@ -867,7 +867,20 @@ LOAD_SONG_FILE_NAME
 LOAD_SCREEN_LOOP
         BSR     HANDLE_MENU_SELECT
 
-        IF.B player_1_action_colour <EQ> #4 THEN
+        MOVEQ   #19,D0
+        ; shift
+        MOVE.L  #$10000000,D1
+        TRAP    #15
+        BTST.L  #24,D1
+        IF  <NE>    THEN
+            IF.W loading_screen_charge <LO> #300    THEN
+                ADD.W   #20,loading_screen_charge
+            ENDI
+        ELSE
+            CLR.W   loading_screen_charge
+        ENDI
+
+        IF.B player_1_action_colour <EQ> #2 AND.W loading_screen_charge <EQ> #300   THEN
             CLR.B   player_1_action_colour
             MOVE.W  #8,D0
             TRAP    #15
@@ -881,7 +894,7 @@ LOAD_SCREEN_LOOP
         
         ; delay
         MOVEQ   #23,D0
-        MOVEQ   #1,D1
+        MOVEQ   #10,D1
         TRAP    #15
         BRA     LOAD_SCREEN_LOOP
 
@@ -2074,7 +2087,6 @@ DRAW_PLAYERS
         ELSE
             MOVE.L  punching_1_start_sprite,A0
             IF.B player_1_punching_index <NE> #0    THEN
-                ;MOVE.B  player_1_punching_colour,D0
                 MOVE.B  player_1_action_colour,D0
                 MOVE.B  player_1_punching_index,D1
             ENDI
@@ -2095,7 +2107,6 @@ DRAW_PLAYERS
             ELSE
                 MOVE.L  punching_2_start_sprite,A0
                 IF.B player_2_punching_index <NE> #0    THEN
-                    ;MOVE.B  player_2_punching_colour,D0
                     MOVE.B  player_2_action_colour,D0
                     MOVE.B  player_2_punching_index,D1
                 ENDI
@@ -3159,21 +3170,51 @@ DRAW_LOAD_SCREEN
         TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$2C10,D1
+        MOVE.L  #$2310,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
         ADD.L   #39,A1
         TRAP    #15
 
+
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
+        TRAP    #15
+
         ; draw red bell
         MOVE.L  unfilled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
-        MOVE.L  #$038002E0,(A1)
+        MOVE.L  #$040002E0,(A1)
         MOVEQ   #2,D0
         BSR     DRAW_NOTE
-        ;BSR     DRAW_PLAYER
-        ;BSR     DRAW_METER
+
+        IF.W loading_screen_charge <NE> #0  THEN
+            ; sets pen colour
+            MOVEQ   #80,D0
+            IF.W loading_screen_charge <EQ> #300    THEN
+                MOVE.L  #WHITE,D1
+            ELSE
+                MOVE.L  #$00444444,D1
+            ENDI
+            TRAP    #15
+            MOVE.W  #81,D0
+            TRAP    #15
+
+            ; draw rectangle
+            MOVEQ   #87,D0
+            MOVE.W  #700,D1
+            MOVE.W  #$2F0,D2
+            MOVE.W  D1,D3
+            MOVE.W  D2,D4
+            ADD.W   loading_screen_charge,D3
+            ADD.W   #30,D4
+            TRAP    #15
+        ENDI
+
+        ADDQ.B  #1,sprite_gif_index
+        AND.B   #7,sprite_gif_index
 
         BSR     DRAW_CONTROL_BUTTONS
         RTS
@@ -3558,7 +3599,8 @@ main_menu_title_colour          DC.L    0
 cross_short_length              DC.W    20
 cross_long_length               DC.W    30
 
-loading_screen_text             DC.B    'Charge punches against shielded bells!',0,'Charge shoulder buttons to continue',0
+loading_screen_text             DC.B    'Charge punches against shielded bells!',0,'Charge shoulder buttons and punch!',0
+loading_screen_charge           DC.W    0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
