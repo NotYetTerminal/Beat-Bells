@@ -28,7 +28,6 @@
 * 
 * song_playing_type needs to change whether another song is put in
 * speed up rendering by not rerendering the whole screen
-* pause screen insta quit bug
 * 
 
 ; set constants
@@ -98,6 +97,7 @@ START   ORG    $1000
         TRAP    #15
 
         MOVE.B  #1,two_player
+        CLR.B   player_1_action_colour
         BRA     MAIN_MENU_LOOP
 
 
@@ -530,6 +530,7 @@ MAIN_MENU_LOOP
 
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
+            CLR.B   player_1_action_colour
             BRA     SELECT_SONG_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
@@ -881,10 +882,10 @@ LOAD_SCREEN_LOOP
         ENDI
 
         IF.B player_1_action_colour <EQ> #2 AND.W loading_screen_charge <EQ> #300   THEN
-            CLR.B   player_1_action_colour
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_object_time
+            CLR.B   player_1_action_colour
             BRA     GAME_LOOP
         ENDI
         CLR.B   player_1_action_colour
@@ -1017,10 +1018,12 @@ CHECK_LIFE_AMOUNTS
             IF.B coop_mode <EQ> #0  THEN
                 IF.W player_1_life_amount <LT> #1   THEN
                     MOVE.B  #2,game_over_status
+                    CLR.B   player_1_action_colour
                     BRA     GAME_OVER_LOOP
                 ENDI
                 IF.W player_2_life_amount <LT> #1   THEN
                     MOVE.B  #1,game_over_status
+                    CLR.B   player_1_action_colour
                     BRA     GAME_OVER_LOOP
                 ENDI
             ELSE
@@ -1028,12 +1031,14 @@ CHECK_LIFE_AMOUNTS
                 ADD.W   player_2_life_amount,D0
                 IF.W D0 <LT> #1 THEN
                     CLR.B   game_over_status
+                    CLR.B   player_1_action_colour
                     BRA     GAME_OVER_LOOP
                 ENDI
             ENDI
         ELSE
             IF.W player_1_life_amount <LT> #1   THEN
                 CLR.B   game_over_status
+                CLR.B   player_1_action_colour
                 BRA     GAME_OVER_LOOP
             ENDI
         ENDI
@@ -1044,8 +1049,8 @@ GAME_OVER_LOOP
         BSR HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
-            CLR.B   player_1_action_colour
             MOVE.B  #1,two_player
+            CLR.B   player_1_action_colour
             BRA     MAIN_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
@@ -1455,6 +1460,7 @@ HANDLE_PAUSE
         ; checks esc
         BTST.L  #24,D1
         IF  <NE>    THEN
+            CLR.B   player_1_action_colour
             BRA     PAUSE_MENU_LOOP
         ENDI
         RTS
@@ -1464,15 +1470,15 @@ PAUSE_MENU_LOOP
         BSR     HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
-            CLR.B   player_1_action_colour
             MOVE.W  #8,D0
             TRAP    #15
             MOVE.L  D1,last_object_time
+            CLR.B   player_1_action_colour
             BRA     GAME_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
-                CLR.B   player_1_action_colour
                 MOVE.B  #1,two_player
+                CLR.B   player_1_action_colour
                 BRA     MAIN_MENU_LOOP
             ENDI
         ENDI
@@ -2007,6 +2013,7 @@ DECREMENT_NOTES_TIMES
                 IF.B D0 <EQ> #1 THEN
                     ; load in new song or show victory screen with percentage hit
                     IF.B song_playing_type <EQ> #0  THEN
+                        CLR.B   player_1_action_colour
                         BSR     GAME_WON_MENU_LOOP
                     ELSE
                         BSR     LOAD_IN_RANDOM_NEW_SONG
@@ -2037,8 +2044,8 @@ GAME_WON_MENU_LOOP
         BSR HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
-            CLR.B   player_1_action_colour
             MOVE.B  #1,two_player
+            CLR.B   player_1_action_colour
             BRA     MAIN_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
