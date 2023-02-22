@@ -2770,6 +2770,75 @@ DRAW_STREAKS
 
 
 DRAW_MAIN_MENU
+        IF.B sprite_gif_index <NE> #0 AND.B sprite_gif_index <NE> #4    THEN
+            BRA     CHANGE_COLOUR
+        ENDI
+        MOVEQ   #7,D3
+        BSR     GET_RANDOM_VALUE
+CHECK_INDEX_AGAIN
+        IF.B D2 <EQ> #0 THEN
+            MOVE.L  #WHITE,D1
+        ELSE
+            IF.B D2 <EQ> #1 THEN
+                MOVE.L  #BLUE,D1
+            ELSE
+                IF.B D2 <EQ> #2 THEN
+                    MOVE.L  #RED,D1
+                ELSE
+                    IF.B D2 <EQ> #3 THEN
+                        MOVE.L  #YELLOW,D1
+                    ELSE
+                        IF.B D2 <EQ> #4 THEN
+                            MOVE.L  #PURPLE2,D1
+                        ELSE
+                            IF.B D2 <EQ> #5 THEN
+                                MOVE.L  #AQUA,D1
+                            ELSE
+                                IF.B D2 <EQ> #6 THEN
+                                    MOVE.L  #ORANGE,D1
+                                ELSE
+                                    MOVE.L  #LIME,D1
+                                ENDI
+                            ENDI
+                        ENDI
+                    ENDI
+                ENDI
+            ENDI
+        ENDI
+        IF.L D1 <EQ> main_menu_title_colour THEN
+            ADD.B   #1,D2
+            BRA     CHECK_INDEX_AGAIN
+        ELSE
+            MOVE.L  D1,main_menu_title_colour
+        ENDI
+CHANGE_COLOUR
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  main_menu_title_colour,D1
+        MOVE.L  #$06400003,D2
+        TRAP    #15
+
+        ; draw text
+        MOVEQ   #95,D0
+        MOVE.W  #730,D1
+        MOVE.W  #100,D2
+        LEA     main_menu_title_text,A1
+        TRAP    #15
+
+        ; draw aqua bell
+        MOVE.L  filled_notes_2_start_sprite,A0
+        LEA     main_menu_bell_positions,A1
+        MOVE.L  #$02700078,(A1)
+        MOVEQ   #1,D0
+        BSR     DRAW_NOTE
+        
+        ; draw orange bell
+        MOVE.L  filled_notes_2_start_sprite,A0
+        ADD.L   #$2600000,(A1)
+        MOVEQ   #2,D0
+        BSR     DRAW_NOTE
+
+
         ; set font
         MOVEQ   #21,D0
         MOVE.L  #WHITE,D1
@@ -3081,6 +3150,12 @@ DRAW_GAME_WON_MENU
         RTS
 
 
+DRAW_CONTROL_BUTTONS
+
+
+        RTS
+
+
 REPAINT_SCREEN
         ; repaints screen
         MOVEQ   #94,D0
@@ -3284,10 +3359,12 @@ previous_notes_speed            DC.W    8               ; stores the previous so
 notes_speed_indexer             DC.W    0               ; stores an index so the note speed in slowly increased
 notes_speed_indexer_rollover    DC.W    32              ; stores the value at which point the indexer adds to the notes speed
 
+main_menu_title_text            DC.B    'BEAT|BELLS',0
 main_menu_difficulty_text       DC.B    'Easy',0,'Medium',0,'Hard',0
 main_menu_player_type_text      DC.B    '1 Player ',0,'2 Player ',0,'Coop ',0,'Versus',0
 main_menu_select_text           DC.B    'Practice Song',0,'Endless Run',0,'Exit',0
 main_menu_bell_positions        DC.L    0
+main_menu_title_colour          DC.L    0
 
 cross_short_length              DC.W    20
 cross_long_length               DC.W    30
