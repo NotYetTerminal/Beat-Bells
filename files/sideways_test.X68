@@ -20,7 +20,6 @@
 * Players can play the other's notes if they are on the same line
 * 
 * Drawing
-* loading menu
 * select menu
 * pause menu
 * game over screen
@@ -75,8 +74,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        * MOVEQ   #2,D1
-        * TRAP    #15
+        MOVEQ   #2,D1
+        TRAP    #15
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
@@ -1461,7 +1460,7 @@ HANDLE_PAUSE
         BTST.L  #24,D1
         IF  <NE>    THEN
             CLR.B   player_1_action_colour
-            BRA     PAUSE_MENU_LOOP
+            MOVE.B  #1,pause_menu_active
         ENDI
         RTS
 
@@ -1485,7 +1484,7 @@ PAUSE_MENU_LOOP
         CLR.B   player_1_action_colour
 
         BSR     DRAW_PAUSE_MENU
-        BSR     REPAINT_SCREEN
+        BSR     REPAINT_AREA
         
         ; delay
         MOVEQ   #23,D0
@@ -2073,7 +2072,15 @@ RENDER_SCREEN
         BSR     DRAW_NOTES_HITS_ANIMATIONS
         BSR     DRAW_INFO_HUD
 
-        BSR     REPAINT_SCREEN
+        IF.B pause_menu_active <EQ> #1  THEN
+            CLR.B   pause_menu_active
+            ; repaints screen
+            MOVEQ   #94,D0
+            TRAP    #15
+            BRA     PAUSE_MENU_LOOP
+        ELSE
+            BSR     REPAINT_SCREEN
+        ENDI
         RTS
 
 
@@ -3177,7 +3184,7 @@ DRAW_LOAD_SCREEN
         TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$2310,D1
+        MOVE.L  #$2510,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -3230,20 +3237,18 @@ DRAW_LOAD_SCREEN
 DRAW_GAME_OVER
 
 
-        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_PAUSE_MENU
 
 
-        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_GAME_WON_MENU
 
-        BSR     DRAW_CONTROL_BUTTONS
+
         RTS
 
 
@@ -3398,6 +3403,26 @@ REPAINT_SCREEN
 		; clears buffer
 		MOVEQ   #11,D0
 		MOVE.W  #$FF00,D1
+		TRAP    #15
+        RTS
+
+
+REPAINT_AREA
+        ; repaints screen
+        MOVEQ   #94,D0
+		TRAP    #15
+        ; sets pen colour
+        MOVEQ   #80,D0
+        CLR.L   D1
+        TRAP    #15
+        MOVE.W  #81,D0
+        TRAP    #15
+		; clears area
+		MOVEQ   #87,D0
+        MOVE.W  #500,D1
+        MOVE.W  #300,D2
+        MOVE.W  #1420,D3
+        MOVE.W  #780,D4
 		TRAP    #15
         RTS
 
@@ -3606,8 +3631,10 @@ main_menu_title_colour          DC.L    0
 cross_short_length              DC.W    20
 cross_long_length               DC.W    30
 
-loading_screen_text             DC.B    'Charge punches against shielded bells!',0,'Charge shoulder buttons and punch!',0
+loading_screen_text             DC.B    'Charge punches against shielded bells!',0,'Hold shoulder buttons and punch!',0
 loading_screen_charge           DC.W    0
+
+pause_menu_active             DC.B    0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
