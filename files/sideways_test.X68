@@ -21,7 +21,6 @@
 * 
 * Drawing
 * loading menu
-* main menu
 * select menu
 * pause menu
 * game over screen
@@ -98,6 +97,7 @@ START   ORG    $1000
         MOVE.L  #$06120000,D2
         TRAP    #15
 
+        MOVE.B  #1,two_player
         BRA     MAIN_MENU_LOOP
 
 
@@ -1032,6 +1032,7 @@ GAME_OVER_LOOP
 
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
+            MOVE.B  #1,two_player
             BRA     MAIN_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
@@ -1458,6 +1459,7 @@ PAUSE_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 CLR.B   player_1_action_colour
+                MOVE.B  #1,two_player
                 BRA     MAIN_MENU_LOOP
             ENDI
         ENDI
@@ -2023,6 +2025,7 @@ GAME_WON_MENU_LOOP
 
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
+            MOVE.B  #1,two_player
             BRA     MAIN_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
@@ -2293,7 +2296,7 @@ DRAW_BEAT_LINE
         MOVEQ   #5,D1
         TRAP    #15
 
-        ; sets pen and fill colour to white
+        ; sets pen to white
         MOVEQ   #80,D0
         MOVE.L  #WHITE,D1
         TRAP    #15
@@ -2535,6 +2538,8 @@ DRAW_INFO_HUD
         BSR     DRAW_SCORE
         BSR     DRAW_SONG_NAME
         BSR     DRAW_STREAKS
+
+        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
@@ -3117,42 +3122,186 @@ CHANGE_COLOUR
 
         ADDQ.B  #1,sprite_gif_index
         AND.B   #7,sprite_gif_index
+
+        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_SELECT_SONG_MENU
 
 
+        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_LOAD_SCREEN
 
 
+        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_GAME_OVER
 
 
+        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_PAUSE_MENU
 
 
+        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_GAME_WON_MENU
 
-
+        BSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_CONTROL_BUTTONS
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
+        TRAP    #15
 
+        ; sets pen colour
+        MOVEQ   #80,D0
+        MOVE.L  #BLUE,D1
+        TRAP    #15
+        MOVEQ   #81,D0
+        TRAP    #15
 
+        ; draw circle
+        MOVEQ   #88,D0
+        MOVE.W  #1750,D1
+        MOVE.W  #15,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        ADD.W   #10,D3
+        ADD.W   #10,D4
+        TRAP    #15
+
+        ; sets pen colour
+        MOVEQ   #80,D0
+        MOVE.L  #RED,D1
+        TRAP    #15
+        MOVEQ   #81,D0
+        TRAP    #15
+
+        ; draw circle
+        MOVEQ   #88,D0
+        MOVE.W  #1770,D1
+        MOVE.W  #35,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        ADD.W   #10,D3
+        ADD.W   #10,D4
+        TRAP    #15
+
+        ; sets pen colour
+        MOVEQ   #80,D0
+        MOVE.L  #YELLOW,D1
+        TRAP    #15
+        MOVEQ   #81,D0
+        TRAP    #15
+
+        ; draw circle
+        MOVEQ   #88,D0
+        MOVE.W  #1750,D1
+        MOVE.W  #55,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        ADD.W   #10,D3
+        ADD.W   #10,D4
+        TRAP    #15
+
+        ; sets pen colour
+        MOVEQ   #80,D0
+        MOVE.L  #PURPLE2,D1
+        TRAP    #15
+        MOVEQ   #81,D0
+        TRAP    #15
+
+        ; draw circle
+        MOVEQ   #88,D0
+        MOVE.W  #1730,D1
+        MOVE.W  #35,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        ADD.W   #10,D3
+        ADD.W   #10,D4
+        TRAP    #15
+
+        IF.B two_player <EQ> #1 THEN
+            ; draw circle
+            MOVEQ   #88,D0
+            MOVE.W  #1830,D1
+            MOVE.W  #35,D2
+            MOVE.W  D1,D3
+            MOVE.W  D2,D4
+            ADD.W   #10,D3
+            ADD.W   #10,D4
+            TRAP    #15
+
+            ; sets pen colour
+            MOVEQ   #80,D0
+            MOVE.L  #AQUA,D1
+            TRAP    #15
+            MOVEQ   #81,D0
+            TRAP    #15
+
+            ; draw circle
+            MOVEQ   #88,D0
+            MOVE.W  #1850,D1
+            MOVE.W  #15,D2
+            MOVE.W  D1,D3
+            MOVE.W  D2,D4
+            ADD.W   #10,D3
+            ADD.W   #10,D4
+            TRAP    #15
+
+            ; sets pen colour
+            MOVEQ   #80,D0
+            MOVE.L  #ORANGE,D1
+            TRAP    #15
+            MOVEQ   #81,D0
+            TRAP    #15
+
+            ; draw circle
+            MOVEQ   #88,D0
+            MOVE.W  #1870,D1
+            MOVE.W  #35,D2
+            MOVE.W  D1,D3
+            MOVE.W  D2,D4
+            ADD.W   #10,D3
+            ADD.W   #10,D4
+            TRAP    #15
+
+            ; sets pen colour
+            MOVEQ   #80,D0
+            MOVE.L  #LIME,D1
+            TRAP    #15
+            MOVEQ   #81,D0
+            TRAP    #15
+
+            ; draw circle
+            MOVEQ   #88,D0
+            MOVE.W  #1850,D1
+            MOVE.W  #55,D2
+            MOVE.W  D1,D3
+            MOVE.W  D2,D4
+            ADD.W   #10,D3
+            ADD.W   #10,D4
+            TRAP    #15
+        ENDI
+
+        ; resets fill colour
+        MOVEQ   #81,D0
+        MOVE.L  #0,D1
+        TRAP    #15
         RTS
 
 
