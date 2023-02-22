@@ -77,8 +77,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        * MOVEQ   #2,D1
-        * TRAP    #15
+        MOVEQ   #2,D1
+        TRAP    #15
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
@@ -2750,7 +2750,7 @@ DRAW_STREAKS
         TRAP    #15
 
         IF.B two_player <EQ> #1 THEN
-            ; set pen colour
+            ; set font colour
             MOVEQ   #21,D0
             MOVE.L  #LIME,D1
             MOVE.L  #$06120002,D2
@@ -2830,8 +2830,92 @@ DRAW_MAIN_MENU
         ADD.L   #7,A1
         TRAP    #15
 
+
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #1,D1
+        TRAP    #15
         ; draw cross icon
-        
+        MOVEQ   #86,D0
+        MOVE.W  #910,D1
+        MOVE.W  #310,D2
+        TRAP    #15
+
+        MOVE.W  D1,D3
+        ; set pen colour
+        MOVEQ   #80,D0
+        IF.B main_menu_difficulty <EQ> #1   THEN
+            MOVE.L  #ORANGE,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
+        MOVEQ   #85,D0
+        MOVE.W  D3,D1
+        SUB.W   cross_long_length,D2
+        TRAP    #15
+
+        ADD.W   cross_short_length,D1
+        TRAP    #15
+
+        ADD.W   cross_long_length,D2
+        TRAP    #15
+
+        MOVE.W  D1,D3
+        ; set pen colour
+        MOVEQ   #80,D0
+        IF.B main_menu_difficulty <EQ> #2   THEN
+            MOVE.L  #RED,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
+        MOVEQ   #85,D0
+        MOVE.W  D3,D1
+        ADD.W   cross_long_length,D1
+        TRAP    #15
+
+        ADD.W   cross_short_length,D2
+        TRAP    #15
+
+        SUB.W   cross_long_length,D1
+        TRAP    #15
+
+        MOVE.W  D1,D3
+        ; set pen colour
+        MOVEQ   #80,D0
+        MOVE.L  #WHITE,D1
+        TRAP    #15
+        MOVEQ   #85,D0
+        MOVE.W  D3,D1
+        ADD.W   cross_long_length,D2
+        TRAP    #15
+
+        SUB.W   cross_short_length,D1
+        TRAP    #15
+
+        SUB.W   cross_long_length,D2
+        TRAP    #15
+
+        MOVE.W  D1,D3
+        ; set pen colour
+        MOVEQ   #80,D0
+        IF.B main_menu_difficulty <EQ> #0   THEN
+            MOVE.L  #LIME,D1
+        ELSE
+            MOVE.L  #WHITE,D1
+        ENDI
+        TRAP    #15
+        MOVEQ   #85,D0
+        MOVE.W  D3,D1
+        SUB.W   cross_long_length,D1
+        TRAP    #15
+
+        SUB.W   cross_short_length,D2
+        TRAP    #15
+
+        ADD.W   cross_long_length,D1
+        TRAP    #15
 
 
         ; set font
@@ -3204,6 +3288,9 @@ main_menu_difficulty_text       DC.B    'Easy',0,'Medium',0,'Hard',0
 main_menu_player_type_text      DC.B    '1 Player ',0,'2 Player ',0,'Coop ',0,'Versus',0
 main_menu_select_text           DC.B    'Practice Song',0,'Endless Run',0,'Exit',0
 main_menu_bell_positions        DC.L    0
+
+cross_short_length              DC.W    20
+cross_long_length               DC.W    30
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
