@@ -85,13 +85,13 @@ START   ORG    $1000
         MOVE.L  #$26280000,player_2_keymaps
 
         ; sets up notes
-        BSR     NOTE_SET_UP
+        JSR     NOTE_SET_UP
 
         ; checks if $28000 has been accidentally used
         IF.L SPRITES_LOADING <NE> #$FFFFFFFF  THEN
             ILLEGAL
         ENDI
-        BSR     LOAD_IN_SPRITES
+        JSR     LOAD_IN_SPRITES
 
         ; set font properties
         MOVEQ   #21,D0
@@ -123,10 +123,10 @@ NOTE_SET_UP
 
 
 LOAD_IN_SPRITES
-        BSR     LOAD_IN_PLAYER_SPRITES
-        BSR     LOAD_IN_PUNCHING_SPRITES
-        BSR     LOAD_IN_FILLED_NOTES_SPRITES
-        BSR     LOAD_IN_UNFILLED_NOTES_SPRITES
+        JSR     LOAD_IN_PLAYER_SPRITES
+        JSR     LOAD_IN_PUNCHING_SPRITES
+        JSR     LOAD_IN_FILLED_NOTES_SPRITES
+        JSR     LOAD_IN_UNFILLED_NOTES_SPRITES
         RTS
 
 
@@ -146,8 +146,8 @@ LOAD_IN_PLAYER_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,17(A1)
 
-            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            BSR     QOI_DECODE
+            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            JSR     QOI_DECODE
         ENDF
 
         ; load player 2
@@ -165,8 +165,8 @@ LOAD_IN_PLAYER_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,17(A1)
 
-            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            BSR     QOI_DECODE
+            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            JSR     QOI_DECODE
         ENDF
         RTS
 
@@ -193,8 +193,8 @@ LOAD_IN_PUNCHING_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,19(A1)
 
-            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            BSR     QOI_DECODE
+            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            JSR     QOI_DECODE
         ENDF
 
         ; load punching 2
@@ -218,8 +218,8 @@ LOAD_IN_PUNCHING_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,19(A1)
 
-            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            BSR     QOI_DECODE
+            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            JSR     QOI_DECODE
         ENDF
         RTS
 
@@ -247,8 +247,8 @@ LOAD_IN_FILLED_NOTES_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,23(A1)
 
-            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            BSR     QOI_DECODE
+            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            JSR     QOI_DECODE
         ENDF
 
         ; load notes 2
@@ -273,8 +273,8 @@ LOAD_IN_FILLED_NOTES_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,23(A1)
 
-            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            BSR     QOI_DECODE
+            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            JSR     QOI_DECODE
         ENDF
         RTS
 
@@ -302,8 +302,8 @@ LOAD_IN_UNFILLED_NOTES_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,25(A1)
 
-            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            BSR     QOI_DECODE
+            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            JSR     QOI_DECODE
         ENDF
         ; load notes 2
         MOVE.L  next_free_slot_address,unfilled_notes_2_start_sprite
@@ -327,8 +327,8 @@ LOAD_IN_UNFILLED_NOTES_SPRITES
             ADD.B   #48,D6
             MOVE.B  D6,25(A1)
 
-            BSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            BSR     QOI_DECODE
+            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
+            JSR     QOI_DECODE
         ENDF
         RTS
 
@@ -352,7 +352,7 @@ LOAD_IMAGE_INTO_SPRITES_LOADING
 
 
 QOI_DECODE
-        BSR     ZERO_PIXELS_ARRAY
+        JSR     ZERO_PIXELS_ARRAY
         MOVE.L  #$000000FF,current_pixel_r
 
         ; could change index run into a Data registry or Address registry
@@ -453,7 +453,7 @@ QOI_DECODE
                             ENDI
                         ENDI
                     ENDI
-                    BSR     QOI_PUT_IN_PIXEL
+                    JSR     QOI_PUT_IN_PIXEL
                 ELSE
                     MOVE.L  #$000000FF,current_pixel_r
                 ENDI
@@ -529,7 +529,7 @@ QOI_PUT_IN_PIXEL
 
 
 MAIN_MENU_LOOP
-        BSR     HANDLE_MENU_SELECT
+        JSR     HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
@@ -557,9 +557,9 @@ MAIN_MENU_LOOP
         ENDI
         CLR.B   player_1_action_colour
 
-        BSR     HANDLE_DIFFICULTY_INPUT
-        BSR     DRAW_MAIN_MENU
-        BSR     REPAINT_SCREEN
+        JSR     HANDLE_DIFFICULTY_INPUT
+        JSR     DRAW_MAIN_MENU
+        JSR     REPAINT_SCREEN
 
         ; delay
         MOVEQ   #23,D0
@@ -574,7 +574,7 @@ HANDLE_MENU_SELECT
         LEA     player_1_charge_amount,A3
         LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
-        BSR     HANDLE_COLOUR_CHANGE
+        JSR     HANDLE_COLOUR_CHANGE
 
         ; resets the punching index
         CLR.B   player_1_punching_index
@@ -608,8 +608,8 @@ HANDLE_DIFFICULTY_INPUT
 
 SELECT_SONG_MENU_LOOP
 
-        BSR     DRAW_SELECT_SONG_MENU
-        BSR     REPAINT_SCREEN
+        JSR     DRAW_SELECT_SONG_MENU
+        JSR     REPAINT_SCREEN
 
         ; delay
         MOVEQ   #23,D0
@@ -662,17 +662,17 @@ GAME_START
 
         LEA     player_1_position,A0
         LEA     player_1_lane_number,A1
-        BSR     CHANGE_PLAYER_Y_POSITION
+        JSR     CHANGE_PLAYER_Y_POSITION
         LEA     player_2_position,A0
         LEA     player_2_lane_number,A1
-        BSR     CHANGE_PLAYER_Y_POSITION
+        JSR     CHANGE_PLAYER_Y_POSITION
 
         ; practice
         IF.B song_playing_type <EQ> #0  THEN
             LEA     song_name,A2
-            BSR     LOAD_IN_SONG
+            JSR     LOAD_IN_SONG
         ELSE
-            BSR     LOAD_IN_RANDOM_NEW_SONG
+            JSR     LOAD_IN_RANDOM_NEW_SONG
         ENDI
 
         ; calculates game difficulty
@@ -810,10 +810,10 @@ LOAD_IN_SONG
 
 
 LOAD_IN_RANDOM_NEW_SONG
-        BSR     CHECK_AVAILABLE_SONGS
-        BSR     GET_RANDOM_SONG_INDEX
-        BSR     LOAD_SONG_FILE_NAME
-        BSR     LOAD_IN_SONG
+        JSR     CHECK_AVAILABLE_SONGS
+        JSR     GET_RANDOM_SONG_INDEX
+        JSR     LOAD_SONG_FILE_NAME
+        JSR     LOAD_IN_SONG
         RTS
 
 
@@ -832,7 +832,7 @@ CHECK_AVAILABLE_SONGS
 GET_RANDOM_SONG_INDEX
         CLR.W   D3
         MOVE.B  number_of_available_songs,D3
-        BSR     GET_RANDOM_VALUE
+        JSR     GET_RANDOM_VALUE
         SUB.B   #1,number_of_available_songs
         MOVE.B  (A0,D2.W),D0
 
@@ -869,7 +869,7 @@ LOAD_SONG_FILE_NAME
 
 
 LOAD_SCREEN_LOOP
-        BSR     HANDLE_MENU_SELECT
+        JSR     HANDLE_MENU_SELECT
 
         MOVEQ   #19,D0
         ; shift
@@ -893,13 +893,13 @@ LOAD_SCREEN_LOOP
             ; puts in H4cn
             MOVE.L  #$4834636E,8(A1)
             CLR.B   9(A1)
-            BSR     PLAY_MUSIC_ON_HIT
+            JSR     PLAY_MUSIC_ON_HIT
             JMP     GAME_LOOP
         ENDI
         CLR.B   player_1_action_colour
 
-        BSR     DRAW_LOAD_SCREEN
-        BSR     REPAINT_SCREEN
+        JSR     DRAW_LOAD_SCREEN
+        JSR     REPAINT_SCREEN
         
         ; delay
         MOVEQ   #23,D0
@@ -931,15 +931,15 @@ FRAME_DELAY
 
 GAME_LOOP
         ; frame delay, so that framerate is consistent
-        BSR     FRAME_DELAY
+        JSR     FRAME_DELAY
 
         ; spawn new notes
         MOVE.W  #8,D0
         TRAP    #15
         SUB.L   last_note_spawn_time,D1
         IF.L #10 <LE> D1    THEN
-            BSR     SPAWN_NEW_NOTE
-            BSR     DECREMENT_NOTES_TIMES
+            JSR     SPAWN_NEW_NOTE
+            JSR     DECREMENT_NOTES_TIMES
 
             ; increments and does modulus 8
             ADDQ.B  #1,sprite_gif_index
@@ -976,9 +976,9 @@ GAME_LOOP
         TRAP    #15
         SUB.L   last_object_time,D1
         IF.L #2 <LE> D1    THEN
-            BSR     MOVE_NOTES
-            BSR     HANDLE_INPUT
-            BSR     CHECK_BOTH_PLAYER_COLLISIONS
+            JSR     MOVE_NOTES
+            JSR     HANDLE_INPUT
+            JSR     CHECK_BOTH_PLAYER_COLLISIONS
 
             ADD.W   #1,player_1_life_amount
             IF.W player_1_life_amount <GT> #400 THEN
@@ -1004,7 +1004,7 @@ GAME_LOOP
             MOVEQ   #8,D0
             TRAP    #15
             MOVE.L  D1,previous_render_time
-            BSR     RENDER_SCREEN
+            JSR     RENDER_SCREEN
             MOVEQ   #8,D0
             TRAP    #15
             SUB.L   previous_render_time,D1
@@ -1013,7 +1013,7 @@ GAME_LOOP
                 MOVE.B  #1,render_skip_amount
             ENDI
 
-            BSR     CHECK_LIFE_AMOUNTS
+            JSR     CHECK_LIFE_AMOUNTS
         ELSE
             SUBQ.B  #1,render_skip_amount
         ENDI
@@ -1054,7 +1054,7 @@ CHECK_LIFE_AMOUNTS
 
 
 GAME_OVER_LOOP
-        BSR HANDLE_MENU_SELECT
+        JSR HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
             MOVE.B  #1,two_player
@@ -1068,8 +1068,8 @@ GAME_OVER_LOOP
         ENDI
         CLR.B   player_1_action_colour
 
-        BSR     DRAW_GAME_OVER
-        BSR     REPAINT_SCREEN
+        JSR     DRAW_GAME_OVER
+        JSR     REPAINT_SCREEN
 
         ; delay
         MOVEQ   #23,D0
@@ -1108,21 +1108,21 @@ CHECK_BOTH_PLAYER_COLLISIONS
         LEA     player_1_lane_number,A4
         LEA     player_1_action_colour,A5
         LEA     player_1_charge_amount,A6
-        BSR     CHECK_COLLISIONS
+        JSR     CHECK_COLLISIONS
 
         LEA     player_1_position,A0
         LEA     player_1_lane_number,A1
-        BSR     CHANGE_PLAYER_Y_POSITION
+        JSR     CHANGE_PLAYER_Y_POSITION
 
         IF.B two_player <EQ> #1 THEN
             LEA     player_2_lane_number,A4
             LEA     player_2_action_colour,A5
             LEA     player_2_charge_amount,A6
-            BSR     CHECK_COLLISIONS
+            JSR     CHECK_COLLISIONS
 
             LEA     player_2_position,A0
             LEA     player_2_lane_number,A1
-            BSR     CHANGE_PLAYER_Y_POSITION
+            JSR     CHANGE_PLAYER_Y_POSITION
         ENDI
         RTS
 
@@ -1153,13 +1153,13 @@ CHECK_COLLISIONS
                             BCLR.L  #4,D1
                             IF  <NE>    THEN
                                 IF.B (A6) <EQ> #80  THEN
-                                    BSR     NOTE_HIT_DETECTION
+                                    JSR     NOTE_HIT_DETECTION
                                 ELSE
                                     ADD.W   #2,A1
                                 ENDI
                             ELSE
                                 IF.B (A6) <EQ> #0   THEN
-                                    BSR     NOTE_HIT_DETECTION
+                                    JSR     NOTE_HIT_DETECTION
                                 ELSE
                                     ADD.W   #2,A1
                                 ENDI
@@ -1173,11 +1173,11 @@ CHECK_COLLISIONS
                         IF.W -(A1) <EQ> #0  THEN
                             IF.B 6(A1) <EQ> #0  THEN
                                 IF.B treble_last_note_success <EQ> #1  THEN
-                                    BSR     PLAY_MUSIC_ON_HIT
+                                    JSR     PLAY_MUSIC_ON_HIT
                                 ENDI
                             ELSE
                                 IF.B 6(A1) <EQ> #1 AND.B bass_last_note_success <EQ> #1   THEN
-                                    BSR     PLAY_MUSIC_ON_HIT
+                                    JSR     PLAY_MUSIC_ON_HIT
                                 ENDI
                             ENDI
                         ELSE
@@ -1204,7 +1204,7 @@ CHECK_COLLISIONS
                             MOVE.L  #WHITE,(A3)
                         ENDI
                         MOVE.W  #$FFFF,(A1)
-                        BSR     LANE_LEFT_SHIFT
+                        JSR     LANE_LEFT_SHIFT
                     ENDI
                 ENDI
             ENDI
@@ -1416,46 +1416,46 @@ LANE_LEFT_SHIFT
 
 
 HANDLE_INPUT
-        BSR     HANDLE_PAUSE
+        JSR     HANDLE_PAUSE
 
         LEA     player_1_action_pressed,A1
         LEA     player_1_action_colour,A2
         LEA     player_1_punching_index,A4
         MOVE.L  player_1_colour_keymaps,D1
-        BSR     HANDLE_COLOUR_CHANGE
+        JSR     HANDLE_COLOUR_CHANGE
 
         ; shift
         MOVE.L  #$10000000,D1
         LEA     player_1_charge_amount,A3
-        BSR     HANDLE_CHARGE
+        JSR     HANDLE_CHARGE
 
         LEA     player_1_lane_number,A1
         LEA     player_1_moving,A2
         MOVE.L  player_1_keymaps,D1
-        BSR     HANDLE_MOVEMENT
+        JSR     HANDLE_MOVEMENT
 
         LEA     player_1_position,A0
-        BSR     CHANGE_PLAYER_Y_POSITION
+        JSR     CHANGE_PLAYER_Y_POSITION
 
         IF.B two_player <EQ> #1 THEN
             LEA     player_2_action_pressed,A1
             LEA     player_2_action_colour,A2
             LEA     player_2_punching_index,A4
             MOVE.L  player_2_colour_keymaps,D1
-            BSR     HANDLE_COLOUR_CHANGE
+            JSR     HANDLE_COLOUR_CHANGE
 
             ; control
             MOVE.L  #$11000000,D1
             LEA     player_2_charge_amount,A3
-            BSR     HANDLE_CHARGE
+            JSR     HANDLE_CHARGE
 
             LEA     player_2_lane_number,A1
             LEA     player_2_moving,A2
             MOVE.L  player_2_keymaps,D1
-            BSR     HANDLE_MOVEMENT
+            JSR     HANDLE_MOVEMENT
 
             LEA     player_2_position,A0
-            BSR     CHANGE_PLAYER_Y_POSITION
+            JSR     CHANGE_PLAYER_Y_POSITION
         ENDI
         RTS
 
@@ -1475,7 +1475,7 @@ HANDLE_PAUSE
 
 
 PAUSE_MENU_LOOP
-        BSR     HANDLE_MENU_SELECT
+        JSR     HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
             MOVE.W  #8,D0
@@ -1492,8 +1492,8 @@ PAUSE_MENU_LOOP
         ENDI
         CLR.B   player_1_action_colour
 
-        BSR     DRAW_PAUSE_MENU
-        BSR     REPAINT_AREA
+        JSR     DRAW_PAUSE_MENU
+        JSR     REPAINT_AREA
         
         ; delay
         MOVEQ   #23,D0
@@ -1653,7 +1653,7 @@ HANDLE_MOVEMENT
 CHANGE_PLAYER_Y_POSITION
         CLR.L   D2
         MOVE.B  (A1),D2
-        BSR     GET_LANE_Y_POSITION
+        JSR     GET_LANE_Y_POSITION
         SUB.W   #40,D3
         MOVE.W  D3,2(A0)
         RTS
@@ -1691,16 +1691,16 @@ SPAWN_NEW_NOTE
             LEA	    treble_quater_beat_count,A4
             ; first byte is checked if there are any notes being played
             IF.B #48 <NE> (A0) THEN
-                BSR     CREATE_NOTE_OBJECT
+                JSR     CREATE_NOTE_OBJECT
                 LEA     treble_song_file_index,A1
                 LEA     treble_note_path_index,A3
-                BSR     LOAD_NOTE_DATA
+                JSR     LOAD_NOTE_DATA
 
                 IF.W (A2) <NE> #0   THEN
                     ADDQ.W  #1,treble_total_notes
                     ; check if teleporter
                     IF.W (A2) <EQ> #4   THEN
-                        BSR     PICK_RANDOM_PATH_INDEX
+                        JSR     PICK_RANDOM_PATH_INDEX
                         MOVE.B  (A3),7(A2)
                     ENDI
                 ENDI
@@ -1715,12 +1715,12 @@ SPAWN_NEW_NOTE
                     IF.L #0 <LE> D1 THEN
                         MOVE.L  D0,last_treble_path_change_time
                         MOVE.W  #100,D3
-                        BSR     GET_RANDOM_VALUE
+                        JSR     GET_RANDOM_VALUE
                         ADD.B   #100,D2
                         CLR.L   D3
                         MOVE.B  D2,D3
                         ADD.L   D3,last_treble_path_change_time
-                        BSR     CHANGE_TREBLE_PATH_INDEX
+                        JSR     CHANGE_TREBLE_PATH_INDEX
                     ENDI
                 ENDI
             ELSE
@@ -1744,10 +1744,10 @@ SPAWN_NEW_NOTE
 
             LEA	    bass_quater_beat_count,A4
             IF.B #48 <NE> (A0) THEN
-                BSR     CREATE_NOTE_OBJECT
+                JSR     CREATE_NOTE_OBJECT
                 LEA     bass_song_file_index,A1
                 LEA     bass_note_path_index,A3
-                BSR     LOAD_NOTE_DATA
+                JSR     LOAD_NOTE_DATA
                 IF.B two_player <EQ> #0 THEN
                     CLR.W   (A2)
                 ELSE
@@ -1755,7 +1755,7 @@ SPAWN_NEW_NOTE
                         ADDQ.W  #1,bass_total_notes
                         ; check if teleporter
                         IF.W (A2) <EQ> #4   THEN
-                            BSR     PICK_RANDOM_PATH_INDEX
+                            JSR     PICK_RANDOM_PATH_INDEX
                             MOVE.B  (A3),7(A2)
                         ENDI
                     ENDI
@@ -1772,12 +1772,12 @@ SPAWN_NEW_NOTE
                         IF.L #0 <LE> D1 THEN
                             MOVE.L  D0,last_bass_path_change_time
                             MOVE.W  #100,D3
-                            BSR     GET_RANDOM_VALUE
+                            JSR     GET_RANDOM_VALUE
                             ADD.B   #100,D2
                             CLR.L   D3
                             MOVE.B  D2,D3
                             ADD.L   D3,last_bass_path_change_time
-                            BSR     CHANGE_BASS_PATH_INDEX
+                            JSR     CHANGE_BASS_PATH_INDEX
                         ENDI
                     ENDI
                 ENDI
@@ -1830,7 +1830,7 @@ LOAD_NOTE_DATA
         IF.B (A4) <LO> D0 THEN
             CLR.W   (A2)
         ELSE
-            BSR     PICK_NOTE_COLOUR
+            JSR     PICK_NOTE_COLOUR
             MOVE.B   #1,(A4)
         ENDI
 
@@ -1840,7 +1840,7 @@ LOAD_NOTE_DATA
         ADD.W   #2,A2
         CLR.L   D2
         MOVE.B  (A3),D2
-        BSR     GET_LANE_Y_POSITION
+        JSR     GET_LANE_Y_POSITION
         MOVE.W  D3,(A2)
         SUB.W   #30,(A2)
 
@@ -1851,7 +1851,7 @@ LOAD_NOTE_DATA
         LEA     lane_notes_addresses,A0
         ADD     D1,A0
         SUB.W   #4,A2
-        BSR     ENQUEUE_OBJECT_TO_LANE
+        JSR     ENQUEUE_OBJECT_TO_LANE
         
         RTS
 
@@ -1860,7 +1860,7 @@ LOAD_NOTE_DATA
 ; choose a random frequency to pick as the visible colour
 PICK_NOTE_COLOUR
         IF.W D3 <NE> #1 THEN
-            BSR     GET_RANDOM_VALUE
+            JSR     GET_RANDOM_VALUE
             AND.L   #$FFFF0000,D2
             LSL.B   #2,D2
         ELSE
@@ -1900,7 +1900,7 @@ ENQUEUE_OBJECT_TO_LANE
 ; A3 contains the current path index
 PICK_RANDOM_PATH_INDEX
         MOVE.W  #3,D3
-        BSR     GET_RANDOM_VALUE
+        JSR     GET_RANDOM_VALUE
 
         FOR D5 = #0 TO #4   DO
             IF.B D5 <NE> treble_note_path_index AND.B D5 <NE> bass_note_path_index   THEN
@@ -1924,7 +1924,7 @@ CHANGE_TREBLE_PATH_INDEX
                 IF.B (A2) <EQ> #4   THEN
                     SUB.B   #1,(A2)
                 ELSE
-                    BSR     UP_DOWN_RANDOM
+                    JSR     UP_DOWN_RANDOM
                 ENDI
             ENDI
         ELSE
@@ -1946,7 +1946,7 @@ CHANGE_TREBLE_PATH_INDEX
                         IF.B D0 <EQ> #$FF THEN
                             SUB.B   #1,(A2)
                         ELSE
-                            BSR     UP_DOWN_RANDOM
+                            JSR     UP_DOWN_RANDOM
                         ENDI
                     ENDI
                 ENDI
@@ -1975,7 +1975,7 @@ CHANGE_BASS_PATH_INDEX
                     IF.B D0 <EQ> #$FF THEN
                         SUB.B   #1,(A2)
                     ELSE
-                        BSR     UP_DOWN_RANDOM
+                        JSR     UP_DOWN_RANDOM
                     ENDI
                 ENDI
             ENDI
@@ -1985,7 +1985,7 @@ CHANGE_BASS_PATH_INDEX
 
 ; this uses the note path index in A2
 UP_DOWN_RANDOM
-        BSR     RANDOM_2
+        JSR     RANDOM_2
         IF  <NE>    THEN
             ADD.B   #1,(A2)
         ELSE
@@ -2017,14 +2017,14 @@ DECREMENT_NOTES_TIMES
             MOVE.L  treble_song_file_index,A0
             MOVE.L  bass_song_file_index,A1
             IF.B (A0) <EQ> #$FF AND.B (A1) <EQ> #$FF    THEN
-                BSR     CHECK_LANES_EMPTY
+                JSR     CHECK_LANES_EMPTY
                 IF.B D0 <EQ> #1 THEN
                     ; load in new song or show victory screen with percentage hit
                     IF.B song_playing_type <EQ> #0  THEN
                         CLR.B   player_1_action_colour
-                        BSR     GAME_WON_MENU_LOOP
+                        JSR     GAME_WON_MENU_LOOP
                     ELSE
-                        BSR     LOAD_IN_RANDOM_NEW_SONG
+                        JSR     LOAD_IN_RANDOM_NEW_SONG
                         ADD.W   #2,previous_notes_speed
                         MOVE.W  previous_notes_speed,notes_speed
                     ENDI
@@ -2049,7 +2049,7 @@ CHECK_LANES_EMPTY
 
 
 GAME_WON_MENU_LOOP
-        BSR HANDLE_MENU_SELECT
+        JSR HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
             MOVE.B  #1,two_player
@@ -2063,8 +2063,8 @@ GAME_WON_MENU_LOOP
         ENDI
         CLR.B   player_1_action_colour
 
-        BSR     DRAW_GAME_WON_MENU
-        BSR     REPAINT_SCREEN
+        JSR     DRAW_GAME_WON_MENU
+        JSR     REPAINT_SCREEN
         
         ; delay
         MOVEQ   #23,D0
@@ -2074,12 +2074,12 @@ GAME_WON_MENU_LOOP
 
 
 RENDER_SCREEN
-        BSR     DRAW_PLAYERS
-        BSR     DRAW_NOTES
-        BSR     DRAW_FOREGROUND
-        BSR     DRAW_CHARGE_METERS
-        BSR     DRAW_NOTES_HITS_ANIMATIONS
-        BSR     DRAW_INFO_HUD
+        JSR     DRAW_PLAYERS
+        JSR     DRAW_NOTES
+        JSR     DRAW_FOREGROUND
+        JSR     DRAW_CHARGE_METERS
+        JSR     DRAW_NOTES_HITS_ANIMATIONS
+        JSR     DRAW_INFO_HUD
 
         IF.B pause_menu_active <EQ> #1  THEN
             CLR.B   pause_menu_active
@@ -2088,7 +2088,7 @@ RENDER_SCREEN
             TRAP    #15
             JMP     PAUSE_MENU_LOOP
         ELSE
-            BSR     REPAINT_SCREEN
+            JSR     REPAINT_SCREEN
         ENDI
         RTS
 
@@ -2106,7 +2106,7 @@ DRAW_PLAYERS
             MOVE.L  player_1_start_sprite,A0
             MOVE.B  player_1_action_colour,D0
             MOVE.B  sprite_gif_index,D1
-            BSR     DRAW_PLAYER
+            JSR     DRAW_PLAYER
         ELSE
             MOVE.L  punching_1_start_sprite,A0
             IF.B player_1_punching_index <NE> #0    THEN
@@ -2114,7 +2114,7 @@ DRAW_PLAYERS
                 MOVE.B  player_1_punching_index,D1
             ENDI
             ADD.W   #6,(A1)
-            BSR     DRAW_PLAYER
+            JSR     DRAW_PLAYER
             SUB.W   #6,(A1)
         ENDI
 
@@ -2126,7 +2126,7 @@ DRAW_PLAYERS
                 MOVE.L  player_2_start_sprite,A0
                 MOVE.B  player_2_action_colour,D0
                 MOVE.B  sprite_gif_index,D1
-                BSR     DRAW_PLAYER
+                JSR     DRAW_PLAYER
             ELSE
                 MOVE.L  punching_2_start_sprite,A0
                 IF.B player_2_punching_index <NE> #0    THEN
@@ -2134,7 +2134,7 @@ DRAW_PLAYERS
                     MOVE.B  player_2_punching_index,D1
                 ENDI
                 ADD.W   #6,(A1)
-                BSR     DRAW_PLAYER
+                JSR     DRAW_PLAYER
                 SUB.W   #6,(A1)
             ENDI
         ENDI
@@ -2215,7 +2215,7 @@ DRAW_NOTES
                                 MOVE.L  unfilled_notes_2_start_sprite,A0
                             ENDI
                         ENDI
-                        BSR     DRAW_NOTE
+                        JSR     DRAW_NOTE
                     ENDI
                 UNLESS.W (A2) <NE> #$FFFF
             ENDI
@@ -2266,8 +2266,8 @@ DRAW_NOTE
 
 
 DRAW_FOREGROUND
-        BSR     DRAW_LANE_LINES
-        BSR     DRAW_BEAT_LINE
+        JSR     DRAW_LANE_LINES
+        JSR     DRAW_BEAT_LINE
         RTS
 
 
@@ -2289,7 +2289,7 @@ DRAW_LANE_LINES
             MULU    D5,D2
             ADD.W   #TOP_BORDER_PADDING,D2
             MOVE.W  D2,D4
-            BSR     DRAW_LINE
+            JSR     DRAW_LINE
         ENDF
 
         ; draw the filled in area
@@ -2318,7 +2318,7 @@ DRAW_LANE_LINES
             ADD.W   #TOP_BORDER_PADDING,D2
             MOVE.W  D2,D4
             MOVE.W  D7,D1
-            BSR     DRAW_LINE
+            JSR     DRAW_LINE
         ENDF
 
         RTS
@@ -2339,7 +2339,7 @@ DRAW_BEAT_LINE
         MOVE.W  #21,D2
         MOVE.W  #BEAT_LINE_X,D3
         MOVE.W  #SCREEN_HEIGHT-19,D4
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
         RTS
 
 
@@ -2358,11 +2358,11 @@ DRAW_CHARGE_METERS
 
         LEA     player_1_position,A0
         MOVE.B  player_1_charge_amount,D5
-        BSR     DRAW_METER
+        JSR     DRAW_METER
 
         LEA     player_2_position,A0
         MOVE.B  player_2_charge_amount,D5
-        BSR     DRAW_METER
+        JSR     DRAW_METER
         RTS
 
 ; A0 contains the address to the player position
@@ -2439,16 +2439,16 @@ DRAW_NOTES_HITS_ANIMATIONS
                 TRAP    #15
 
                 MOVE.W  A0,D2
-                BSR     GET_LANE_Y_POSITION
+                JSR     GET_LANE_Y_POSITION
                 MOVE.W  D3,D7
 
                 IF.B (A1) <LO> #4   THEN
-                    BSR     LOWER_SHORT_DRAW
+                    JSR     LOWER_SHORT_DRAW
                 ELSE
                     IF.B (A1) <HI> #4   THEN
-                        BSR     UPPER_SHORT_DRAW
+                        JSR     UPPER_SHORT_DRAW
                     ELSE
-                        BSR     LONG_DRAW
+                        JSR     LONG_DRAW
                     ENDI
                 ENDI
                 IF.L #8 <LE> D5 THEN
@@ -2479,7 +2479,7 @@ LOWER_SHORT_DRAW
         MOVE.W  D2,D4
         ADD.W   D6,D3
         ADD.W   D6,D4
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
 
         MOVE.W  #BEAT_LINE_X,D1
         MOVE.W  D7,D2
@@ -2489,7 +2489,7 @@ LOWER_SHORT_DRAW
         MOVE.W  D2,D4
         SUB.W   D6,D3
         ADD.W   D6,D4
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
 
         MOVE.W  #BEAT_LINE_X,D1
         MOVE.W  D7,D2
@@ -2499,7 +2499,7 @@ LOWER_SHORT_DRAW
         MOVE.W  D2,D4
         ADD.W   D6,D3
         SUB.W   D6,D4
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
 
         MOVE.W  #BEAT_LINE_X,D1
         MOVE.W  D7,D2
@@ -2509,7 +2509,7 @@ LOWER_SHORT_DRAW
         MOVE.W  D2,D4
         SUB.W   D6,D3
         SUB.W   D6,D4
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
         RTS
 
 
@@ -2527,12 +2527,12 @@ UPPER_SHORT_DRAW
         SUB.W   D6,D2
         ADD.W   D6,D3
         ADD.W   D6,D4
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
         
         MOVE.W  D3,D7
         MOVE.W  D1,D3
         MOVE.W  D7,D1
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
         RTS
 
 
@@ -2546,12 +2546,12 @@ LONG_DRAW
         SUB.W   #32,D2
         ADD.W   #32,D3
         ADD.W   #32,D4
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
 
         MOVE.W  D3,D7
         MOVE.W  D1,D3
         MOVE.W  D7,D1
-        BSR     DRAW_LINE
+        JSR     DRAW_LINE
         RTS
 
 
@@ -2562,18 +2562,18 @@ DRAW_INFO_HUD
         MOVE.L  #$06120000,D2
         TRAP    #15
 
-        BSR     DRAW_LIFE_BARS
+        JSR     DRAW_LIFE_BARS
 
         ; sets pen fill to black
         MOVE.W  #81,D0
         CLR.L   D1
         TRAP    #15
 
-        BSR     DRAW_SCORE_AND_LIFE_TEXT
-        BSR     DRAW_SONG_NAME
-        BSR     DRAW_STREAKS
+        JSR     DRAW_SCORE_AND_LIFE_TEXT
+        JSR     DRAW_SONG_NAME
+        JSR     DRAW_STREAKS
 
-        BSR     DRAW_CONTROL_BUTTONS
+        JSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
@@ -2823,7 +2823,7 @@ DRAW_MAIN_MENU
             JMP     CHANGE_COLOUR
         ENDI
         MOVEQ   #7,D3
-        BSR     GET_RANDOM_VALUE
+        JSR     GET_RANDOM_VALUE
 CHECK_INDEX_AGAIN
         IF.B D2 <EQ> #0 THEN
             MOVE.L  #WHITE,D1
@@ -2879,13 +2879,13 @@ CHANGE_COLOUR
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$02700078,(A1)
         MOVEQ   #1,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
         
         ; draw orange bell
         MOVE.L  filled_notes_2_start_sprite,A0
         ADD.L   #$2600000,(A1)
         MOVEQ   #2,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
 
 
         ; set font
@@ -3144,35 +3144,35 @@ CHANGE_COLOUR
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$030001C0,(A1)
         MOVEQ   #4,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
 
         ; draw blue bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #1,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
 
         ; draw red bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #2,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
 
         ; draw yellow bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #3,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
 
         ADDQ.B  #1,sprite_gif_index
         AND.B   #7,sprite_gif_index
 
-        BSR     DRAW_CONTROL_BUTTONS
+        JSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
 DRAW_SELECT_SONG_MENU
-        BSR     DRAW_CONTROL_BUTTONS
+        JSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
@@ -3211,7 +3211,7 @@ DRAW_LOAD_SCREEN
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$040002E0,(A1)
         MOVEQ   #2,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
 
         IF.W loading_screen_charge <NE> #0  THEN
             ; sets pen colour
@@ -3239,7 +3239,7 @@ DRAW_LOAD_SCREEN
         ADDQ.B  #1,sprite_gif_index
         AND.B   #7,sprite_gif_index
 
-        BSR     DRAW_CONTROL_BUTTONS
+        JSR     DRAW_CONTROL_BUTTONS
         RTS
 
 
@@ -3299,13 +3299,13 @@ DRAW_PAUSE_MENU
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$030001C0,(A1)
         MOVEQ   #1,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
 
         ; draw red bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #2,D0
-        BSR     DRAW_NOTE
+        JSR     DRAW_NOTE
         RTS
 
 
@@ -3512,7 +3512,7 @@ NINC1
         MOVE.L  D0,random_value
         MOVE.L  D0,D2
 
-        BSR     DIVIDE_NUMBER
+        JSR     DIVIDE_NUMBER
         SWAP    D2
         ; remainder is now in D2.W, i.e. the random number
         RTS
