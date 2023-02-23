@@ -28,6 +28,10 @@
 * song_playing_type needs to change whether another song is put in
 * speed up rendering by not rerendering the whole screen
 * 
+* graphical issue when exiting pause screen to main menu
+* unnesesarry draw when calling pause menu
+* note plays incorrectly on loading menu
+* 
 
 ; set constants
 SCREEN_WIDTH            EQU     1920
@@ -97,7 +101,7 @@ START   ORG    $1000
 
         MOVE.B  #1,two_player
         CLR.B   player_1_action_colour
-        BRA     MAIN_MENU_LOOP
+        JMP     MAIN_MENU_LOOP
 
 
 ; loads in all notes into DirectX memory
@@ -530,16 +534,16 @@ MAIN_MENU_LOOP
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
             CLR.B   player_1_action_colour
-            BRA     SELECT_SONG_MENU_LOOP
+            JMP     SELECT_SONG_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 CLR.B   player_1_action_colour
                 MOVE.B  #1,song_playing_type
-                BRA     GAME_START
+                JMP     GAME_START
             ELSE
                 IF.B player_1_action_colour <EQ> #3 THEN
                     CLR.B   player_1_action_colour
-                    BRA     EXIT_PROGRAM
+                    JMP     EXIT_PROGRAM
                 ELSE
                     IF.B player_1_action_colour <EQ> #4 THEN
                         CLR.B   player_1_action_colour
@@ -561,7 +565,7 @@ MAIN_MENU_LOOP
         MOVEQ   #23,D0
         MOVEQ   #10,D1
         TRAP    #15
-        BRA     MAIN_MENU_LOOP
+        JMP     MAIN_MENU_LOOP
 
 
 HANDLE_MENU_SELECT
@@ -611,7 +615,7 @@ SELECT_SONG_MENU_LOOP
         MOVEQ   #23,D0
         MOVEQ   #1,D1
         TRAP    #15
-        BRA     SELECT_SONG_MENU_LOOP
+        JMP     SELECT_SONG_MENU_LOOP
 
 
 GAME_START
@@ -755,7 +759,7 @@ GAME_START
         CLR.W   player_1_notes_hit_count
         CLR.W   player_2_notes_hit_count
 
-        BRA     LOAD_SCREEN_LOOP
+        JMP     LOAD_SCREEN_LOOP
 
 
 ; loads in two song files
@@ -886,11 +890,11 @@ LOAD_SCREEN_LOOP
             MOVE.L  D1,last_object_time
             CLR.B   player_1_action_colour
             LEA     note_objects,A1
-            ; puts in H5cn
-            MOVE.L  #$4835636E,8(A1)
+            ; puts in H4cn
+            MOVE.L  #$4834636E,8(A1)
             CLR.B   9(A1)
             BSR     PLAY_MUSIC_ON_HIT
-            BRA     GAME_LOOP
+            JMP     GAME_LOOP
         ENDI
         CLR.B   player_1_action_colour
 
@@ -901,7 +905,7 @@ LOAD_SCREEN_LOOP
         MOVEQ   #23,D0
         MOVEQ   #10,D1
         TRAP    #15
-        BRA     LOAD_SCREEN_LOOP
+        JMP     LOAD_SCREEN_LOOP
 
 
 FRAME_DELAY
@@ -1014,7 +1018,7 @@ GAME_LOOP
             SUBQ.B  #1,render_skip_amount
         ENDI
 
-        BRA     GAME_LOOP
+        JMP     GAME_LOOP
 
 
 CHECK_LIFE_AMOUNTS
@@ -1023,12 +1027,12 @@ CHECK_LIFE_AMOUNTS
                 IF.W player_1_life_amount <LT> #1   THEN
                     MOVE.B  #2,game_over_status
                     CLR.B   player_1_action_colour
-                    BRA     GAME_OVER_LOOP
+                    JMP     GAME_OVER_LOOP
                 ENDI
                 IF.W player_2_life_amount <LT> #1   THEN
                     MOVE.B  #1,game_over_status
                     CLR.B   player_1_action_colour
-                    BRA     GAME_OVER_LOOP
+                    JMP     GAME_OVER_LOOP
                 ENDI
             ELSE
                 MOVE.W  player_1_life_amount,D0
@@ -1036,14 +1040,14 @@ CHECK_LIFE_AMOUNTS
                 IF.W D0 <LT> #1 THEN
                     CLR.B   game_over_status
                     CLR.B   player_1_action_colour
-                    BRA     GAME_OVER_LOOP
+                    JMP     GAME_OVER_LOOP
                 ENDI
             ENDI
         ELSE
             IF.W player_1_life_amount <LT> #1   THEN
                 CLR.B   game_over_status
                 CLR.B   player_1_action_colour
-                BRA     GAME_OVER_LOOP
+                JMP     GAME_OVER_LOOP
             ENDI
         ENDI
         RTS
@@ -1055,11 +1059,11 @@ GAME_OVER_LOOP
         IF.B player_1_action_colour <EQ> #1 THEN
             MOVE.B  #1,two_player
             CLR.B   player_1_action_colour
-            BRA     MAIN_MENU_LOOP
+            JMP     MAIN_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 CLR.B   player_1_action_colour
-                BRA     GAME_START
+                JMP     GAME_START
             ENDI
         ENDI
         CLR.B   player_1_action_colour
@@ -1071,7 +1075,7 @@ GAME_OVER_LOOP
         MOVEQ   #23,D0
         MOVEQ   #1,D1
         TRAP    #15
-        BRA     GAME_OVER_LOOP
+        JMP     GAME_OVER_LOOP
 
 
 ; D1 must contain the time calculated from last object time
@@ -1478,12 +1482,12 @@ PAUSE_MENU_LOOP
             TRAP    #15
             MOVE.L  D1,last_object_time
             CLR.B   player_1_action_colour
-            BRA     GAME_LOOP
+            JMP     GAME_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
-                BRA     MAIN_MENU_LOOP
+                JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
         CLR.B   player_1_action_colour
@@ -1495,7 +1499,7 @@ PAUSE_MENU_LOOP
         MOVEQ   #23,D0
         MOVEQ   #1,D1
         TRAP    #15
-        BRA     PAUSE_MENU_LOOP
+        JMP     PAUSE_MENU_LOOP
 
 
 ; A1 must contain player action pressed
@@ -2050,11 +2054,11 @@ GAME_WON_MENU_LOOP
         IF.B player_1_action_colour <EQ> #1 THEN
             MOVE.B  #1,two_player
             CLR.B   player_1_action_colour
-            BRA     MAIN_MENU_LOOP
+            JMP     MAIN_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 CLR.B   player_1_action_colour
-                BRA     GAME_START
+                JMP     GAME_START
             ENDI
         ENDI
         CLR.B   player_1_action_colour
@@ -2066,7 +2070,7 @@ GAME_WON_MENU_LOOP
         MOVEQ   #23,D0
         MOVEQ   #1,D1
         TRAP    #15
-        BRA     GAME_WON_MENU_LOOP
+        JMP     GAME_WON_MENU_LOOP
 
 
 RENDER_SCREEN
@@ -2082,7 +2086,7 @@ RENDER_SCREEN
             ; repaints screen
             MOVEQ   #94,D0
             TRAP    #15
-            BRA     PAUSE_MENU_LOOP
+            JMP     PAUSE_MENU_LOOP
         ELSE
             BSR     REPAINT_SCREEN
         ENDI
@@ -2816,7 +2820,7 @@ DRAW_STREAKS
 
 DRAW_MAIN_MENU
         IF.B sprite_gif_index <NE> #0 AND.B sprite_gif_index <NE> #4    THEN
-            BRA     CHANGE_COLOUR
+            JMP     CHANGE_COLOUR
         ENDI
         MOVEQ   #7,D3
         BSR     GET_RANDOM_VALUE
@@ -2852,7 +2856,7 @@ CHECK_INDEX_AGAIN
         ENDI
         IF.L D1 <EQ> main_menu_title_colour THEN
             ADD.B   #1,D2
-            BRA     CHECK_INDEX_AGAIN
+            JMP     CHECK_INDEX_AGAIN
         ELSE
             MOVE.L  D1,main_menu_title_colour
         ENDI
@@ -3246,8 +3250,62 @@ DRAW_GAME_OVER
 
 
 DRAW_PAUSE_MENU
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06200003,D2
+        TRAP    #15
+
+        ; draw text
+        MOVEQ   #95,D0
+        MOVE.W  #870,D1
+        MOVE.W  #320,D2
+        LEA     pause_menu_text,A1
+        TRAP    #15
 
 
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06180000,D2
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$340E,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #7,A1
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$3412,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #9,A1
+        TRAP    #15
+
+
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
+        TRAP    #15
+
+        ; draw blue bell
+        MOVE.L  filled_notes_1_start_sprite,A0
+        LEA     main_menu_bell_positions,A1
+        MOVE.L  #$030001C0,(A1)
+        MOVEQ   #1,D0
+        BSR     DRAW_NOTE
+
+        ; draw red bell
+        MOVE.L  filled_notes_1_start_sprite,A0
+        ADD.L   #$90,(A1)
+        MOVEQ   #2,D0
+        BSR     DRAW_NOTE
         RTS
 
 
@@ -3646,6 +3704,7 @@ loading_screen_text             DC.B    'Charge punches against shielded bells!'
 loading_screen_charge           DC.W    0
 
 pause_menu_active               DC.B    0
+pause_menu_text                 DC.B    'Paused',0,'Continue',0,'Main Menu',0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
