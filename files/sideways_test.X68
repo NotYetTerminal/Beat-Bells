@@ -458,7 +458,7 @@ QOI_DECODE
             IF.B current_pixel_a <EQ> #0    THEN
                 MOVE.L  #0,(A1,D6.L)
             ELSE
-                MOVE.B  #0,(A1,D6.L)
+                CLR.B   (A1,D6.L)
                 MOVE.B  current_pixel_b,1(A1,D6.L)
                 MOVE.B  current_pixel_g,2(A1,D6.L)
                 MOVE.B  current_pixel_r,3(A1,D6.L)
@@ -587,7 +587,7 @@ HANDLE_DIFFICULTY_INPUT
         ; checks 1
         BTST.L  #24,D1
         IF  <NE>    then
-            MOVE.B  #0,main_menu_difficulty
+            CLR.B   main_menu_difficulty
         ENDI
         ; checks 2
         BTST.L  #16,D1
@@ -801,7 +801,7 @@ LOAD_IN_SONG
         TRAP    #15
 
         LEA     song_name,A1
-        MOVE.B  #0,(A1,D3)
+        CLR.B   (A1,D3)
         RTS
 
 
@@ -885,6 +885,11 @@ LOAD_SCREEN_LOOP
             TRAP    #15
             MOVE.L  D1,last_object_time
             CLR.B   player_1_action_colour
+            LEA     note_objects,A1
+            ; puts in H5cn
+            MOVE.L  #$4835636E,8(A1)
+            CLR.B   9(A1)
+            BSR     PLAY_MUSIC_ON_HIT
             BRA     GAME_LOOP
         ENDI
         CLR.B   player_1_action_colour
@@ -1695,7 +1700,7 @@ SPAWN_NEW_NOTE
                         MOVE.B  (A3),7(A2)
                     ENDI
                 ENDI
-                MOVE.B  #0,6(A2)
+                CLR.B   6(A2)
                 
                 IF.W (A2) <NE> #0 AND.W (A2) <NE> #4    THEN
                     ; new path index
@@ -1807,7 +1812,7 @@ LOAD_NOTE_DATA
             MOVE.B  (A0,D3),(A2,D3)
             ADDQ.B   #1,D3
         ENDW
-        MOVE.B  #0,(A2,D3)
+        CLR.B   (A2,D3)
         SUBQ.B  #7,D3
         ADD.L   D3,(A1)
         SUBQ.B  #1,D3
@@ -2270,7 +2275,7 @@ DRAW_LANE_LINES
         
         ; sets pen colour to grey
         MOVEQ   #80,D0
-        MOVE.L  #$00444444,D1
+        MOVE.L  #DARKGREY,D1
         TRAP    #15
 
         MOVE.W  #LEFT_BORDER_PADDING+1,D1
@@ -2383,7 +2388,7 @@ DRAW_METER
             IF.B D5 <NE> #80    THEN
                 ; sets pen and fill colour to grey
                 MOVEQ   #80,D0
-                MOVE.L  #$00444444,D1
+                MOVE.L  #DARKGREY,D1
                 TRAP    #15
                 MOVE.W  #81,D0
                 TRAP    #15
@@ -2891,7 +2896,7 @@ CHANGE_COLOUR
         IF.B main_menu_difficulty <EQ> #0  THEN
             MOVE.L  #LIME,D1
         ELSE
-            MOVE.L  #WHITE,D1
+            MOVE.L  #DARKGREY,D1
         ENDI
         TRAP    #15
         ; sets the cursor position
@@ -2909,7 +2914,7 @@ CHANGE_COLOUR
         IF.B main_menu_difficulty <EQ> #1  THEN
             MOVE.L  #ORANGE,D1
         ELSE
-            MOVE.L  #WHITE,D1
+            MOVE.L  #DARKGREY,D1
         ENDI
         TRAP    #15
         ; sets the cursor position
@@ -2927,7 +2932,7 @@ CHANGE_COLOUR
         IF.B main_menu_difficulty <EQ> #2  THEN
             MOVE.L  #RED,D1
         ELSE
-            MOVE.L  #WHITE,D1
+            MOVE.L  #DARKGREY,D1
         ENDI
         TRAP    #15
         ; sets the cursor position
@@ -3033,7 +3038,7 @@ CHANGE_COLOUR
         IF.B menu_screen_game_type <EQ> #0  THEN
             MOVE.L  #RED,D1
         ELSE
-            MOVE.L  #WHITE,D1
+            MOVE.L  #DARKGREY,D1
         ENDI
         TRAP    #15
         ; sets the cursor position
@@ -3051,7 +3056,7 @@ CHANGE_COLOUR
         IF.B menu_screen_game_type <NE> #0  THEN
             MOVE.L  #LIME,D1
         ELSE
-            MOVE.L  #WHITE,D1
+            MOVE.L  #DARKGREY,D1
         ENDI
         TRAP    #15
         ; sets the cursor position
@@ -3069,7 +3074,7 @@ CHANGE_COLOUR
         IF.B menu_screen_game_type <EQ> #1  THEN
             MOVE.L  #ORANGE,D1
         ELSE
-            MOVE.L  #WHITE,D1
+            MOVE.L  #DARKGREY,D1
         ENDI
         TRAP    #15
         ; show text
@@ -3083,7 +3088,7 @@ CHANGE_COLOUR
         IF.B menu_screen_game_type <EQ> #2  THEN
             MOVE.L  #AQUA,D1
         ELSE
-            MOVE.L  #WHITE,D1
+            MOVE.L  #DARKGREY,D1
         ENDI
         TRAP    #15
         ; show text
@@ -3210,7 +3215,7 @@ DRAW_LOAD_SCREEN
             IF.W loading_screen_charge <EQ> #300    THEN
                 MOVE.L  #WHITE,D1
             ELSE
-                MOVE.L  #$00444444,D1
+                MOVE.L  #DARKGREY,D1
             ENDI
             TRAP    #15
             MOVE.W  #81,D0
@@ -3407,15 +3412,21 @@ REPAINT_SCREEN
         RTS
 
 
+; clears the popup area of size 820x480
 REPAINT_AREA
         ; repaints screen
         MOVEQ   #94,D0
 		TRAP    #15
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #3,D1
+        TRAP    #15
         ; sets pen colour
         MOVEQ   #80,D0
-        CLR.L   D1
+        MOVE.L  #WHITE,D1
         TRAP    #15
         MOVE.W  #81,D0
+        CLR.L   D1
         TRAP    #15
 		; clears area
 		MOVEQ   #87,D0
@@ -3634,7 +3645,7 @@ cross_long_length               DC.W    30
 loading_screen_text             DC.B    'Charge punches against shielded bells!',0,'Hold shoulder buttons and punch!',0
 loading_screen_charge           DC.W    0
 
-pause_menu_active             DC.B    0
+pause_menu_active               DC.B    0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
@@ -3648,6 +3659,7 @@ ORANGE          EQU     $000080FF       ; Bass B, E
 LIME            EQU     $0000FF00       ; Bass C, F
 PURPLE2         EQU     $00FF0080       ; Teleport
 WHITE           EQU     $00FFFFFF
+DARKGREY        EQU     $00444444
 
 ; QOI decoding
 SPRITES_LOADING             EQU     $28000      ; address where the qoi file is loaded
