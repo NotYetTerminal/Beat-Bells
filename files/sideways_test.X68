@@ -31,6 +31,9 @@
 * graphical issue when exiting pause screen to main menu
 * unnesesarry draw when calling pause menu
 * note plays incorrectly on loading menu
+* main menu not lined up
+* loading screen not lined up
+* change speed up time when changing song
 * 
 
 ; set constants
@@ -1185,12 +1188,12 @@ CHECK_COLLISIONS
                                 CLR.B   treble_last_note_success
                                 CLR.B   player_1_charge_amount
                                 CLR.W   player_1_longest_streak
-                                ;SUB.W   #199,player_1_life_amount
+                                SUB.W   #199,player_1_life_amount
                             ELSE
                                 CLR.B   bass_last_note_success
                                 CLR.B   player_2_charge_amount
                                 CLR.W   player_2_longest_streak
-                                ;SUB.W   #199,player_2_life_amount
+                                SUB.W   #199,player_2_life_amount
                             ENDI
                             MOVE.W  previous_notes_speed,D0
                             IF.W notes_speed <HI> D0    THEN
@@ -3576,7 +3579,7 @@ player_2_position       DS.W    2       ; stores the top right player position x
 player_2_lane_number    DS.B    3       ; stores the lane number
 player_2_moving         DC.B    0       ; stores whether the player is moving up or down
 player_2_action_pressed DC.B    0       ; stores whether any action buttons are pressed
-player_2_keymaps        DC.L    'RF'    ; stores the movement keys of player
+player_2_keymaps        DC.L    'AA'    ; stores the movement keys of player
 player_2_action_colour  DC.B    0       ; stores the player action colour
 player_2_colour_keymaps DC.L    'XCVZ'  ; stores the keymaps for the player changing colours
 player_2_charge_amount  DC.B    0       ; stores the charge amount
