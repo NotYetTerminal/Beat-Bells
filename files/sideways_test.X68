@@ -29,11 +29,9 @@
 * speed up rendering by not rerendering the whole screen
 * 
 * graphical issue when exiting pause screen to main menu
-* unnesesarry draw when calling pause menu
 * note plays incorrectly on loading menu
-* main menu not lined up
 * loading screen not lined up
-* change speed up time when changing song
+* change to speed up less when changing song
 * 
 
 ; set constants
@@ -1485,22 +1483,24 @@ PAUSE_MENU_LOOP
             TRAP    #15
             MOVE.L  D1,last_object_time
             CLR.B   player_1_action_colour
+            BSR     REPAINT_SCREEN
             JMP     GAME_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
+                BSR     REPAINT_SCREEN
                 JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
         CLR.B   player_1_action_colour
 
-        JSR     DRAW_PAUSE_MENU
         JSR     REPAINT_AREA
+        JSR     DRAW_PAUSE_MENU
         
         ; delay
         MOVEQ   #23,D0
-        MOVEQ   #1,D1
+        MOVEQ   #10,D1
         TRAP    #15
         JMP     PAUSE_MENU_LOOP
 
@@ -2893,12 +2893,6 @@ CHANGE_COLOUR
 
         ; set font
         MOVEQ   #21,D0
-        MOVE.L  #WHITE,D1
-        MOVE.L  #$06180000,D2
-        TRAP    #15
-
-        ; set font
-        MOVEQ   #21,D0
         MOVE.L  #$06180000,D2
         IF.B main_menu_difficulty <EQ> #0  THEN
             MOVE.L  #LIME,D1
@@ -2908,7 +2902,7 @@ CHANGE_COLOUR
         TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$2A08,D1
+        MOVE.L  #$2D08,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -2926,7 +2920,7 @@ CHANGE_COLOUR
         TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$3006,D1
+        MOVE.L  #$3206,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -2944,7 +2938,7 @@ CHANGE_COLOUR
         TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$3808,D1
+        MOVE.L  #$3A08,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -2958,7 +2952,7 @@ CHANGE_COLOUR
         TRAP    #15
         ; draw cross icon
         MOVEQ   #86,D0
-        MOVE.W  #910,D1
+        MOVE.W  #950,D1
         MOVE.W  #310,D2
         TRAP    #15
 
@@ -3261,8 +3255,8 @@ DRAW_PAUSE_MENU
 
         ; draw text
         MOVEQ   #95,D0
-        MOVE.W  #870,D1
-        MOVE.W  #320,D2
+        MOVE.W  #900,D1
+        MOVE.W  #380,D2
         LEA     pause_menu_text,A1
         TRAP    #15
 
@@ -3284,7 +3278,7 @@ DRAW_PAUSE_MENU
 
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$3412,D1
+        MOVE.L  #$3411,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -3300,15 +3294,19 @@ DRAW_PAUSE_MENU
         ; draw blue bell
         MOVE.L  filled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
-        MOVE.L  #$030001C0,(A1)
+        MOVE.L  #$03300200,(A1)
         MOVEQ   #1,D0
         JSR     DRAW_NOTE
 
         ; draw red bell
         MOVE.L  filled_notes_1_start_sprite,A0
-        ADD.L   #$90,(A1)
+        ADD.L   #$70,(A1)
         MOVEQ   #2,D0
         JSR     DRAW_NOTE
+
+        ADDQ.B  #1,sprite_gif_index
+        AND.B   #7,sprite_gif_index
+
         RTS
 
 
@@ -3491,10 +3489,10 @@ REPAINT_AREA
         TRAP    #15
 		; clears area
 		MOVEQ   #87,D0
-        MOVE.W  #500,D1
-        MOVE.W  #300,D2
-        MOVE.W  #1420,D3
-        MOVE.W  #780,D4
+        MOVE.W  #600,D1
+        MOVE.W  #350,D2
+        MOVE.W  #1320,D3
+        MOVE.W  #730,D4
 		TRAP    #15
         RTS
 
