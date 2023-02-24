@@ -45,7 +45,7 @@ LANE_ADDRESSES_SIZE     EQU     55
 
 LIFE_BAR_X              EQU     700
 
-NUMBER_OF_SONGS         EQU     2
+NUMBER_OF_SONGS         EQU     32
 VARIABLES_START         EQU     $4000
 
     MEMORY  ROM     $1000,VARIABLES_START-1
@@ -57,7 +57,7 @@ START
         IF.L VARIABLES_START <NE> #$FFFFFFFF  THEN
             ILLEGAL
         ENDI
-        
+
         ; checks if $10000 has been accidentally used
         IF.L TREBLE_FILE_CONTENTS <NE> #$FFFFFFFF  THEN
             ILLEGAL
@@ -70,9 +70,9 @@ START
         
         ; turn on double buffering
         ; avoids flickering
-		MOVEQ   #92,D0
-        MOVEQ   #17,D1
-		TRAP    #15
+		* MOVEQ   #92,D0
+        * MOVEQ   #17,D1
+		* TRAP    #15
 
         ; sets the screen size
         MOVEQ   #33,D0
@@ -535,6 +535,7 @@ MAIN_MENU_LOOP
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
             MOVE.B  #0,song_playing_type
+            CLR.B   select_song_line
             JMP     SELECT_SONG_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
@@ -3184,7 +3185,7 @@ DRAW_SELECT_SONG_MENU
 
         ; draw text
         MOVEQ   #95,D0
-        MOVE.W  #730,D1
+        MOVE.W  #700,D1
         MOVE.W  #100,D2
         LEA     select_song_menu_text,A1
         TRAP    #15
@@ -3213,6 +3214,42 @@ DRAW_SELECT_SONG_MENU
         MOVEQ   #14,D0
         ADD.L   #10,A1
         TRAP    #15
+
+
+        ; draw song names
+        MOVE.L  #$F000,D1
+        LEA     ALL_SONG_FILE_NAMES,A1
+        FOR.W D5 = #0 TO #NUMBER_OF_SONGS-1 DO
+            ; sets the cursor position
+            MOVEQ   #11,D0
+            MOVE.W  D5,D4
+            AND.W   #7,D4
+            IF.W D4 <EQ> #0 THEN
+                ADD.W   #$1800,D1
+                MOVE.B  #5,D1
+            ENDI
+            ADD.W   #2,D1
+            IF.B select_song_line <EQ> D5   THEN
+                SUB.W   #$200,D1
+            ENDI
+            TRAP    #15
+            ; draws the select marker
+            IF.B select_song_line <EQ> D5   THEN
+                MOVE.L  A1,A2
+                MOVEQ   #14,D0
+                LEA     select_marker,A1
+                TRAP    #15
+                MOVE.L  A2,A1
+                ADD.W   #$200,D1
+            ENDI
+            ; show text
+            MOVEQ   #14,D0
+            TRAP    #15
+            WHILE.B (A1) <NE> #0    DO
+                ADD.L   #1,A1
+            ENDW
+            ADD.L   #1,A1
+        ENDF
 
 
         ; sets pen width
@@ -3856,7 +3893,14 @@ song_name               DC.B    'songs/'
 
 number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
-ALL_SONG_FILE_NAMES             DC.B    'Running in the 90s',0,'Running in the 90s',0
+ALL_SONG_FILE_NAMES             DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
 
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
@@ -3950,6 +3994,7 @@ game_over_streak_text           DC.B    'Longest Streak:',0
 game_over_notes_hit_text        DC.B    'Notes hit:',0,'/',0
 
 select_song_menu_text           DC.B    'Select Song',0,'Play Song',0,'Main Menu',0
+select_marker                   DC.B    '> ',0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
