@@ -5,10 +5,6 @@
 * Description:  The one and only assembly file for the game
 *-----------------------------------------------------------
 
-* TODO
-* 
-* decrement notes times slow
-* 
 * Warnings
 * If in the piano sheet there is a held note with lines then it won't play the full thing
 * this is an issue of the transcriber and not the assembly code.
@@ -22,9 +18,16 @@
 * the actual code in memory, however this has been patched byt setting that memory
 * location to be ROM.
 * 
-* Drawing
-* select menu
+* TODO
+* decrement notes times slow
 * gameplay hud needs to change for practice game
+* speed up rendering by drawing lines instead of rectangles
+* change menus update speed
+* 
+* try to merge two sprites when punching
+* add sound for punching
+* add sound for missing a note
+* look for other notes wav sound files
 * 
 
 ; set constants
@@ -71,17 +74,17 @@ START
         
         ; turn on double buffering
         ; avoids flickering
-		* MOVEQ   #92,D0
-        * MOVEQ   #17,D1
-		* TRAP    #15
+		MOVEQ   #92,D0
+        MOVEQ   #17,D1
+		TRAP    #15
 
         ; sets the screen size
         MOVEQ   #33,D0
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        * MOVEQ   #2,D1
-        * TRAP    #15
+        MOVEQ   #2,D1
+        TRAP    #15
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
@@ -614,17 +617,58 @@ SELECT_SONG_MENU_LOOP
 
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
-            BSR     REPAINT_SCREEN
+            JSR     REPAINT_SCREEN
+            MOVE.B  select_song_line,D0
+            JSR     LOAD_SONG_FILE_NAME
             JMP     GAME_START
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
-                BSR     REPAINT_SCREEN
+                JSR     REPAINT_SCREEN
                 JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
         CLR.B   player_1_action_colour
+
+        LEA     player_1_moving,A2
+        ; check for keys
+        MOVE.W  #19,D0
+        ; 2 4
+        MOVE.L  #$32340000,D1
+        TRAP    #15
+
+        ; checks if any key is pressed
+        IF.L #0 <EQ> D1 THEN
+            CLR.B   (A2)
+        ELSE
+            ; checks 2
+            BTST.L  #24,D1
+            IF  <NE>    THEN
+                BTST.B  #0,(A2)
+                IF  <EQ>    THEN
+                    IF.B select_song_line <NE> #0   THEN
+                        SUB.B   #1,select_song_line
+                        BSET.B  #0,(A2)
+                    ENDI
+                ENDI
+            ELSE
+                BCLR.B  #0,(A2)
+            ENDI
+            ; checks 4
+            BTST.L  #16,D1
+            IF  <NE>    THEN
+                BTST.B  #1,(A2)
+                IF  <EQ>    THEN
+                    IF.B select_song_line <NE> #NUMBER_OF_SONGS-1   THEN
+                        ADD.B   #1,select_song_line
+                        BSET.B  #1,(A2)
+                    ENDI
+                ENDI
+            ELSE
+                BCLR.B  #1,(A2)
+            ENDI
+        ENDI
 
         JSR     DRAW_SELECT_SONG_MENU
         JSR     REPAINT_SCREEN
@@ -862,6 +906,7 @@ GET_RANDOM_SONG_INDEX
         RTS
 
 
+; D0 must contain the index of song name
 LOAD_SONG_FILE_NAME
         LEA     ALL_SONG_FILE_NAMES,A0
         CLR.L   D5
@@ -1082,13 +1127,13 @@ GAME_OVER_LOOP
 
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
-            BSR     REPAINT_SCREEN
+            JSR     REPAINT_SCREEN
             JMP     GAME_START
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
-                BSR     REPAINT_SCREEN
+                JSR     REPAINT_SCREEN
                 JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
@@ -1516,13 +1561,13 @@ PAUSE_MENU_LOOP
             TRAP    #15
             MOVE.L  D1,last_object_time
             CLR.B   player_1_action_colour
-            BSR     REPAINT_SCREEN
+            JSR     REPAINT_SCREEN
             JMP     GAME_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
-                BSR     REPAINT_SCREEN
+                JSR     REPAINT_SCREEN
                 JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
