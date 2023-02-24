@@ -20,7 +20,6 @@
 * 
 * TODO
 * decrement notes times slow
-* gameplay hud needs to change for practice game
 * speed up rendering by drawing lines instead of rectangles
 * change menus update speed
 * 
@@ -2102,8 +2101,7 @@ DECREMENT_NOTES_TIMES
                 IF.B D0 <EQ> #1 THEN
                     ; load in new song or show victory screen with percentage hit
                     IF.B song_playing_type <EQ> #0  THEN
-                        CLR.B   player_1_action_colour
-                        JSR     GAME_OVER_LOOP
+                        MOVE.B  #1,game_over_menu_active
                     ELSE
                         JSR     LOAD_IN_RANDOM_NEW_SONG
                         ADD.W   #1,previous_notes_speed
@@ -2144,7 +2142,18 @@ RENDER_SCREEN
             TRAP    #15
             JMP     PAUSE_MENU_LOOP
         ELSE
-            JSR     CHECK_LIFE_AMOUNTS
+            IF.B song_playing_type <EQ> #1  THEN
+                JSR     CHECK_LIFE_AMOUNTS
+            ELSE
+                IF.B game_over_menu_active <EQ> #1  THEN
+                    CLR.B   pause_menu_active
+                    ; repaints screen
+                    MOVEQ   #94,D0
+                    TRAP    #15
+                    CLR.B   player_1_action_colour
+                    JSR     GAME_OVER_LOOP
+                ENDI
+            ENDI
             JSR     REPAINT_SCREEN
         ENDI
         RTS
@@ -2618,15 +2627,23 @@ DRAW_INFO_HUD
         MOVE.L  #WHITE,D1
         MOVE.L  #$06120000,D2
         TRAP    #15
+        IF.B song_playing_type <EQ> #1  THEN
+            JSR     DRAW_LIFE_BARS
 
-        JSR     DRAW_LIFE_BARS
+            ; sets pen fill to black
+            MOVE.W  #81,D0
+            CLR.L   D1
+            TRAP    #15
 
-        ; sets pen fill to black
-        MOVE.W  #81,D0
-        CLR.L   D1
-        TRAP    #15
+            JSR     DRAW_SCORE_AND_LIFE_TEXT
+        ELSE
+            ; sets pen fill to black
+            MOVE.W  #81,D0
+            CLR.L   D1
+            TRAP    #15
 
-        JSR     DRAW_SCORE_AND_LIFE_TEXT
+            JSR     DRAW_NOTES_HIT_TEXT
+        ENDI
         JSR     DRAW_SONG_NAME
         JSR     DRAW_STREAKS
 
@@ -2659,6 +2676,60 @@ DRAW_SCORE_AND_LIFE_TEXT
         MOVEQ   #14,D0
         LEA     life_text,A1
         TRAP    #15
+        RTS
+
+
+DRAW_NOTES_HIT_TEXT
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$1801,D1
+        TRAP    #15
+
+        ; set font colour
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06120000,D2
+        TRAP    #15
+
+        ; show text
+        MOVEQ   #14,D0
+        LEA     notes_hit_text,A1
+        TRAP    #15
+        
+        ; set font colour
+        MOVEQ   #21,D0
+        MOVE.L  #RED,D1
+        MOVE.L  #$06120002,D2
+        TRAP    #15
+
+        ; show x
+        MOVEQ   #14,D0
+        ADD.L   #11,A1
+        TRAP    #15
+
+        ; show number
+        MOVEQ   #3,D0
+        CLR.L   D1
+        MOVE.W  player_1_notes_hit_count,D1
+        TRAP    #15
+
+        IF.B two_player <EQ> #1 THEN
+            ; set font colour
+            MOVEQ   #21,D0
+            MOVE.L  #LIME,D1
+            MOVE.L  #$06120002,D2
+            TRAP    #15
+
+            ; show x
+            MOVEQ   #14,D0
+            TRAP    #15
+
+            ; show number
+            MOVEQ   #3,D0
+            CLR.L   D1
+            MOVE.W  player_2_notes_hit_count,D1
+            TRAP    #15
+        ENDI
         RTS
 
 
@@ -2797,6 +2868,12 @@ DRAW_LIFE_BARS
 
 
 DRAW_SONG_NAME
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06120000,D2
+        TRAP    #15
+
         ; sets the cursor position
         MOVEQ   #11,D0
         MOVE.L  #$3025,D1
@@ -3464,15 +3541,17 @@ DRAW_GAME_OVER
             TRAP    #15
             ; show number
             MOVEQ   #3,D0
-            MOVE.L  player_1_notes_hit_count,D1
+            CLR.L   D1
+            MOVE.W  player_1_notes_hit_count,D1
             TRAP    #15
-            ; show text
+            ; show /
             MOVEQ   #14,D0
             ADD.L   #11,A1
             TRAP    #15
             ; show number
             MOVEQ   #3,D0
-            MOVE.L  treble_total_notes,D1
+            CLR.L   D1
+            MOVE.W  treble_total_notes,D1
             TRAP    #15
 
             IF.B two_player <EQ> #1 THEN
@@ -3482,15 +3561,16 @@ DRAW_GAME_OVER
                 TRAP    #15
                 ; show number
                 MOVEQ   #3,D0
-                MOVE.L  player_2_notes_hit_count,D1
+                CLR.L   D1
+                MOVE.W  player_2_notes_hit_count,D1
                 TRAP    #15
-                ; show text
+                ; show /
                 MOVEQ   #14,D0
-                ADD.L   #11,A1
                 TRAP    #15
                 ; show number
                 MOVEQ   #3,D0
-                MOVE.L  bass_total_notes,D1
+                CLR.L   D1
+                MOVE.W  bass_total_notes,D1
                 TRAP    #15
             ENDI
         ENDI
@@ -4002,6 +4082,7 @@ treble_total_notes              DC.W    0               ; stores the total amoun
 bass_total_notes                DC.W    0               ; stores the total amount of visible bass notes spawned
 player_1_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
 player_2_notes_hit_count        DC.W    0               ; stores the number of visible notes hit
+notes_hit_text                  DC.B    'Notes hit:',0,' x',0
 song_name_text                  DC.B    'Currently playing: ',0
 life_text                       DC.B    'Life:',0
 
@@ -4038,6 +4119,7 @@ pause_menu_text                 DC.B    'Paused',0,'Continue',0,'Main Menu',0
 game_over_menu_text             DC.B    'Game Over',0,'Player 1 Wins',0,'Player 2 Wins',0,'Restart',0,'Main Menu',0
 game_over_streak_text           DC.B    'Longest Streak:',0
 game_over_notes_hit_text        DC.B    'Notes hit:',0,'/',0
+game_over_menu_active           DC.B    0
 
 select_song_menu_text           DC.B    'Select Song',0,'Play Song',0,'Main Menu',0
 select_marker                   DC.B    '> ',0
