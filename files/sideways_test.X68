@@ -21,17 +21,11 @@
 * 
 * Drawing
 * select menu
-* pause menu
 * game over screen
 * practice win screen
 * 
 * song_playing_type needs to change whether another song is put in
 * speed up rendering by not rerendering the whole screen
-* 
-* graphical issue when exiting pause screen to main menu
-* note plays incorrectly on loading menu
-* loading screen not lined up
-* change to speed up less when changing song
 * 
 
 ; set constants
@@ -79,8 +73,8 @@ START   ORG    $1000
         MOVE.L  #SCREEN_WIDTH*$10000+SCREEN_HEIGHT,D1
         TRAP    #15
         ; sets the window to be fullscreen
-        MOVEQ   #2,D1
-        TRAP    #15
+        * MOVEQ   #2,D1
+        * TRAP    #15
 
         ; up and down arrow keys
         MOVE.L  #$26280000,player_2_keymaps
@@ -891,9 +885,9 @@ LOAD_SCREEN_LOOP
             MOVE.L  D1,last_object_time
             CLR.B   player_1_action_colour
             LEA     note_objects,A1
-            ; puts in H4cn
-            MOVE.L  #$4834636E,8(A1)
-            CLR.B   9(A1)
+            ; puts in H5cn
+            MOVE.L  #$4835636E,8(A1)
+            CLR.B   12(A1)
             JSR     PLAY_MUSIC_ON_HIT
             JMP     GAME_LOOP
         ENDI
@@ -1058,23 +1052,25 @@ GAME_OVER_LOOP
         JSR HANDLE_MENU_SELECT
 
         IF.B player_1_action_colour <EQ> #1 THEN
-            MOVE.B  #1,two_player
             CLR.B   player_1_action_colour
-            JMP     MAIN_MENU_LOOP
+            BSR     REPAINT_SCREEN
+            JMP     GAME_START
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
+                MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
-                JMP     GAME_START
+                BSR     REPAINT_SCREEN
+                JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
         CLR.B   player_1_action_colour
 
+        JSR     REPAINT_AREA
         JSR     DRAW_GAME_OVER
-        JSR     REPAINT_SCREEN
 
         ; delay
         MOVEQ   #23,D0
-        MOVEQ   #1,D1
+        MOVEQ   #10,D1
         TRAP    #15
         JMP     GAME_OVER_LOOP
 
@@ -1186,12 +1182,12 @@ CHECK_COLLISIONS
                                 CLR.B   treble_last_note_success
                                 CLR.B   player_1_charge_amount
                                 CLR.W   player_1_longest_streak
-                                SUB.W   #199,player_1_life_amount
+                                ;SUB.W   #199,player_1_life_amount
                             ELSE
                                 CLR.B   bass_last_note_success
                                 CLR.B   player_2_charge_amount
                                 CLR.W   player_2_longest_streak
-                                SUB.W   #199,player_2_life_amount
+                                ;SUB.W   #199,player_2_life_amount
                             ENDI
                             MOVE.W  previous_notes_speed,D0
                             IF.W notes_speed <HI> D0    THEN
@@ -1497,7 +1493,7 @@ PAUSE_MENU_LOOP
 
         JSR     REPAINT_AREA
         JSR     DRAW_PAUSE_MENU
-        
+
         ; delay
         MOVEQ   #23,D0
         MOVEQ   #10,D1
@@ -2028,7 +2024,7 @@ DECREMENT_NOTES_TIMES
                         JSR     GAME_WON_MENU_LOOP
                     ELSE
                         JSR     LOAD_IN_RANDOM_NEW_SONG
-                        ADD.W   #2,previous_notes_speed
+                        ADD.W   #1,previous_notes_speed
                         MOVE.W  previous_notes_speed,notes_speed
                     ENDI
                 ENDI
@@ -3182,7 +3178,7 @@ DRAW_LOAD_SCREEN
 
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$220E,D1
+        MOVE.L  #$220B,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -3190,7 +3186,7 @@ DRAW_LOAD_SCREEN
         TRAP    #15
         ; sets the cursor position
         MOVEQ   #11,D0
-        MOVE.L  #$2510,D1
+        MOVE.L  #$250E,D1
         TRAP    #15
         ; show text
         MOVEQ   #14,D0
@@ -3206,7 +3202,7 @@ DRAW_LOAD_SCREEN
         ; draw red bell
         MOVE.L  unfilled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
-        MOVE.L  #$040002E0,(A1)
+        MOVE.L  #$044002B0,(A1)
         MOVEQ   #2,D0
         JSR     DRAW_NOTE
 
@@ -3224,8 +3220,8 @@ DRAW_LOAD_SCREEN
 
             ; draw rectangle
             MOVEQ   #87,D0
-            MOVE.W  #700,D1
-            MOVE.W  #$2F0,D2
+            MOVE.W  #750,D1
+            MOVE.W  #$2C0,D2
             MOVE.W  D1,D3
             MOVE.W  D2,D4
             ADD.W   loading_screen_charge,D3
@@ -3294,7 +3290,7 @@ DRAW_PAUSE_MENU
         ; draw blue bell
         MOVE.L  filled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
-        MOVE.L  #$03300200,(A1)
+        MOVE.L  #$034001F0,(A1)
         MOVEQ   #1,D0
         JSR     DRAW_NOTE
 
