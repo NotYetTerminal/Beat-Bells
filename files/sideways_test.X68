@@ -46,10 +46,18 @@ LANE_ADDRESSES_SIZE     EQU     55
 LIFE_BAR_X              EQU     700
 
 NUMBER_OF_SONGS         EQU     2
+VARIABLES_START         EQU     $4000
 
+    MEMORY  ROM     $1000,VARIABLES_START-1
+    ORG    $1000
 
 ; program start
-START   ORG    $1000
+START
+        ; checks if $4000 has been accidentally used
+        IF.L VARIABLES_START <NE> #$FFFFFFFF  THEN
+            ILLEGAL
+        ENDI
+        
         ; checks if $10000 has been accidentally used
         IF.L TREBLE_FILE_CONTENTS <NE> #$FFFFFFFF  THEN
             ILLEGAL
@@ -526,7 +534,7 @@ MAIN_MENU_LOOP
 
         IF.B player_1_action_colour <EQ> #1 THEN
             CLR.B   player_1_action_colour
-            CLR.B   player_1_action_colour
+            MOVE.B  #0,song_playing_type
             JMP     SELECT_SONG_MENU_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
@@ -600,13 +608,28 @@ HANDLE_DIFFICULTY_INPUT
 
 
 SELECT_SONG_MENU_LOOP
+        JSR HANDLE_MENU_SELECT
+
+        IF.B player_1_action_colour <EQ> #1 THEN
+            CLR.B   player_1_action_colour
+            BSR     REPAINT_SCREEN
+            JMP     GAME_START
+        ELSE
+            IF.B player_1_action_colour <EQ> #2 THEN
+                MOVE.B  #1,two_player
+                CLR.B   player_1_action_colour
+                BSR     REPAINT_SCREEN
+                JMP     MAIN_MENU_LOOP
+            ENDI
+        ENDI
+        CLR.B   player_1_action_colour
 
         JSR     DRAW_SELECT_SONG_MENU
         JSR     REPAINT_SCREEN
 
         ; delay
         MOVEQ   #23,D0
-        MOVEQ   #1,D1
+        MOVEQ   #10,D1
         TRAP    #15
         JMP     SELECT_SONG_MENU_LOOP
 
@@ -2033,7 +2056,7 @@ DECREMENT_NOTES_TIMES
                     ; load in new song or show victory screen with percentage hit
                     IF.B song_playing_type <EQ> #0  THEN
                         CLR.B   player_1_action_colour
-                        JSR     GAME_WON_MENU_LOOP
+                        JSR     GAME_OVER_LOOP
                     ELSE
                         JSR     LOAD_IN_RANDOM_NEW_SONG
                         ADD.W   #1,previous_notes_speed
@@ -2057,31 +2080,6 @@ CHECK_LANES_EMPTY
         ENDF
         MOVEQ   #1,D0
         RTS
-
-
-GAME_WON_MENU_LOOP
-        JSR HANDLE_MENU_SELECT
-
-        IF.B player_1_action_colour <EQ> #1 THEN
-            MOVE.B  #1,two_player
-            CLR.B   player_1_action_colour
-            JMP     MAIN_MENU_LOOP
-        ELSE
-            IF.B player_1_action_colour <EQ> #2 THEN
-                CLR.B   player_1_action_colour
-                JMP     GAME_START
-            ENDI
-        ENDI
-        CLR.B   player_1_action_colour
-
-        JSR     DRAW_GAME_WON_MENU
-        JSR     REPAINT_SCREEN
-        
-        ; delay
-        MOVEQ   #23,D0
-        MOVEQ   #1,D1
-        TRAP    #15
-        JMP     GAME_WON_MENU_LOOP
 
 
 RENDER_SCREEN
@@ -3178,6 +3176,66 @@ CHANGE_COLOUR
 
 
 DRAW_SELECT_SONG_MENU
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06400003,D2
+        TRAP    #15
+
+        ; draw text
+        MOVEQ   #95,D0
+        MOVE.W  #730,D1
+        MOVE.W  #100,D2
+        LEA     select_song_menu_text,A1
+        TRAP    #15
+
+
+        ; set font
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06180000,D2
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$2A18,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #12,A1
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$4018,D1
+        TRAP    #15
+        ; show text
+        MOVEQ   #14,D0
+        ADD.L   #10,A1
+        TRAP    #15
+
+
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
+        TRAP    #15
+
+        ; draw blue bell
+        MOVE.L  filled_notes_1_start_sprite,A0
+        LEA     main_menu_bell_positions,A1
+        MOVE.L  #$02800370,(A1)
+        MOVEQ   #1,D0
+        JSR     DRAW_NOTE
+
+        ; draw red bell
+        MOVE.L  filled_notes_1_start_sprite,A0
+        ADD.L   #$1800000,(A1)
+        MOVEQ   #2,D0
+        JSR     DRAW_NOTE
+
+        ADDQ.B  #1,sprite_gif_index
+        AND.B   #7,sprite_gif_index
+
         JSR     DRAW_CONTROL_BUTTONS
         RTS
 
@@ -3728,6 +3786,8 @@ EXIT_PROGRAM
         TRAP    #15
 
 
+    ORG    VARIABLES_START
+
 ; variables
 random_value                    DS.L    1       ; stores a random variable
 
@@ -3888,6 +3948,8 @@ pause_menu_text                 DC.B    'Paused',0,'Continue',0,'Main Menu',0
 game_over_menu_text             DC.B    'Game Over',0,'Player 1 Wins',0,'Player 2 Wins',0,'Restart',0,'Main Menu',0
 game_over_streak_text           DC.B    'Longest Streak:',0
 game_over_notes_hit_text        DC.B    'Notes hit:',0,'/',0
+
+select_song_menu_text           DC.B    'Select Song',0,'Play Song',0,'Main Menu',0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
