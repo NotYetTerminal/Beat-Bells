@@ -10,12 +10,12 @@
 * this is an issue of the transcriber and not the assembly code.
 * When reading in the sound files the program won't find any B or E sharps, the warnings
 * can be ignored, these don't exist.
-* Will get a similar error with sprites.
+* Will get a similar reading error with sprites.
 * 
 * Error
 * Players can play the other's notes if they are on the same line.
 * There may be a game breaking bug where some rogue for or while loop is changing
-* the actual code in memory, however this has been patched byt setting that memory
+* the actual code in memory, however this has been patched by setting that memory
 * location to be ROM.
 * 
 * TODO
@@ -51,7 +51,7 @@ LIFE_BAR_X              EQU     700
 NUMBER_OF_SONGS         EQU     32
 VARIABLES_START         EQU     $4000
 
-    MEMORY  ROM     $1000,VARIABLES_START-1
+    MEMORY  Read    $1000,VARIABLES_START-1
     ORG    $1000
 
 ; program start
@@ -630,42 +630,38 @@ SELECT_SONG_MENU_LOOP
         ENDI
         CLR.B   player_1_action_colour
 
-        LEA     player_1_moving,A2
         ; check for keys
         MOVE.W  #19,D0
-        ; 2 4
-        MOVE.L  #$32340000,D1
+        ; 1 2 3 4
+        MOVE.L  #$31323334,D1
         TRAP    #15
 
-        ; checks if any key is pressed
-        IF.L #0 <EQ> D1 THEN
-            CLR.B   (A2)
-        ELSE
-            ; checks 2
-            BTST.L  #24,D1
-            IF  <NE>    THEN
-                BTST.B  #0,(A2)
-                IF  <EQ>    THEN
-                    IF.B select_song_line <NE> #0   THEN
-                        SUB.B   #1,select_song_line
-                        BSET.B  #0,(A2)
-                    ENDI
-                ENDI
-            ELSE
-                BCLR.B  #0,(A2)
+        ; checks 1
+        BTST.L  #24,D1
+        IF  <NE>    THEN
+            IF.B select_song_line <GT> #7   THEN
+                SUB.B   #8,select_song_line
             ENDI
-            ; checks 4
-            BTST.L  #16,D1
-            IF  <NE>    THEN
-                BTST.B  #1,(A2)
-                IF  <EQ>    THEN
-                    IF.B select_song_line <NE> #NUMBER_OF_SONGS-1   THEN
-                        ADD.B   #1,select_song_line
-                        BSET.B  #1,(A2)
-                    ENDI
-                ENDI
-            ELSE
-                BCLR.B  #1,(A2)
+        ENDI
+        ; checks 2
+        BTST.L  #16,D1
+        IF  <NE>    THEN
+            IF.B select_song_line <NE> #0   THEN
+                SUB.B   #1,select_song_line
+            ENDI
+        ENDI
+        ; checks 3
+        BTST.L  #8,D1
+        IF  <NE>    THEN
+            IF.B select_song_line <LT> #24  THEN
+                ADD.B   #8,select_song_line
+            ENDI
+        ENDI
+        ; checks 4
+        BTST.L  #0,D1
+        IF  <NE>    THEN
+            IF.B select_song_line <NE> #NUMBER_OF_SONGS-1   THEN
+                ADD.B   #1,select_song_line
             ENDI
         ENDI
 
@@ -914,6 +910,7 @@ LOAD_SONG_FILE_NAME
                 ADDQ.L  #1,D5
                 ADD.L   D5,A0
                 SUBQ.B  #1,D0
+                CLR.L   D5
             ENDI
             ADDQ.L  #1,D5
         ENDW
@@ -1414,6 +1411,7 @@ PLAY_MUSIC_ON_HIT
                 ADD.B   #1,D6
                 MOVE.B  (A1,D6),D4
                 LEA     NOTES_NAMES,A3
+                CLR.L   D1
 
                 ; if not 0
                 IF #48 <NE> D4  THEN
