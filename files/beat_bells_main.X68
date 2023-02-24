@@ -4017,7 +4017,7 @@ song_name               DC.B    'songs/'
 
 number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
-ALL_SONG_FILE_NAMES             DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+ALL_SONG_FILE_NAMES             DC.B    'We_Are_Number_One_but_it&#039;s_a_piano_transcript',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
