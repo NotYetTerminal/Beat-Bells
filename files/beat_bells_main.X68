@@ -1,8 +1,8 @@
 *-----------------------------------------------------------
-* Title      :  sideways test
+* Title      :  Beat Bells
 * Written by :  Gabor Major
-* Date       :  13/01/2023
-* Description:  project test
+* Date       :  24/02/2023
+* Description:  The one and only assembly file for the game
 *-----------------------------------------------------------
 
 * TODO
@@ -10,20 +10,21 @@
 * decrement notes times slow
 * 
 * Warnings
-* if in the piano sheet there is a held note with lines then it won't play the full thing
-* this is an issue of the transcriber and not the assembly code
-* when reading in the sound files the program won't find any B or E sharps, the warnings
-* can be ignored, these don't exist
-* will get a similar error with sprites
+* If in the piano sheet there is a held note with lines then it won't play the full thing
+* this is an issue of the transcriber and not the assembly code.
+* When reading in the sound files the program won't find any B or E sharps, the warnings
+* can be ignored, these don't exist.
+* Will get a similar error with sprites.
 * 
 * Error
-* Players can play the other's notes if they are on the same line
+* Players can play the other's notes if they are on the same line.
+* There may be a game breaking bug where some rogue for or while loop is changing
+* the actual code in memory, however this has been patched byt setting that memory
+* location to be ROM.
 * 
 * Drawing
 * select menu
-* 
-* song_playing_type needs to change whether another song is put in
-* speed up rendering by not rerendering the whole screen
+* gameplay hud needs to change for practice game
 * 
 
 ; set constants
