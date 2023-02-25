@@ -2894,12 +2894,6 @@ DRAW_SONG_NAME
         LEA     song_name_text,A1
         TRAP    #15
 
-        ; set font
-        MOVEQ   #21,D0
-        MOVE.L  #WHITE,D1
-        MOVE.L  #$06120002,D2
-        TRAP    #15
-
         ; show song name
         MOVEQ   #14,D0
         LEA     song_name,A1
@@ -4029,7 +4023,7 @@ song_name               DC.B    'songs/'
 
 number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
-ALL_SONG_FILE_NAMES             DC.B    'Gourmet Race',0,'Levan Polkka',0,'Running in the 90s',0,'Running in the 90s',0
+ALL_SONG_FILE_NAMES             DC.B    'Gourmet Race',0,'Levan Polkka',0,'Nyan Cat',0,'Never Gonna Give You Up',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
