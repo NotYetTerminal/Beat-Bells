@@ -1,0 +1,139 @@
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+D2fs D3fs D3an D4cs,0,0,0,
+0,0,0,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+D2fs D3fs D3an D4cs,0,0,0,
+0,0,0,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+
+B2fs,0,B3fs B3an B4cs,0,
+B2cs,0,B3fs B3an B4cs,0,
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+
+B2en,0,B3en B3gs B4cs,0,
+B2cs,0,B3en B3gs B4cs,0,
+D2fs D3fs D3an D4cs,0,0,0,
+0,0,0,0,
+
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+
+D3cs,0,0,0,
+B3en,0,B3cs,0,
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+
+D3cs,0,0,0,
+B3en,0,B3cs,0,
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+
+D3cs,0,0,0,
+B3en,0,B3cs,0,
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+D3fs,0,0,0,
+B3cs,0,B3en,0,
+
+D3cs,0,0,0,
+B3en,0,B3cs,0,
+D3fs,0,0,0,
+0,0,0,0,

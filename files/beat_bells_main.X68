@@ -21,12 +21,15 @@
 * TODO
 * decrement notes times slow
 * speed up rendering by drawing lines instead of rectangles
-* change menus update speed
+* fix notes moving offscreen
+* add custom times to each song
 * 
+* points fading in and out
 * try to merge two sprites when punching
 * add sound for punching
 * add sound for missing a note
 * look for other notes wav sound files
+* make it look like pianos
 * 
 
 ; set constants
@@ -832,9 +835,12 @@ LOAD_IN_SONG
         MOVE.B  #128,bass_quater_beat_count
         MOVE.B  #1,treble_last_note_success
         MOVE.B  #1,bass_last_note_success
+        CLR.L   D3
+        MOVE.B  song_name_last_index,D3
 
         MOVEQ   #51,D0
         LEA     song_name,A1
+        MOVE.B  #84,(A1,D3)
         TRAP    #15
 
         MOVEQ   #53,D0
@@ -848,8 +854,6 @@ LOAD_IN_SONG
 
         MOVEQ   #51,D0
         LEA     song_name,A1
-        CLR.L   D3
-        MOVE.B  song_name_last_index,D3
         MOVE.B  #66,(A1,D3)
         TRAP    #15
 
@@ -1463,7 +1467,7 @@ PLAY_MUSIC_ON_HIT
                 ENDI
 
                 ; puts in the rest time
-                SUB.B   #60,D3
+                SUB.B   #63,D3
                 MOVE.B  D3,(A2,D1)
 
                 ; D1 needed here
@@ -2099,6 +2103,14 @@ DECREMENT_NOTES_TIMES
                 IF.B D0 <EQ> #1 THEN
                     ; load in new song or show victory screen with percentage hit
                     IF.B song_playing_type <EQ> #0  THEN
+                        MOVE.W  player_1_longest_streak,D7
+                        IF.W player_1_streak <HI> D7    THEN
+                            MOVE.W  player_1_streak,player_1_longest_streak
+                        ENDI
+                        MOVE.W  player_2_longest_streak,D7
+                        IF.W player_2_streak <HI> D7    THEN
+                            MOVE.W  player_2_streak,player_2_longest_streak
+                        ENDI
                         MOVE.B  #1,game_over_menu_active
                     ELSE
                         JSR     LOAD_IN_RANDOM_NEW_SONG
@@ -2144,7 +2156,7 @@ RENDER_SCREEN
                 JSR     CHECK_LIFE_AMOUNTS
             ELSE
                 IF.B game_over_menu_active <EQ> #1  THEN
-                    CLR.B   pause_menu_active
+                    CLR.B   game_over_menu_active
                     ; repaints screen
                     MOVEQ   #94,D0
                     TRAP    #15
@@ -4017,7 +4029,7 @@ song_name               DC.B    'songs/'
 
 number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
-ALL_SONG_FILE_NAMES             DC.B    'We_Are_Number_One_but_it&#039;s_a_piano_transcript',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+ALL_SONG_FILE_NAMES             DC.B    'Gourmet Race',0,'Levan Polkka',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
@@ -4172,7 +4184,6 @@ unfilled_notes_1_start_sprite   DS.L    1
 unfilled_notes_2_start_sprite   DS.L    1
 
         END    START
-
 
 *~Font name~Courier New~
 *~Font size~10~
