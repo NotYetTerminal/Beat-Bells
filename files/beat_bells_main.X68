@@ -1009,8 +1009,8 @@ GAME_LOOP
         TRAP    #15
         SUB.L   last_note_spawn_time,D1
         IF.B song_note_spawning_speed <LE> D1   THEN
-            JSR     SPAWN_NEW_NOTE
             JSR     DECREMENT_NOTES_TIMES
+            JSR     SPAWN_NEW_NOTE
 
             ; increments and does modulus 8
             ADDQ.B  #1,sprite_gif_index
@@ -4030,11 +4030,12 @@ song_name               DC.B    'songs/'
 number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
 song_note_spawning_speed        DC.B    10
-SONGS_NOTE_SPAWNING_SPEED_ARRAY DC.L    $0A080A0A
-                                DC.L    $0A0A0B07
-ALL_SONG_FILE_NAMES             DC.B    'Bad Apple',0,'Gourmet Race',0,'Levan Polkka',0,'Never Gonna Give You Up',0
-                                DC.B    'Nyan Cat',0,'Running in the 90s',0,'Spring',0,'Take On Me',0
-                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+SONGS_NOTE_SPAWNING_SPEED_ARRAY DC.L    $0A08080A
+                                DC.L    $0A0A0A08
+                                DC.L    $0B070000
+ALL_SONG_FILE_NAMES             DC.B    'Bad Apple',0,'Dragostea Din Tei',0,'Gourmet Race',0,'Ievan Polkka',0
+                                DC.B    'Never Gonna Give You Up',0,'Nyan Cat',0,'Running in the 90s',0,'Sandstorm',0
+                                DC.B    'Spring',0,'Take On Me',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0

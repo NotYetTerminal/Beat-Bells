@@ -1,0 +1,239 @@
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+Z1en Z2en,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+D1en D2en,0,0,0,
+
+P2en C3en C3bn,0,0,C3en C3bn,
+0,0,B3en B3bn,0,
+C3en C3bn,0,0,C3en C3bn,
+0,0,B3bn B4en,0,
+
+H2dn C3bn C4en,0,0,C3bn C4en,
+0,0,B3an B4dn,0,
+H2an C3an C4dn,0,0,C3an C4dn,
+0,0,B3dn B3an,0,
+
+Z2en C3en C3bn,0,0,C3en C3bn,
+0,0,B3en B3bn,0,
+C3en C3bn,0,0,C3en C3bn,
+0,0,B3bn B4en,0,
+
+C3en C3bn,0,0,C3en C3bn,
+0,0,B3en B3bn,0,
+C3en C3bn,0,0,C3en C3bn,
+0,0,B3bn B4en,0,
+
+H2en C3en C3bn,0,0,C3en C3bn,
+0,0,B3en B3bn,0,
+H2en C3en C3bn,0,0,C3en C3bn,
+0,0,B3en B3bn,0,
+
+D2en C3en C3bn,0,0,C3en C3bn,
+D2en,0,B3en B3bn,0,
+D2en C3en C3bn,0,0,C3en C3bn,
+D2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+A2en,A3en A3bn,A2en,A3en A3bn,
+
+A2en,A2fn,A2fs,A2gn,
+A2gs,A2an,A2as,A2bn,
+A3cn,A3cs,A3dn,A3ds,
+D3en,0,0,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2an,0,B3en B3an,0,
+B2an,0,B3en B3an,0,
+B2gn,0,B3dn B3gn,0,
+B2gn,0,B3dn B3gn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2an,0,B3en B3an,0,
+B2an,0,B3en B3an,0,
+B2gn,0,B3dn B3gn,0,
+B2gn,0,B3dn B3gn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+
+B1an B2an,0,B3en B3an,0,
+B1an B2an,0,B3en B3an,0,
+B1en B2en,0,B3en B3an,0,
+B1en B2en,0,B3en B3an,0,
+
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+
+B1an B2an,0,B3en B3an,0,
+B1an B2an,0,B3en B3an,0,
+B1en B2en,0,B3en B3an,0,
+B1en B2en,0,B3en B3an,0,
+
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2an,0,B3en B3an,0,
+B2an,0,B3en B3an,0,
+B2gn,0,B3dn B3gn,0,
+B2gn,0,B3dn B3gn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2an,0,B3en B3an,0,
+B2an,0,B3en B3an,0,
+B2gn,0,B3dn B3gn,0,
+B2gn,0,B3dn B3gn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2an,0,B3en B3an,0,
+B2an,0,B3en B3an,0,
+B2gn,0,B3dn B3gn,0,
+B2gn,0,B3dn B3gn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+B2en,0,B3en B3bn,0,
+
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+B1en B2en,0,B3en B3bn,0,
+
+P1en P2en,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
