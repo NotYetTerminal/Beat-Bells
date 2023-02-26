@@ -22,7 +22,7 @@
 * decrement notes times slow
 * speed up rendering by drawing lines instead of rectangles
 * fix notes moving offscreen
-* add custom times to each song
+* variable custom times for difficulties
 * 
 * points fading in and out
 * try to merge two sprites when punching
@@ -907,6 +907,12 @@ GET_RANDOM_SONG_INDEX
 
 ; D0 must contain the index of song name
 LOAD_SONG_FILE_NAME
+        LEA     SONGS_NOTE_SPAWNING_SPEED_ARRAY,A0
+        CLR.L   D1
+        MOVE.B  D0,D1
+        ADD.L   D1,A0
+        MOVE.B  (A0),song_note_spawning_speed
+
         LEA     ALL_SONG_FILE_NAMES,A0
         CLR.L   D5
         WHILE.B D0 <NE> #0  DO
@@ -1002,7 +1008,7 @@ GAME_LOOP
         MOVE.W  #8,D0
         TRAP    #15
         SUB.L   last_note_spawn_time,D1
-        IF.L #10 <LE> D1    THEN
+        IF.B song_note_spawning_speed <LE> D1   THEN
             JSR     SPAWN_NEW_NOTE
             JSR     DECREMENT_NOTES_TIMES
 
@@ -4023,8 +4029,11 @@ song_name               DC.B    'songs/'
 
 number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
-ALL_SONG_FILE_NAMES             DC.B    'Gourmet Race',0,'Levan Polkka',0,'Nyan Cat',0,'Never Gonna Give You Up',0
-                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+song_note_spawning_speed        DC.B    10
+SONGS_NOTE_SPAWNING_SPEED_ARRAY DC.L    $0A080A0A
+                                DC.L    $0A0A0B07
+ALL_SONG_FILE_NAMES             DC.B    'Bad Apple',0,'Gourmet Race',0,'Levan Polkka',0,'Never Gonna Give You Up',0
+                                DC.B    'Nyan Cat',0,'Running in the 90s',0,'Spring',0,'Take On Me',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
                                 DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
