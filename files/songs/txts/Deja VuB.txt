@@ -1,0 +1,334 @@
+P2an,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+B1fn,0,B1fn,0,
+B2fn,0,B1fn,0,
+B1fn,0,B1fn,0,
+B2fn,0,B1fn,0,
+
+B1gn,0,B1gn,0,
+B2gn,0,B1gn,0,
+B1gn,0,B1gn,0,
+B2gn,0,B1gn,0,
+
+B1an,0,B1an,0,
+B2an,0,B1an,0,
+B1an,0,B1an,0,
+B2an,0,B1an,0,
+
+B1fn,0,B1fn,0,
+B2fn,0,B1fn,0,
+B1gn,0,B1gn,0,
+B2gn,0,B1gn,0,
+
+B1fn,0,B1fn,0,
+B2fn,0,B1fn,0,
+B1fn,0,B1fn,0,
+B2fn,0,B1fn,0,
+
+B1gn,0,B1gn,0,
+B2gn,0,B1gn,0,
+B1gn,0,B1gn,0,
+B2gn,0,B1gn,0,
+
+B2dn,0,B2dn,0,
+B3dn,0,B2dn,0,
+B2dn,0,B2dn,0,
+B3dn,0,B2dn,0,
+
+B2dn,0,B2dn,0,
+B3dn,0,B2dn,0,
+B2dn,0,B2dn,0,
+B3dn,0,B2dn,0,
+
+B2an,0,B2an,0,
+B3an,0,B2an,0,
+B2an,0,B2an,0,
+B3an,0,B2an,0,
+
+B2gn,0,B2gn,0,
+B3gn,0,B2gn,0,
+B2gn,0,B2gn,0,
+B3gn,0,B2gn,0,
+
+B2an,0,B2an,0,
+B3an,0,B2an,0,
+B2an,0,B2an,0,
+B3an,0,B2an,0,
+
+B2an,0,B2an,0,
+B3an,0,B2an,0,
+B2an,0,B2an,0,
+B3an,0,B2an,0,
+
+B2fn,0,B2fn,0,
+B3fn,0,B2fn,0,
+B2fn,0,B2fn,0,
+B3fn,0,B2fn,0,
+
+B2gn,0,B2gn,0,
+B3gn,0,B2gn,0,
+B2gn,0,B2gn,0,
+B3gn,0,B2gn,0,
+
+B2dn,0,B2dn,0,
+B3dn,0,B2dn,0,
+B2dn,0,B2dn,0,
+B3dn,0,B2dn,0,
+
+D2en D3en,0,0,0,
+D1en D2en,0,0,0,
+D1en D2en,0,0,0,
+D1en D2en,0,0,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B2gn,0,
+B2bl,0,B3el,0,
+B2bl,0,B2fn,0,
+
+B3cn,0,B3fn,0,
+B2fn,0,B3cn,0,
+B3fn,0,B2fn,0,
+B3cn,0,B3fn,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B2el,0,
+B2bl,0,B3el,0,
+B2bl,0,B2fn,0,
+
+B3cn,0,B3fn,0,
+B2fn,0,B3cn,0,
+B3fn,0,B2fn,0,
+B3cn,0,B3fn,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B2el,0,
+B2bl,0,B3el,0,
+B2bl,0,B2fn,0,
+
+B3cn,0,B3fn,0,
+B2fn,0,B3cn,0,
+B3fn,0,B2fn,0,
+B3cn,0,B3fn,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B2el,0,
+B2bl,0,B3el,0,
+B2el,0,B2bl,0,
+
+B2fn B3fn,0,D1fn D2fn,0,
+0,0,L1fn L2fn,0,
+0,0,0,0,
+0,0,0,0,
+
+B2cn B2gn,0,B2cn B2gn,0,
+B2cn B2gn,0,B2cn B2gn,0,
+B2cn B2gn,0,B2cn B2gn,0,
+B2cn B2gn,0,B2cn B2gn,0,
+
+B2cn B2gn,0,B2cn B2gn,0,
+B2cn B2gn,0,B2cn B2gn,0,
+B2cn B2gn,0,B2cn B2gn,0,
+B2cn B2gn,0,B2cn B2gn,0,
+
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+
+B3cn B3gn,0,B3cn B3gn,0,
+B3cn B3gn,0,B3cn B3gn,0,
+B3cn B3gn,0,B3cn B3gn,0,
+B3cn B3gn,0,B3cn B3gn,0,
+
+B3cn B3gn,0,B3cn B3gn,0,
+B3cn B3gn,0,B3cn B3gn,0,
+B3cn B3gn,0,B3cn B3gn,0,
+B3cn B3gn,0,B3cn B3gn,0,
+
+B2gn B3dn,0,B2gn B3dn,0,
+B2gn B3dn,0,B2gn B3dn,0,
+B2gn B3dn,0,B2gn B3dn,0,
+B2gn B3dn,0,B2gn B3dn,0,
+
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,D3cn,0,
+0,0,B2bl,0,
+B2al,0,B2gn,0,
+
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+
+B2gn B3dn,0,B2gn B3dn,0,
+B2gn B3dn,0,B2gn B3dn,0,
+B2gn B3dn,0,B2gn B3dn,0,
+B2gn B3dn,0,B2gn B3dn,0,
+
+B2al B3el,0,B2al B3el,0,
+B2bl B3fn,0,B2bl B3fn,0,
+B3cn B3gn,0,B3cn B3gn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+B2al B3el,0,B2al B3el,0,
+
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+B2bl B3fn,0,B2bl B3fn,0,
+
+B3cn B3fn B3gn,0,B3cn B3fn B3gn,0,
+B3cn B3fn B3gn,0,B3cn B3fn B3gn,0,
+B3cn B3fn B3gn,0,B3cn B3fn B3gn,0,
+B3cn B3fn B3gn,0,B3cn B3fn B3gn,0,
+
+B3cn B3el B3gn,0,0,0,
+0,0,0,0,
+H2cn H3cn,0,0,0,
+0,0,0,0,
+
+B1al,0,B2al,0,
+B1al,0,B2al,0,
+B1bl,0,B2bl,0,
+B1bl,0,B2bl,0,
+
+B2cn,0,B3cn,0,
+B2cn,0,B3cn,0,
+B2cn,0,B3cn,0,
+B1bl,0,B2bl,0,
+
+B1al,0,B2al,0,
+B1al,0,B2al,0,
+B1bl,0,B2bl,0,
+B1bl,0,B2bl,0,
+
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+
+B1al,0,B2al,0,
+B1al,0,B2al,0,
+B1bl,0,B2bl,0,
+B1bl,0,B2bl,0,
+
+B2cn,0,B3cn,0,
+B2cn,0,B3cn,0,
+B2cn,0,B3cn,0,
+B1bl,0,B2bl,0,
+
+B1al,0,B2al,0,
+B1al,0,B2al,0,
+B1bl,0,B2bl,0,
+B1bl,0,B2bl,0,
+
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+
+B1gn,0,B2gn,0,
+B1gn,0,B2gn,0,
+B1gn,0,B2gn,0,
+D1gn D2gn,0,0,0,
+
+B1al,0,B2al,0,
+B1al,0,B2al,0,
+B1bl,0,B2bl,0,
+B1bl,0,B2bl,0,
+
+B2cn,0,B3cn,0,
+B2cn,0,B3cn,0,
+B2cn,0,B3cn,0,
+B1bl,0,B2bl,0,
+
+B1al,0,B2al,0,
+B1al,0,B2al,0,
+B1bl,0,B2bl,0,
+B1bl,0,B2bl,0,
+
+B1fn,0,B2fn,0,
+B2el,0,B3el,0,
+B2dn,0,B3dn,0,
+B2bl,0,B3bl,0,
+
+B1al,0,B2al,0,
+B1al,0,B2al,0,
+B1bl,0,B2bl,0,
+B1bl,0,B2bl,0,
+
+B2cn,0,B3cn,0,
+B2cn,0,B3cn,0,
+B2cn,0,B3cn,0,
+B1bl,0,B2bl,0,
+
+B1al,0,B2al,0,
+B1al,0,B2al,0,
+B1bl,0,B2bl,0,
+B1bl,0,B2bl,0,
+
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+B1fn,0,B2fn,0,
+
+B1gn,0,B2gn,0,
+B1gn,0,B2gn,0,
+B1gn,0,B2gn,0,
+D1gn D2gn,0,0,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B2gn,0,
+B2bl,0,B3el,0,
+B2bl,0,B2fn,0,
+
+B3cn,0,B3fn,0,
+B2fn,0,B3cn,0,
+B3fn,0,B2fn,0,
+B3cn,0,B3fn,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B2el,0,
+B2bl,0,B3el,0,
+B2bl,0,B2fn,0,
+
+B3cn,0,B3fn,0,
+B2fn,0,B3cn,0,
+B3fn,0,B2fn,0,
+B3cn,0,B3fn,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B2el,0,
+B2bl,0,B3el,0,
+B2bl,0,B2fn,0,
+
+B3cn,0,B3fn,0,
+B2fn,0,B3cn,0,
+B3fn,0,B2fn,0,
+B3cn,0,B3fn,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B2el,0,
+B2bl,0,B3el,0,
+B2el,0,B2bl,0,
+
+B2fn B3fn,0,D1fn D2fn,0,
+0,0,L1fn L2fn,0,
+0,0,0,0,
+0,0,0,0,

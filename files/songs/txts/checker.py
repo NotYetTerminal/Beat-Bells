@@ -13,19 +13,19 @@ def checker(file_contents: list) -> list:
         full_line = line.split(',')
         if len(full_line) != 5 or full_line[-1] != '':
             print(full_line)
-            print(line_count)
+            print((line_count/4)*5)
             print('Not five')
             input()
         for index1 in range(len(full_line)):
             beat = full_line[index1]
             if beat == '' and index1 != len(full_line) - 1:
                 print(full_line)
-                print(line_count)
+                print((line_count/4)*5)
                 print('Wrong nothing')
             if beat != '0' and beat != '':
                 if len(beat) % 4 != 0:
                     print(full_line)
-                    print(line_count)
+                    print((line_count/4)*5)
                     print('Something missing')
                 count: str = ''
                 octave: int = 0
@@ -36,21 +36,21 @@ def checker(file_contents: list) -> list:
                     if index % 4 == 0:
                         if not beat[index].isupper():
                             print(full_line)
-                            print(line_count)
+                            print((line_count/4)*5)
                             print('Not uppercase')
                         else:
                             count = beat[index]
                     elif index % 4 == 1:
                         if not beat[index].isdigit():
                             print(full_line)
-                            print(line_count)
+                            print((line_count/4)*5)
                             print('Not number')
                         else:
                             octave = int(beat[index])
                     elif index % 4 == 2:
                         if not beat[index].islower():
                             print(full_line)
-                            print(line_count)
+                            print((line_count/4)*5)
                             print('Not lowercase')
                         else:
                             letter = beat[index]
@@ -63,7 +63,7 @@ def checker(file_contents: list) -> list:
                                 octave -= 1
                         elif beat[index] != 'n' and beat[index] != 's':
                             print(full_line)
-                            print(line_count)
+                            print((line_count/4)*5)
                             print('Not neutral or sharp')
                         else:
                             modifier = beat[index]

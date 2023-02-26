@@ -6,8 +6,6 @@
 *-----------------------------------------------------------
 
 * Warnings
-* If in the piano sheet there is a held note with lines then it won't play the full thing
-* this is an issue of the transcriber and not the assembly code.
 * When reading in the sound files the program won't find any B or E sharps, the warnings
 * can be ignored, these don't exist.
 * Will get a similar reading error with sprites.
@@ -22,7 +20,6 @@
 * decrement notes times slow
 * speed up rendering by drawing lines instead of rectangles
 * fix notes moving offscreen
-* variable custom times for difficulties
 * 
 * points fading in and out
 * try to merge two sprites when punching
@@ -911,6 +908,9 @@ LOAD_SONG_FILE_NAME
         CLR.L   D1
         MOVE.B  D0,D1
         ADD.L   D1,A0
+        IF.B two_player <EQ> #0 THEN
+            ADD.L   #1,A0
+        ENDI
         MOVE.B  (A0),song_note_spawning_speed
 
         LEA     ALL_SONG_FILE_NAMES,A0
@@ -4030,17 +4030,17 @@ song_name               DC.B    'songs/'
 number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
 song_note_spawning_speed        DC.B    10
-SONGS_NOTE_SPAWNING_SPEED_ARRAY DC.L    $0A08080A
-                                DC.L    $0A0A0A08
-                                DC.L    $0B070000
-ALL_SONG_FILE_NAMES             DC.B    'Bad Apple',0,'Dragostea Din Tei',0,'Gourmet Race',0,'Ievan Polkka',0
-                                DC.B    'Never Gonna Give You Up',0,'Nyan Cat',0,'Running in the 90s',0,'Sandstorm',0
-                                DC.B    'Spring',0,'Take On Me',0,'Running in the 90s',0,'Running in the 90s',0
-                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
-                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
-                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
-                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
-                                DC.B    'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0,'Running in the 90s',0
+SONGS_NOTE_SPAWNING_SPEED_ARRAY DC.L    $0A080808
+                                DC.L    $0A0A0A0A
+                                DC.L    $080B0709
+ALL_SONG_FILE_NAMES             DC.B    'Bad Apple',0,'Deja Vu',0,'Dragostea Din Tei',0,'Gourmet Race',0
+                                DC.B    'Ievan Polkka',0,'Never Gonna Give You Up',0,'Nyan Cat',0,'Running in the 90s',0
+                                DC.B    'Sandstorm',0,'Spring',0,'Take On Me',0,'Troupe Master Grimm',0
+                                DC.B    'A',0,'A',0,'A',0,'A',0
+                                DC.B    'A',0,'A',0,'A',0,'A',0
+                                DC.B    'A',0,'A',0,'A',0,'A',0
+                                DC.B    'A',0,'A',0,'A',0,'A',0
+                                DC.B    'A',0,'A',0,'A',0,'A',0
 
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
