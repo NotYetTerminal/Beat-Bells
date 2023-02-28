@@ -1,0 +1,296 @@
+P2dn P3dn,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+P2cs P3cs,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+P2cs P3cs,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+P1bn P2bn,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+
+B1bl B2bl,0,B2bl,0,
+B3fn,0,B3dn,0,
+B2bl,0,B2fn,0,
+B1bl,0,B2fn,0,
+
+B1an,0,B2fn,0,
+B2an,0,B2fn,0,
+B3cn,0,B3fn,0,
+B3an,0,B3fn,0,
+
+B1gn,0,B2gn,0,
+B2bl,0,B3dn,0,
+B3gn,0,B3dn,0,
+B2bl,0,B2gn,0,
+
+B1an B2an,0,B2an,0,
+B3en,0,B3cs,0,
+B1an B2an,0,B2en,0,
+B2ds,0,B1an,0,
+
+B1gn,0,B2gn,0,
+B2bl,0,B3dn,0,
+B3gn,0,B3bl,0,
+0,0,0,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B3en,0,
+B3gn,0,B4cn,0,
+0,0,0,0,
+
+B1an,0,B2en,0,
+B2an,0,B3cn,0,
+B3en,0,B3an,0,
+0,0,0,0,
+
+B2dn,0,B2an,0,
+B3dn,0,B3fn,0,
+B3an,0,B3fn,0,
+B3dn,0,B2an,0,
+
+B1gn,0,B2gn,0,
+B2bl,0,B3dn,0,
+B3gn,0,B3bl,0,
+0,0,0,0,
+
+B1an,0,B2en,0,
+B2an,0,B3cn,0,
+D3en,0,0,0,
+0,0,0,0,
+
+B2dn B3dn,0,B2cn B3cn,0,
+B2cs B3cs,0,B2dn B3dn,0,
+0,0,B1dn B2dn,0,
+B1en B2en,0,H1fn H2fn,0,
+
+0,0,0,0,
+0,0,B3cn B4cn,0,
+B3gn,0,B3en,0,
+B3cn,0,B2gn,0,
+B2en,0,B2cn,0,
+B1gn,0,B1en,0,
+
+B1gn,0,B2gn,0,
+B2bl,0,B2dn,0,
+B3gn,0,B3bl,0,
+0,0,0,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B3en,0,
+B3gn,0,B4cn,0,
+0,0,0,0,
+
+B1an,0,B2en,0,
+B2an,0,B3cn,0,
+B3en,0,B3an,0,
+0,0,0,0,
+
+B2dn,0,B2an,0,
+B3dn,0,B3fn,0,
+B3an,0,B3fn,0,
+0,0,B2an,0,
+
+B1gn,0,B2gn,0,
+B2bl,0,B3dn,0,
+B3gn,0,B3bl,0,
+0,0,0,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B3en,0,
+D3gn,0,0,0,
+0,0,0,0,
+
+B2dn B3dn,0,B2an,0,
+B2dn,0,B3dn,0,
+B1an B2an,0,B2en,0,
+B1an B2en,0,D1dn D2dn,0,
+
+0,0,B1dn B2dn,0,
+D1dn D2dn,0,0,0,
+B2dn B3dn,0,0,0,
+B2cn B3cn,0,B1bl B2bl,0,
+
+B2bl,0,B3dn,0,
+B3fn,0,B3dn,0,
+B2fn,0,B1bl,0,
+D2fn,0,0,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B3en,0,
+B3gn,0,B4cn,0,
+B3gn,0,B3cn,0,
+
+B1an,0,B2en,0,
+B2an,0,B3cn,0,
+B3en,0,B3an,0,
+0,0,0,0,
+
+B2dn,0,B2an,0,
+B3dn,0,B3fn,0,
+B3an,0,B3fn,0,
+B3dn,0,B2an,0,
+
+B1gn,0,B2gn,0,
+B2bl,0,B3dn,0,
+B3gn,0,B3bl,0,
+0,0,0,0,
+
+B1an,0,B2en,0,
+B2an,0,B3cn,0,
+B3en,0,B3an,0,
+0,0,0,0,
+
+B1an B2an,0,B2an,0,
+B3dn,0,F2cn F3cn,0,
+0,0,0,0,
+B3cn B4cn,0,D2dn D3dn,0,
+
+0,0,B1dn B2dn,0,
+D1dn D2dn,0,0,0,
+B2dn B3dn,0,0,0,
+B2cn B3cn,0,B1bl B2bl,0,
+
+B2bl,0,B3dn,0,
+B3fn,0,B3dn,0,
+B2fn,0,B1bl,0,
+D2fn,0,0,0,
+
+B2cn,0,B2gn,0,
+B3cn,0,B3en,0,
+B3gn,0,B4cn,0,
+B3gn,0,B3cn,0,
+
+B1an,0,B2en,0,
+B2an,0,B3cn,0,
+B3en,0,B3an,0,
+D3en,0,0,0,
+
+B2dn,0,B2an,0,
+B3dn,0,B3fn,0,
+B3an,0,B3fn,0,
+B3dn,0,B2an,0,
+
+B1gn B2gn,0,B2gn,0,
+B2bl B3bl,0,B2gn,0,
+B2bl B3bl,0,B2gn,0,
+B2bl B3bl,0,B2gn,0,
+
+B1an B2an,0,B2an,0,
+B3en B3an,0,B2an,0,
+B3en B3an,0,B2an,0,
+B3en B3an,0,F1bl F2bl,0,
+
+0,0,0,0,
+B2bl,0,D1an D2an,0,
+0,0,B2an,0,
+B3cs B3en B3an,0,D1bl D2bl,0,
+
+0,0,D2bl,0,
+0,0,F2cn F3cn,0,
+0,0,0,0,
+D3cn D3gn D4cn,0,0,0,
+
+D1bn D2bn,0,0,0,
+B2gn B3gn,0,B2fn B3fn,0,
+B2en B3en,0,B2dn B3dn,0,
+B2cn B3cn,0,B2bn B3bn,0,
+
+B1an B2an,0,B2an,0,
+B3en B4cn,0,B1gn B2gn,0,
+B1gn B2gn,0,B2gn,0,
+D3en D3bn,0,0,0,
+
+B1fn B2fn,0,B2fn,0,
+B3fn,0,B3fn,0,
+B3an B4cn,0,B3fn,0,
+B2fn B3fn,0,B3cn,0,
+
+B1dn B2dn,0,B3dn,0,
+B3an B4dn,0,D1gn D2gn,0,
+0,0,D2gn D3dn D3gn,0,
+0,0,B1an B2an,0,
+
+D2cn D3cn,0,0,0,
+D3cn D3gn,0,0,0,
+D2en D3en,0,0,0,
+D1en D2en,0,0,0,
+
+B1an B2an,0,B2an,0,
+B3en B4cn,0,B1gn B2gn,0,
+B1gn B2gn,0,B2gn,0,
+D3en D3bn,0,0,0,
+
+B1fn B2fn,0,B2fn,0,
+B3fn,0,B3fn,0,
+B3an B4cn,0,B3fn,0,
+B2fn B3fn,0,B3cn,0,
+
+B1dn B2dn,0,B3dn,0,
+B3an B4dn,0,D1gn D2gn,0,
+0,0,D2gn D3dn D3gn,0,
+0,0,D1an D2an,0,
+
+0,0,B2an B3an,0,
+B2gn B3gn,0,B2fn B3fn,0,
+B2en B3en,0,B2dn B3dn,0,
+B2cn B3cn,0,B1bn B2bn,0,
+
+B1an B2an,0,B2an,0,
+B3en B4cn,0,B1gn B2gn,0,
+B1gn B2gn,0,B2gn,0,
+D3en D3bn,0,0,0,
+
+B1fn B2fn,0,B2fn,0,
+B3fn,0,B3fn,0,
+B3an B4cn,0,B3fn,0,
+B2fn B3fn,0,B3cn,0,
+
+B1dn B2dn,0,B3dn,0,
+B3an B4dn,0,D1gn D2gn,0,
+0,0,D2gn D3dn D3gn,0,
+0,0,B1an B2an,0,
+
+D1an D2an,0,0,0,
+B2cn B3cn,0,B3gn,0,
+B2en B3en,0,B2gs B2bn,0,
+B1en B2en,0,B1gs B1bn,0,
+
+B1an B2an,0,B2an,0,
+B3en B4cn,0,B1gn B2gn,0,
+B1gn B2gn,0,B2gn,0,
+D3en D3bn,0,0,0,
+
+B1fn B2fn,0,B2fn,0,
+B3fn,0,B3fn,0,
+B3an B4cn,0,B3fn,0,
+B2fn B3fn,0,B3cn,0,
+
+B1dn B2dn,0,B3dn,0,
+B3an B4dn,0,D1gn D2gn,0,
+0,0,D2gn D3dn D3gn,0,
+0,0,B1an B2an,0,
+
+B1an B2an,0,B2an,0,
+B3en B3an,0,B2an,0,
+B3en B3bn,0,B2an,0,
+B3en B4cn,0,B2an,0,
+
+B1an B2an,0,B2en,0,
+B1an B2an,0,D1gn D2gn,0,
+0,0,D1gn D2gn,0,
+0,0,R1gn R2gn,0,
+
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,
+0,0,0,0,

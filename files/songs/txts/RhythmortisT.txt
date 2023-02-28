@@ -1,0 +1,179 @@
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5fn,0,
+B4fn,0,B5fn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5cn,0,
+B5cn,0,B4bn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5fn,0,
+B4fn,0,B5fn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,A5cn,A5cn,
+A5cn,A5cn,A5fn,A5cn,
+
+B4fn,0,A4fn,C4gs,
+0,0,D4as,0,
+0,0,B4fn,0,
+A4fn,A3fn,A4gn,A4gs,
+
+B4fn,0,A4fn,C4gs,
+0,0,D4as,0,
+0,0,B5cn,0,
+A5cn,A4cn,A4bn,A3bn,
+
+B4fn,0,A4fn,C4gs,
+0,0,D4as,0,
+0,0,B4fn,0,
+A4fn,A3fn,A4gn,A4gs,
+
+0,0,A4fn,C4gs,
+0,0,A4fn,C4as,
+0,0,A5cn,A4fn,
+B5fn,0,0,0,
+
+P4gs A4fn,B5fn,0,A4fn,
+B5fn,0,B4fn,0,
+0,0,B4fn,0,
+A4fn,A5fn,B4fn,0,
+
+P4as A4cs,B5cs,0,A4cs,
+B5fn,0,B4cs,0,
+0,0,B4cs,0,
+A4cs,A5cs,B4cs,0,
+
+P5cn A4gn,B5gn,0,A4gn,
+B5gn,0,B4gn,0,
+0,0,B4gn,0,
+A4gn,A5gn,B4gn,0,
+
+H5al A5cn,B6cn,0,A5cn,
+B5fn,0,B5cn,0,
+H5gn,0,A5en,A5cn,
+B5en,0,B5gs,0,
+
+P4gs A4fn,B5fn,0,A4fn,
+B5fn,0,B4fn,0,
+0,0,B4fn,0,
+A4fn,A5fn,B4fn,0,
+
+P4as A4cs,B5cs,0,A4cs,
+B5fn,0,B4cs,0,
+0,0,B4cs,0,
+A4cs,A5cs,B4cs,0,
+
+P5cn A4gn,B5gn,0,A4gn,
+B5gn,0,B4gn,0,
+0,0,B4gn,0,
+A4gn,A5gn,B4gn,0,
+
+H5al A5cn,B6cn,0,A5cn,
+B5fn,0,B5cn,0,
+H5gn,0,A5en,A5cn,
+B5en,0,B5gs,0,
+
+J5cn A4fn,B5fn,0,A4fn,
+B5fn,0,B4fn,0,
+0,0,B4fn,0,
+A4fn,A5fn C5cn,B4fn,0,
+
+J5cs A4cs,B5cs,0,A4cs,
+B5fn,0,B4cs,0,
+0,0,B4cs B4gs,0,
+A4cs B5cs,A5cs,B4cs B5fn,0,
+
+H5gn A4gn,B5gn,0,A4gn,
+B5gn,0,B4gn,0,
+D5fn,0,B4gn,0,
+A4gn D5cn,A5gn,B4gn,0,
+
+A5en A5cn,B5fn B6cn,0,A5cn C5gn,
+B5fn,0,B5cn D5gn,0,
+0,0,B5cn A5en,A5cn,
+B5en B6cn,0,B5cn B5gs,0,
+
+A4fn,B5fn,0,A4fn,
+B5fn D5cn,0,B4fn,0,
+D5dl,0,B4fn,0,
+A4fn D5cn,A5fn,B4fn,0,
+
+H4bn A4cs,B5cs,0,A4cs,
+B5fn,0,B4cs,0,
+F4gn,0,B4cs,0,
+A4cs,A5cs,B4cs A4gn,A4gs,
+
+D4as A4gn,B5gn,0,A4gn,
+B5gn D4fn,0,B4gn,0,
+D4al,0,B4gn,0,
+B4gn,A5gn,B4gn B4fn,0,
+
+A4en A4cn,B4fn B5cn,0,A4cn C4gn,
+B4fn,0,B4cn D4gn,0,
+0,0,B4cn A4en,A4cn,
+B4en D5cn,0,B4gs,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5fn,0,
+B4fn,0,B5fn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5cn,0,
+B5cn,0,B4bn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5fn,0,
+B4fn,0,B5fn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,A5cn,A5cn,
+A5cn,A5cn,A5fn,A5cn,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5fn,0,
+B4fn,0,B5fn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5cn,0,
+B5cn,0,B4bn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,B5fn,0,
+B4fn,0,B5fn,0,
+
+B4fn,0,A5fn,C4fn,
+0,0,B5fn,0,
+0,0,A5cn,A5cn,
+A5cn,A5cn,A5fn,A5cn,
+
+B4fn,0,A4fn,C4gs,
+0,0,D4as,0,
+0,0,B4fn,0,
+A4fn,A3fn,A4gn,A4gs,
+
+B4fn,0,A4fn,C4gs,
+0,0,D4as,0,
+0,0,B5cn,0,
+A5cn,A4cn,A4bn,A3bn,
+
+B4fn,0,A4fn,C4gs,
+0,0,D4as,0,
+0,0,B4fn,0,
+A4fn,A3fn,A4gn,A4gs,
+
+0,0,A4fn,C4gs,
+0,0,A4fn,C4as,
+0,0,A5cn,A4fn,
+B5fn,0,0,0,

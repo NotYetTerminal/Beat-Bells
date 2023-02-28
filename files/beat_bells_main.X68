@@ -1,7 +1,7 @@
 *-----------------------------------------------------------
 * Title      :  Beat Bells
 * Written by :  Gabor Major
-* Date       :  24/02/2023
+* Date       :  28/02/2023
 * Description:  The one and only assembly file for the game
 *-----------------------------------------------------------
 
@@ -20,6 +20,7 @@
 * decrement notes times slow
 * speed up rendering by drawing lines instead of rectangles
 * fix notes moving offscreen
+* main screen menu music
 * 
 * points fading in and out
 * try to merge two sprites when punching
@@ -4031,12 +4032,13 @@ number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
 song_note_spawning_speed        DC.B    10
 SONGS_NOTE_SPAWNING_SPEED_ARRAY DC.L    $0A080808
-                                DC.L    $0A0A0A0A
-                                DC.L    $080B0709
+                                DC.L    $080A0A0A
+                                DC.L    $090A080B
+                                DC.L    $07090000
 ALL_SONG_FILE_NAMES             DC.B    'Bad Apple',0,'Deja Vu',0,'Dragostea Din Tei',0,'Gourmet Race',0
-                                DC.B    'Ievan Polkka',0,'Never Gonna Give You Up',0,'Nyan Cat',0,'Running in the 90s',0
-                                DC.B    'Sandstorm',0,'Spring',0,'Take On Me',0,'Troupe Master Grimm',0
-                                DC.B    'A',0,'A',0,'A',0,'A',0
+                                DC.B    'Hacking To The Gate',0,'Ievan Polkka',0,'Never Gonna Give You Up',0,'Nyan Cat',0
+                                DC.B    'Rhythmortis',0,'Running in the 90s',0,'Sandstorm',0,'Spring',0
+                                DC.B    'Take On Me',0,'Troupe Master Grimm',0,0,'A',0,'A',0
                                 DC.B    'A',0,'A',0,'A',0,'A',0
                                 DC.B    'A',0,'A',0,'A',0,'A',0
                                 DC.B    'A',0,'A',0,'A',0,'A',0
