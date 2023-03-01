@@ -16,19 +16,6 @@
 * the actual code in memory, however this has been patched by setting that memory
 * location to be ROM.
 * 
-* TODO
-* decrement notes times slow
-* speed up rendering by drawing lines instead of rectangles
-* fix notes moving offscreen
-* main screen menu music
-* 
-* points fading in and out
-* try to merge two sprites when punching
-* add sound for punching
-* add sound for missing a note
-* look for other notes wav sound files
-* make it look like pianos
-* 
 
 ; set constants
 SCREEN_WIDTH            EQU     1920
@@ -49,10 +36,10 @@ LANE_ADDRESSES_SIZE     EQU     55
 
 LIFE_BAR_X              EQU     700
 
-NUMBER_OF_SONGS         EQU     32
+NUMBER_OF_SONGS         EQU     16
 VARIABLES_START         EQU     $4000
 
-    MEMORY  Read    $1000,VARIABLES_START-1
+    MEMORY  ROM     $1000,VARIABLES_START-1
     ORG    $1000
 
 ; program start
@@ -356,6 +343,7 @@ LOAD_IMAGE_INTO_SPRITES_LOADING
         RTS
 
 
+; qoi decoding based on the source C code
 QOI_DECODE
         JSR     ZERO_PIXELS_ARRAY
         MOVE.L  #$000000FF,current_pixel_r
@@ -909,10 +897,10 @@ LOAD_SONG_FILE_NAME
         CLR.L   D1
         MOVE.B  D0,D1
         ADD.L   D1,A0
-        IF.B two_player <EQ> #0 THEN
-            ADD.L   #1,A0
-        ENDI
         MOVE.B  (A0),song_note_spawning_speed
+        IF.B two_player <EQ> #0 THEN
+            ADD.B   #1,song_note_spawning_speed
+        ENDI
 
         LEA     ALL_SONG_FILE_NAMES,A0
         CLR.L   D5
@@ -1215,11 +1203,11 @@ CHECK_COLLISIONS
                 MOVE.W  (A0),A1
                 ADD.W   #2,A1
                 ; check if the note is close to beat line
-                IF.W (A1) <LS> #BEAT_LINE_X THEN
+                IF.W (A1) <LE> #BEAT_LINE_X THEN
                     ; check if the note is invisible
                     IF.W -(A1) <EQ> #0  THEN
                         ADD.W   #2,A1
-                        IF.W (A1) <LS> #BEAT_LINE_X-(NOTE_SIZE/2) THEN
+                        IF.W (A1) <LE> #BEAT_LINE_X-(NOTE_SIZE/2) THEN
                             CLR.W   (A1)
                         ENDI
                     ELSE
@@ -1246,7 +1234,7 @@ CHECK_COLLISIONS
                     ENDI
 
                     ; check collision with the beat line, ie too late
-                    IF.W (A1) <LS> #BEAT_LINE_X-NOTE_SIZE THEN
+                    IF.W (A1) <LE> #BEAT_LINE_X-NOTE_SIZE THEN
                         ; check if it was an invisible or hit note
                         IF.W -(A1) <EQ> #0  THEN
                             IF.B 6(A1) <EQ> #0  THEN
@@ -2185,11 +2173,12 @@ DRAW_PLAYERS
         CLR.L   D0
         LEA     player_1_position,A1
         CLR.L   D1
+        MOVE.W  #90,D7
         IF.B player_1_punching_index <EQ> #8    THEN
             MOVE.L  player_1_start_sprite,A0
             MOVE.B  player_1_action_colour,D0
             MOVE.B  sprite_gif_index,D1
-            JSR     DRAW_PLAYER
+            JSR     DRAW_SPRITE
         ELSE
             MOVE.L  punching_1_start_sprite,A0
             IF.B player_1_punching_index <NE> #0    THEN
@@ -2197,7 +2186,7 @@ DRAW_PLAYERS
                 MOVE.B  player_1_punching_index,D1
             ENDI
             ADD.W   #6,(A1)
-            JSR     DRAW_PLAYER
+            JSR     DRAW_SPRITE
             SUB.W   #6,(A1)
         ENDI
 
@@ -2209,7 +2198,7 @@ DRAW_PLAYERS
                 MOVE.L  player_2_start_sprite,A0
                 MOVE.B  player_2_action_colour,D0
                 MOVE.B  sprite_gif_index,D1
-                JSR     DRAW_PLAYER
+                JSR     DRAW_SPRITE
             ELSE
                 MOVE.L  punching_2_start_sprite,A0
                 IF.B player_2_punching_index <NE> #0    THEN
@@ -2217,7 +2206,7 @@ DRAW_PLAYERS
                     MOVE.B  player_2_punching_index,D1
                 ENDI
                 ADD.W   #6,(A1)
-                JSR     DRAW_PLAYER
+                JSR     DRAW_SPRITE
                 SUB.W   #6,(A1)
             ENDI
         ENDI
@@ -2225,10 +2214,11 @@ DRAW_PLAYERS
 
 
 ; A0 must contain the start of the sprite
-; A1 must contain the player 1 position
-; D0 must contain the player action colour
+; A1 must contain the sprite position
+; D0 must contain the sprite colour
 ; D1 must contain the sprite gif index
-DRAW_PLAYER
+; D7 must contain the sprite total width 90 or 66
+DRAW_SPRITE
         ; multiply by $2000
         LSL.L   #8,D0
         LSL.L   #5,D0
@@ -2238,14 +2228,18 @@ DRAW_PLAYER
         LSL.L   #2,D1
         ADD.L   D1,A0
 
-        CLR.L   D3
-        CLR.L   D2
-        MOVE.W  2(A1),D2
-        MOVE.L  D2,D4
-        ; 16x16
-        FOR D5 = #0 TO #$F  DO
-            MOVE.W  (A1),D3
-            FOR D6 = #0 TO #$F  DO
+        ; setting up for loop bounds
+        CLR.L   D1
+        MOVE.W  (A1),D6
+        ADD.W   D7,D6
+        MOVE.W  2(A1),D0
+        MOVE.W  D0,D5
+        ADD.W   D7,D5
+        FOR.W D2 = D0 TO D5 BY #6   DO
+            MOVE.W  D2,D4
+            MOVE.W  D6,D1
+            SUB.W   D7,D1
+            FOR.W D3 = D1 TO D6 BY #6   DO
                 ; set pen colour
                 MOVEQ   #80,D0
                 MOVE.L  (A0)+,D1
@@ -2255,11 +2249,7 @@ DRAW_PLAYER
                 MOVEQ   #90,D0
                 MOVE.W  D3,D1
                 TRAP    #15
-
-                ADDQ    #6,D3
             ENDF
-            ADDQ    #6,D2
-            ADDQ    #6,D4
         ENDF
         RTS
 
@@ -2298,52 +2288,16 @@ DRAW_NOTES
                                 MOVE.L  unfilled_notes_2_start_sprite,A0
                             ENDI
                         ENDI
-                        JSR     DRAW_NOTE
+                        CLR.L   D1
+                        MOVE.B  sprite_gif_index,D1
+                        MOVE.W  D7,A5
+                        MOVE.W  #66,D7
+                        JSR     DRAW_SPRITE
+                        MOVE.W  A5,D7
                     ENDI
                 UNLESS.W (A2) <NE> #$FFFF
             ENDI
             ADD.W   #(LANE_ADDRESSES_SIZE*2)+2,A3
-        ENDF
-        RTS
-
-
-; A0 must contain the start of the sprite
-; D0 must contain the note colour
-; A1 must contain the note position
-DRAW_NOTE
-        ; multiply by $2000
-        LSL.L   #8,D0
-        LSL.L   #5,D0
-        ADD.L   D0,A0
-        ; multiply by $400
-        CLR.L   D1
-        MOVE.B  sprite_gif_index,D1
-        LSL.L   #8,D1
-        LSL.L   #2,D1
-        ADD.L   D1,A0
-
-        CLR.L   D3
-        CLR.L   D2
-        MOVE.W  2(A1),D2
-        MOVE.L  D2,D4
-        ; 12x12
-        FOR D5 = #0 TO #$B  DO
-            MOVE.W  (A1),D3
-            FOR D6 = #0 TO #$B  DO
-                ; set pen colour
-                MOVEQ   #80,D0
-                MOVE.L  (A0)+,D1
-                TRAP    #15
-
-                ; draw rectangle
-                MOVEQ   #90,D0
-                MOVE.W  D3,D1
-                TRAP    #15
-
-                ADDQ    #6,D3
-            ENDF
-            ADDQ    #6,D2
-            ADDQ    #6,D4
         ENDF
         RTS
 
@@ -3024,13 +2978,18 @@ CHANGE_COLOUR
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$02700078,(A1)
         MOVEQ   #1,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        MOVE.W  #66,D7
+        JSR     DRAW_SPRITE
         
         ; draw orange bell
         MOVE.L  filled_notes_2_start_sprite,A0
         ADD.L   #$2600000,(A1)
         MOVEQ   #2,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        JSR     DRAW_SPRITE
 
 
         ; set font
@@ -3283,25 +3242,33 @@ CHANGE_COLOUR
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$030001C0,(A1)
         MOVEQ   #4,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        JSR     DRAW_SPRITE
 
         ; draw blue bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #1,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        JSR     DRAW_SPRITE
 
         ; draw red bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #2,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        JSR     DRAW_SPRITE
 
         ; draw yellow bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #3,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        JSR     DRAW_SPRITE
 
         ADDQ.B  #1,sprite_gif_index
         AND.B   #7,sprite_gif_index
@@ -3396,13 +3363,18 @@ DRAW_SELECT_SONG_MENU
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$02800370,(A1)
         MOVEQ   #1,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        MOVE.W  #66,D7
+        JSR     DRAW_SPRITE
 
         ; draw red bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$1800000,(A1)
         MOVEQ   #2,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        JSR     DRAW_SPRITE
 
         ADDQ.B  #1,sprite_gif_index
         AND.B   #7,sprite_gif_index
@@ -3446,7 +3418,10 @@ DRAW_LOAD_SCREEN
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$044002B0,(A1)
         MOVEQ   #2,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        MOVE.W  #66,D7
+        JSR     DRAW_SPRITE
 
         IF.W loading_screen_charge <NE> #0  THEN
             ; sets pen colour
@@ -3646,13 +3621,18 @@ DRAW_GAME_OVER
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$02800200,(A1)
         MOVEQ   #1,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        MOVE.W  #66,D7
+        JSR     DRAW_SPRITE
 
         ; draw red bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$70,(A1)
         MOVEQ   #2,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        JSR     DRAW_SPRITE
 
         ADDQ.B  #1,sprite_gif_index
         AND.B   #7,sprite_gif_index
@@ -3710,13 +3690,18 @@ DRAW_PAUSE_MENU
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$03400200,(A1)
         MOVEQ   #1,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        MOVE.W  #66,D7
+        JSR     DRAW_SPRITE
 
         ; draw red bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$70,(A1)
         MOVEQ   #2,D0
-        JSR     DRAW_NOTE
+        CLR.L   D1
+        MOVE.B  sprite_gif_index,D1
+        JSR     DRAW_SPRITE
 
         ADDQ.B  #1,sprite_gif_index
         AND.B   #7,sprite_gif_index
@@ -4034,11 +4019,11 @@ song_note_spawning_speed        DC.B    10
 SONGS_NOTE_SPAWNING_SPEED_ARRAY DC.L    $0A080808
                                 DC.L    $080A0A0A
                                 DC.L    $090A080B
-                                DC.L    $07090000
+                                DC.L    $070C0900
 ALL_SONG_FILE_NAMES             DC.B    'Bad Apple',0,'Deja Vu',0,'Dragostea Din Tei',0,'Gourmet Race',0
                                 DC.B    'Hacking To The Gate',0,'Ievan Polkka',0,'Never Gonna Give You Up',0,'Nyan Cat',0
                                 DC.B    'Rhythmortis',0,'Running in the 90s',0,'Sandstorm',0,'Spring',0
-                                DC.B    'Take On Me',0,'Troupe Master Grimm',0,0,'A',0,'A',0
+                                DC.B    'Take On Me',0,'The Last Game',0,'Troupe Master Grimm',0,'A',0
                                 DC.B    'A',0,'A',0,'A',0,'A',0
                                 DC.B    'A',0,'A',0,'A',0,'A',0
                                 DC.B    'A',0,'A',0,'A',0,'A',0
