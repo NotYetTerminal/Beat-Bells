@@ -1,7 +1,7 @@
 *-----------------------------------------------------------
 * Title      :  Beat Bells
 * Written by :  Gabor Major
-* Date       :  28/02/2023
+* Date       :  01/03/2023
 * Description:  The one and only assembly file for the game
 *-----------------------------------------------------------
 
@@ -15,6 +15,18 @@
 * There may be a game breaking bug where some rogue for or while loop is changing
 * the actual code in memory, however this has been patched by setting that memory
 * location to be ROM.
+* 
+* TODO
+* make charge faster
+* make notes move speed slower
+* fix two player streak issue
+* add in last song
+* fix song select screen drawing
+* fix song select screen selecting
+* change notes sprites and colours to match controller's
+* change player sprites and colours to match controller's
+* change menu sprites and colours to match controller's
+* fix controller mappings
 * 
 
 ; set constants
@@ -93,6 +105,8 @@ START
 
         MOVE.B  #1,two_player
         CLR.B   player_1_action_colour
+
+        JSR     LOAD_IN_MENU_SONG
         JMP     MAIN_MENU_LOOP
 
 
@@ -521,6 +535,20 @@ QOI_PUT_IN_PIXEL
         RTS
 
 
+LOAD_IN_MENU_SONG
+        LEA     song_name,A1
+        ADDQ    #6,A1
+        LEA     menu_song_name,A0
+        CLR.L   D5
+        WHILE.B (A0,D5) <NE> #0 DO
+            MOVE.B  (A0,D5),(A1,D5)
+            ADDQ.B  #1,D5
+        ENDW
+        MOVE.B  (A0,D5),(A1,D5)
+        JSR     LOAD_IN_SONG
+        RTS
+
+
 MAIN_MENU_LOOP
         JSR     HANDLE_MENU_SELECT
 
@@ -554,6 +582,8 @@ MAIN_MENU_LOOP
         JSR     HANDLE_DIFFICULTY_INPUT
         JSR     DRAW_MAIN_MENU
         JSR     REPAINT_SCREEN
+
+        JSR     PLAY_MENU_MUSIC
 
         ; delay
         MOVEQ   #23,D0
@@ -600,6 +630,43 @@ HANDLE_DIFFICULTY_INPUT
         RTS
 
 
+PLAY_MENU_MUSIC
+        JSR     DECREMENT_NOTES_TIMES
+        MOVE.L  treble_song_file_index,A0
+        IF.B (A0) <EQ> #13  THEN
+            ADD.L   #2,A0
+        ELSE
+            IF.B (A0) <EQ> #10  THEN
+                ADD.L   #1,A0
+            ENDI
+        ENDI
+        ; check for comma
+        IF.B (A0) <EQ> #$2C THEN
+            ADD.L   #1,A0
+        ENDI
+        ; check for zero
+        IF.B (A0) <EQ> #48  THEN
+            ADD.L   #2,A0
+            MOVE.L  A0,treble_song_file_index
+            RTS
+        ENDI
+        ; check for end of song
+        IF.B (A0) <EQ> #$FF THEN
+            MOVE.L  #TREBLE_FILE_CONTENTS,treble_song_file_index
+            RTS
+        ENDI
+        LEA     note_objects,A1
+        ADDQ.L  #8,A1
+        WHILE.B (A0) <NE> #44  DO
+            MOVE.B  (A0)+,(A1)+
+        ENDW
+        MOVE.B  #0,(A1)
+        LEA     note_objects,A1
+        JSR     PLAY_MUSIC_ON_HIT
+        MOVE.L  A0,treble_song_file_index
+        RTS
+
+
 SELECT_SONG_MENU_LOOP
         JSR HANDLE_MENU_SELECT
 
@@ -614,6 +681,7 @@ SELECT_SONG_MENU_LOOP
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
                 JSR     REPAINT_SCREEN
+                JSR     LOAD_IN_MENU_SONG
                 JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
@@ -715,7 +783,6 @@ GAME_START
 
         ; practice
         IF.B song_playing_type <EQ> #0  THEN
-            LEA     song_name,A2
             JSR     LOAD_IN_SONG
         ELSE
             JSR     LOAD_IN_RANDOM_NEW_SONG
@@ -1129,6 +1196,7 @@ GAME_OVER_LOOP
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
                 JSR     REPAINT_SCREEN
+                JSR     LOAD_IN_MENU_SONG
                 JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
@@ -1564,6 +1632,7 @@ PAUSE_MENU_LOOP
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
                 JSR     REPAINT_SCREEN
+                JSR     LOAD_IN_MENU_SONG
                 JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
@@ -1664,6 +1733,8 @@ HANDLE_CHARGE
                 LSR.W   #1,D0
                 ADD.B   D0,D2
                 ADD.B   D2,(A3)
+                ADD.B   D2,(A3)
+                ; here
                 IF.B (A3) <HI> #80  THEN
                     MOVE.B  #80,(A3)
                 ENDI
@@ -3999,6 +4070,7 @@ note_objects            DS.W    NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2    ; stor
 ;   W   x position
 ;   W   y position
 ;   B   stores the player number 0 or 1, treble or bass
+;   B   unused
 ;   L*10   music notes data, same as in the file
 
 treble_note_path_index  DC.B    2       ; stores the lane index of the note path
@@ -4012,6 +4084,7 @@ notes_times_array       DS.B    102     ; contains the times for each note that 
 song_name_last_index    DS.B    1
 song_name               DC.B    'songs/'
                         DS.B    26
+menu_song_name          DC.B    'KahootT',0
 
 number_of_available_songs       DC.B    0
 available_songs_array           DS.B    NUMBER_OF_SONGS
