@@ -51,14 +51,14 @@ LANE_ADDRESSES_SIZE     EQU     55
 LIFE_BAR_X              EQU     700
 
 NUMBER_OF_SONGS         EQU     16
-VARIABLES_START         EQU     $4000
+VARIABLES_START         EQU     $4200
 
     MEMORY  ROM     $1000,VARIABLES_START-1
     ORG    $1000
 
 ; program start
 START
-        ; checks if $4000 has been accidentally used
+        ; checks if $4200 has been accidentally used
         IF.L VARIABLES_START <NE> #$FFFFFFFF  THEN
             ILLEGAL
         ENDI
@@ -538,6 +538,7 @@ QOI_PUT_IN_PIXEL
 
 
 LOAD_IN_MENU_SONG
+        MOVE.B  #12,song_name_last_index
         LEA     song_name,A1
         ADDQ    #6,A1
         LEA     menu_song_name,A0
@@ -610,22 +611,21 @@ HANDLE_MENU_SELECT
 HANDLE_DIFFICULTY_INPUT
         ; check for keys
         MOVE.W  #19,D0
-        ; 1 2 3
-        MOVE.L  #$31323300,D1
+        MOVE.L  player_1_keymaps,D1
         TRAP    #15
 
-        ; checks 1
+        ; checks w
         BTST.L  #24,D1
-        IF  <NE>    then
-            CLR.B   main_menu_difficulty
-        ENDI
-        ; checks 2
-        BTST.L  #16,D1
         IF  <NE>    then
             MOVE.B  #1,main_menu_difficulty
         ENDI
-        ; checks 3
+        ; checks a
         BTST.L  #8,D1
+        IF  <NE>    then
+            CLR.B   main_menu_difficulty
+        ENDI
+        ; checks d
+        BTST.L  #0,D1
         IF  <NE>    then
             MOVE.B  #2,main_menu_difficulty
         ENDI
@@ -690,36 +690,35 @@ SELECT_SONG_MENU_LOOP
 
         ; check for keys
         MOVE.W  #19,D0
-        ; 1 2 3 4
-        MOVE.L  #$31323334,D1
+        MOVE.L  player_1_keymaps,D1
         TRAP    #15
 
-        ; checks 1
+        ; checks w
         BTST.L  #24,D1
-        IF  <NE>    THEN
-            IF.B select_song_line <GT> #7   THEN
-                SUB.B   #8,select_song_line
-            ENDI
-        ENDI
-        ; checks 2
-        BTST.L  #16,D1
         IF  <NE>    THEN
             IF.B select_song_line <NE> #0   THEN
                 SUB.B   #1,select_song_line
             ENDI
         ENDI
-        ; checks 3
-        BTST.L  #8,D1
-        IF  <NE>    THEN
-            IF.B select_song_line <LT> #24  THEN
-                ADD.B   #8,select_song_line
-            ENDI
-        ENDI
-        ; checks 4
-        BTST.L  #0,D1
+        ; checks s
+        BTST.L  #16,D1
         IF  <NE>    THEN
             IF.B select_song_line <NE> #NUMBER_OF_SONGS-1   THEN
                 ADD.B   #1,select_song_line
+            ENDI
+        ENDI
+        ; checks a
+        BTST.L  #8,D1
+        IF  <NE>    THEN
+            IF.B select_song_line <GT> #7   THEN
+                SUB.B   #8,select_song_line
+            ENDI
+        ENDI
+        ; checks d
+        BTST.L  #0,D1
+        IF  <NE>    THEN
+            IF.B select_song_line <LT> #24  THEN
+                ADD.B   #8,select_song_line
             ENDI
         ENDI
 
@@ -772,8 +771,8 @@ GAME_START
         ADD.B   D1,bass_note_path_index
 
         ; sets the players' positions
-        MOVE.W  #50,player_1_position
-        MOVE.W  #50,player_2_position
+        MOVE.W  #60,player_1_position
+        MOVE.W  #60,player_2_position
         MOVE.B  treble_note_path_index,player_1_lane_number
         MOVE.B  bass_note_path_index,player_2_lane_number
 
@@ -2246,8 +2245,8 @@ DRAW_PLAYERS
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        CLR.L   D0
         LEA     player_1_position,A1
+        CLR.L   D0
         CLR.L   D1
         MOVE.W  #90,D7
         IF.B player_1_punching_index <EQ> #8    THEN
@@ -2266,9 +2265,38 @@ DRAW_PLAYERS
             SUB.W   #6,(A1)
         ENDI
 
+        ; set pen colour
+        MOVEQ   #80,D0
+        MOVE.L  #RED,D1
+        TRAP    #15
+        MOVEQ   #81,D0
+        TRAP    #15
+
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #2,D1
+        TRAP    #15
+
+        ; draw player circle
+        MOVEQ   #88,D0
+        MOVE.W  (A1),D1
+        MOVE.W  2(A1),D2
+        SUB.W   #15,D1
+        ADD.W   #25,D2
+        MOVE.W  D1,D3
+        MOVE.W  D2,D4
+        ADD.W   #10,D3
+        ADD.W   #10,D4
+        TRAP    #15
+
         IF.B two_player <EQ> #1 THEN
-            CLR.L   D0
+            ; sets pen width
+            MOVEQ   #93,D0
+            MOVEQ   #MULTIPLIER_SIZE,D1
+            TRAP    #15
+
             LEA     player_2_position,A1
+            CLR.L   D0
             CLR.L   D1
             IF.B player_2_punching_index <EQ> #8    THEN
                 MOVE.L  player_2_start_sprite,A0
@@ -2285,6 +2313,30 @@ DRAW_PLAYERS
                 JSR     DRAW_SPRITE
                 SUB.W   #6,(A1)
             ENDI
+
+            ; set pen colour
+            MOVEQ   #80,D0
+            MOVE.L  #LIME,D1
+            TRAP    #15
+            MOVEQ   #81,D0
+            TRAP    #15
+
+            ; sets pen width
+            MOVEQ   #93,D0
+            MOVEQ   #2,D1
+            TRAP    #15
+
+            ; draw player circle
+            MOVEQ   #88,D0
+            MOVE.W  (A1),D1
+            MOVE.W  2(A1),D2
+            SUB.W   #15,D1
+            ADD.W   #40,D2
+            MOVE.W  D1,D3
+            MOVE.W  D2,D4
+            ADD.W   #10,D3
+            ADD.W   #10,D4
+            TRAP    #15
         ENDI
         RTS
 
@@ -3049,6 +3101,11 @@ CHANGE_COLOUR
         LEA     main_menu_title_text,A1
         TRAP    #15
 
+        ; sets pen width
+        MOVEQ   #93,D0
+        MOVEQ   #MULTIPLIER_SIZE,D1
+        TRAP    #15
+
         ; draw aqua bell
         MOVE.L  filled_notes_2_start_sprite,A0
         LEA     main_menu_bell_positions,A1
@@ -3781,14 +3838,13 @@ DRAW_PAUSE_MENU
 
         ADDQ.B  #1,sprite_gif_index
         AND.B   #7,sprite_gif_index
-
         RTS
 
 
 DRAW_CONTROL_BUTTONS
         ; sets pen width
         MOVEQ   #93,D0
-        MOVEQ   #MULTIPLIER_SIZE,D1
+        MOVEQ   #5,D1
         TRAP    #15
 
         ; sets pen colour
@@ -4037,7 +4093,7 @@ player_1_position       DS.W    2       ; stores the top right player position x
 player_1_lane_number    DS.B    1       ; stores the lane number
 player_1_moving         DC.B    0       ; stores whether the player is moving up or down
 player_1_action_pressed DC.B    0       ; stores whether any action buttons are pressed
-player_1_keymaps        DC.L    'WS'    ; stores the movement keys of player
+player_1_keymaps        DC.L    'WSAD'  ; stores the movement keys of player
 player_1_action_colour  DC.B    0       ; stores the player action colour
 player_1_colour_keymaps DC.L    'HUK '  ; stores the keymaps for the player changing colours
 player_1_charge_amount  DC.B    0       ; stores the charge amount
