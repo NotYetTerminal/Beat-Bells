@@ -17,10 +17,6 @@
 * location to be ROM.
 * 
 * TODO
-* fix song select screen drawing
-* fix song select screen selecting
-* add in last song
-* 
 * change notes sprites and colours to match controller's
 * change player sprites and colours to match controller's
 * change menu sprites and colours to match controller's
@@ -47,7 +43,7 @@ LANE_ADDRESSES_SIZE     EQU     55
 
 LIFE_BAR_X              EQU     700
 
-NUMBER_OF_SONGS         EQU     16
+NUMBER_OF_SONGS         EQU     15
 VARIABLES_START         EQU     $4200
 
     MEMORY  ROM     $1000,VARIABLES_START-1
@@ -707,15 +703,15 @@ SELECT_SONG_MENU_LOOP
         ; checks a
         BTST.L  #8,D1
         IF  <NE>    THEN
-            IF.B select_song_line <GT> #7   THEN
-                SUB.B   #8,select_song_line
+            IF.B select_song_line <GT> #5   THEN
+                SUB.B   #5,select_song_line
             ENDI
         ENDI
         ; checks d
         BTST.L  #0,D1
         IF  <NE>    THEN
-            IF.B select_song_line <LT> #24  THEN
-                ADD.B   #8,select_song_line
+            IF.B select_song_line <LT> #9  THEN
+                ADD.B   #5,select_song_line
             ENDI
         ENDI
 
@@ -1554,7 +1550,7 @@ LANE_LEFT_SHIFT
             MOVE.W  (A0,D7),(A0,D6)
             ADD.B   #2,D7
         ENDF
-        MOVE.W  #$FFFF,(A0,D6)
+        MOVE.W  #$FFFF,-2(A0,D6)
         RTS
 
 
@@ -3445,16 +3441,17 @@ DRAW_SELECT_SONG_MENU
 
 
         ; draw song names
-        MOVE.L  #$F000,D1
+        MOVE.L  #$F200,D1
         LEA     ALL_SONG_FILE_NAMES,A1
         FOR.W D5 = #0 TO #NUMBER_OF_SONGS-1 DO
             ; sets the cursor position
             MOVEQ   #11,D0
-            MOVE.W  D5,D4
-            AND.W   #7,D4
+            MOVE.L  D5,D4
+            DIVU    #5,D4
+            SWAP    D4
             IF.W D4 <EQ> #0 THEN
-                ADD.W   #$1800,D1
-                MOVE.B  #5,D1
+                ADD.W   #$1D00,D1
+                MOVE.B  #8,D1
             ENDI
             ADD.W   #2,D1
             IF.B select_song_line <EQ> D5   THEN
@@ -4146,16 +4143,12 @@ available_songs_array           DS.B    NUMBER_OF_SONGS
 song_note_spawning_speed        DC.B    10
 SONGS_NOTE_SPAWNING_SPEED_ARRAY DC.L    $0A080808
                                 DC.L    $080A0A0A
-                                DC.L    $090A080B
-                                DC.L    $070C0900
+                                DC.L    $09080B07
+                                DC.L    $0C070900
 ALL_SONG_FILE_NAMES             DC.B    'Bad Apple',0,'Deja Vu',0,'Dragostea Din Tei',0,'Gourmet Race',0
                                 DC.B    'Hacking To The Gate',0,'Ievan Polkka',0,'Never Gonna Give You Up',0,'Nyan Cat',0
-                                DC.B    'Rhythmortis',0,'Running in the 90s',0,'Sandstorm',0,'Spring',0
-                                DC.B    'Take On Me',0,'The Last Game',0,'Troupe Master Grimm',0,'A',0
-                                DC.B    'A',0,'A',0,'A',0,'A',0
-                                DC.B    'A',0,'A',0,'A',0,'A',0
-                                DC.B    'A',0,'A',0,'A',0,'A',0
-                                DC.B    'A',0,'A',0,'A',0,'A',0
+                                DC.B    'Rhythmortis',0,'Sandstorm',0,'Spring',0,'Take On Me',0
+                                DC.B    'The Last Game',0,'The Red Baron',0,'Troupe Master Grimm',0
 
 ; THE PROGRAM MUST NOT USE THE FOLLOWING MEMORY ADDRESS
 ; THERE IS A CHECK AT THE START OF THE PROGRAM TO STOP THIS FROM HAPPENEING
