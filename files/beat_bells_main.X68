@@ -19,13 +19,15 @@
 * TODO
 * make charge faster
 * make notes move speed slower
-* fix two player streak issue
-* add in last song
+* 
 * fix song select screen drawing
 * fix song select screen selecting
+* add in last song
+* 
 * change notes sprites and colours to match controller's
 * change player sprites and colours to match controller's
 * change menu sprites and colours to match controller's
+* 
 * fix controller mappings
 * 
 
@@ -681,7 +683,6 @@ SELECT_SONG_MENU_LOOP
                 MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
                 JSR     REPAINT_SCREEN
-                JSR     LOAD_IN_MENU_SONG
                 JMP     MAIN_MENU_LOOP
             ENDI
         ENDI
@@ -724,6 +725,8 @@ SELECT_SONG_MENU_LOOP
 
         JSR     DRAW_SELECT_SONG_MENU
         JSR     REPAINT_SCREEN
+
+        JSR     PLAY_MENU_MUSIC
 
         ; delay
         MOVEQ   #23,D0
@@ -1153,17 +1156,18 @@ CHECK_LIFE_AMOUNTS
                     IF.W player_2_life_amount <LT> #1   THEN
                         CLR.B   game_over_status
                         CLR.B   player_1_action_colour
-                        JMP     GAME_OVER_LOOP
+                        MOVE.B  #1,game_over_menu_active
                     ELSE
                         MOVE.B  #2,game_over_status
                         CLR.B   player_1_action_colour
-                        JMP     GAME_OVER_LOOP
+                        MOVE.B  #1,game_over_menu_active
                     ENDI
-                ENDI
-                IF.W player_2_life_amount <LT> #1   THEN
-                    MOVE.B  #1,game_over_status
-                    CLR.B   player_1_action_colour
-                    JMP     GAME_OVER_LOOP
+                ELSE
+                    IF.W player_2_life_amount <LT> #1   THEN
+                        MOVE.B  #1,game_over_status
+                        CLR.B   player_1_action_colour
+                            MOVE.B  #1,game_over_menu_active
+                    ENDI
                 ENDI
             ELSE
                 MOVE.W  player_1_life_amount,D0
@@ -1171,14 +1175,14 @@ CHECK_LIFE_AMOUNTS
                 IF.W D0 <LT> #1 THEN
                     CLR.B   game_over_status
                     CLR.B   player_1_action_colour
-                    JMP     GAME_OVER_LOOP
+                    MOVE.B  #1,game_over_menu_active
                 ENDI
             ENDI
         ELSE
             IF.W player_1_life_amount <LT> #1   THEN
                 CLR.B   game_over_status
                 CLR.B   player_1_action_colour
-                JMP     GAME_OVER_LOOP
+                MOVE.B  #1,game_over_menu_active
             ENDI
         ENDI
         RTS
@@ -2169,14 +2173,6 @@ DECREMENT_NOTES_TIMES
                 IF.B D0 <EQ> #1 THEN
                     ; load in new song or show victory screen with percentage hit
                     IF.B song_playing_type <EQ> #0  THEN
-                        MOVE.W  player_1_longest_streak,D7
-                        IF.W player_1_streak <HI> D7    THEN
-                            MOVE.W  player_1_streak,player_1_longest_streak
-                        ENDI
-                        MOVE.W  player_2_longest_streak,D7
-                        IF.W player_2_streak <HI> D7    THEN
-                            MOVE.W  player_2_streak,player_2_longest_streak
-                        ENDI
                         MOVE.B  #1,game_over_menu_active
                     ELSE
                         JSR     LOAD_IN_RANDOM_NEW_SONG
@@ -2220,15 +2216,24 @@ RENDER_SCREEN
         ELSE
             IF.B song_playing_type <EQ> #1  THEN
                 JSR     CHECK_LIFE_AMOUNTS
-            ELSE
-                IF.B game_over_menu_active <EQ> #1  THEN
-                    CLR.B   game_over_menu_active
-                    ; repaints screen
-                    MOVEQ   #94,D0
-                    TRAP    #15
-                    CLR.B   player_1_action_colour
-                    JSR     GAME_OVER_LOOP
+            ENDI
+            IF.B game_over_menu_active <EQ> #1  THEN
+                ; update streak counts
+                MOVE.W  player_1_longest_streak,D7
+                IF.W player_1_streak <HI> D7    THEN
+                    MOVE.W  player_1_streak,player_1_longest_streak
                 ENDI
+                MOVE.W  player_2_longest_streak,D7
+                IF.W player_2_streak <HI> D7    THEN
+                    MOVE.W  player_2_streak,player_2_longest_streak
+                ENDI
+
+                CLR.B   game_over_menu_active
+                ; repaints screen
+                MOVEQ   #94,D0
+                TRAP    #15
+                CLR.B   player_1_action_colour
+                JSR     GAME_OVER_LOOP
             ENDI
             JSR     REPAINT_SCREEN
         ENDI
