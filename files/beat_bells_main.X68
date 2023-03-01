@@ -17,9 +17,6 @@
 * location to be ROM.
 * 
 * TODO
-* make charge faster
-* make notes move speed slower
-* 
 * fix song select screen drawing
 * fix song select screen selecting
 * add in last song
@@ -809,7 +806,7 @@ GAME_START
         MOVEQ   #20,D0
         SUB.B   song_difficulty,D0
         LSR.B   #2,D0
-        ADD.B   #8,D0
+        ADD.B   #6,D0
         MOVE.W  D0,notes_speed
         MOVE.W  D0,previous_notes_speed
         CLR.W   notes_speed_indexer
@@ -1733,11 +1730,8 @@ HANDLE_CHARGE
                 LSR.B   #1,D0
                 SUB.B   D0,D2
                 MOVE.W  notes_speed,D0
-                LSR.W   #1,D0
                 ADD.B   D0,D2
                 ADD.B   D2,(A3)
-                ADD.B   D2,(A3)
-                ; here
                 IF.B (A3) <HI> #80  THEN
                     MOVE.B  #80,(A3)
                 ENDI
