@@ -125,7 +125,7 @@ NOTE_SET_UP
 
 LOAD_IN_SPRITES
         JSR     LOAD_IN_PLAYER_SPRITES
-        JSR     LOAD_IN_PUNCHING_SPRITES
+        ;JSR     LOAD_IN_PUNCHING_SPRITES
         JSR     LOAD_IN_FILLED_NOTES_SPRITES
         JSR     LOAD_IN_UNFILLED_NOTES_SPRITES
         RTS
@@ -138,8 +138,14 @@ LOAD_IN_PLAYER_SPRITES
         ; put in a
         MOVE.B  #97,15(A1)
 
-        FOR D5 = #0 TO #7   DO
+        FOR D5 = #0 TO #40   DO
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
+
+            MOVE.L  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,16(A1)
 
             MOVE.B  D5,D6
             ; modulus 8
@@ -157,67 +163,20 @@ LOAD_IN_PLAYER_SPRITES
         ; put in b
         MOVE.B  #98,15(A1)
 
-        FOR D5 = #0 TO #7   DO
+        FOR D5 = #0 TO #40   DO
             LEA     PLAYER_SPRITES_BASIC_PATH,A1
+
+            MOVE.L  D5,D6
+            ; divide by 8
+            LSR.B   #3,D6
+            ADD.B   #48,D6
+            MOVE.B  D6,16(A1)
 
             MOVE.B  D5,D6
             ; modulus 8
             AND.B   #7,D6
             ADD.B   #48,D6
             MOVE.B  D6,17(A1)
-
-            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            JSR     QOI_DECODE
-        ENDF
-        RTS
-
-
-LOAD_IN_PUNCHING_SPRITES
-        ; load punching 1
-        MOVE.L  next_free_slot_address,punching_1_start_sprite
-        LEA     PUNCHING_SPRITES_BASIC_PATH,A1
-        ; put in a
-        MOVE.B  #97,17(A1)
-
-        FOR D5 = #0 TO #39   DO
-            LEA     PUNCHING_SPRITES_BASIC_PATH,A1
-
-            MOVE.L  D5,D6
-            ; divide by 8
-            LSR.B   #3,D6
-            ADD.B   #48,D6
-            MOVE.B  D6,18(A1)
-
-            MOVE.B  D5,D6
-            ; modulus 8
-            AND.B   #7,D6
-            ADD.B   #48,D6
-            MOVE.B  D6,19(A1)
-
-            JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
-            JSR     QOI_DECODE
-        ENDF
-
-        ; load punching 2
-        MOVE.L  next_free_slot_address,punching_2_start_sprite
-        LEA     PUNCHING_SPRITES_BASIC_PATH,A1
-        ; put in b
-        MOVE.B  #98,17(A1)
-
-        FOR D5 = #0 TO #39   DO
-            LEA     PUNCHING_SPRITES_BASIC_PATH,A1
-
-            MOVE.B  D5,D6
-            ; divide by 8
-            LSR.B   #3,D6
-            ADD.B   #48,D6
-            MOVE.B  D6,18(A1)
-
-            MOVE.B  D5,D6
-            ; modulus 8
-            AND.B   #7,D6
-            ADD.B   #48,D6
-            MOVE.B  D6,19(A1)
 
             JSR     LOAD_IMAGE_INTO_SPRITES_LOADING
             JSR     QOI_DECODE
@@ -2234,21 +2193,21 @@ DRAW_PLAYERS
         MOVEQ   #93,D0
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
-
+        
+        MOVE.L  player_1_start_sprite,A0
         LEA     player_1_position,A1
         CLR.L   D0
         CLR.L   D1
         MOVE.W  #90,D7
         IF.B player_1_punching_index <EQ> #8    THEN
-            MOVE.L  player_1_start_sprite,A0
-            MOVE.B  player_1_action_colour,D0
             MOVE.B  sprite_gif_index,D1
             JSR     DRAW_SPRITE
         ELSE
-            MOVE.L  punching_1_start_sprite,A0
             IF.B player_1_punching_index <NE> #0    THEN
                 MOVE.B  player_1_action_colour,D0
                 MOVE.B  player_1_punching_index,D1
+            ELSE
+                MOVE.B  #5,D0
             ENDI
             ADD.W   #6,(A1)
             JSR     DRAW_SPRITE
@@ -2285,19 +2244,19 @@ DRAW_PLAYERS
             MOVEQ   #MULTIPLIER_SIZE,D1
             TRAP    #15
 
+            MOVE.L  player_2_start_sprite,A0
             LEA     player_2_position,A1
             CLR.L   D0
             CLR.L   D1
             IF.B player_2_punching_index <EQ> #8    THEN
-                MOVE.L  player_2_start_sprite,A0
-                MOVE.B  player_2_action_colour,D0
                 MOVE.B  sprite_gif_index,D1
                 JSR     DRAW_SPRITE
             ELSE
-                MOVE.L  punching_2_start_sprite,A0
                 IF.B player_2_punching_index <NE> #0    THEN
                     MOVE.B  player_2_action_colour,D0
                     MOVE.B  player_2_punching_index,D1
+                ELSE
+                    MOVE.B  #5,D0
                 ENDI
                 ADD.W   #6,(A1)
                 JSR     DRAW_SPRITE
@@ -4288,8 +4247,6 @@ sprite_gif_index            DC.B    0                   ; stores the index of th
 
 player_1_start_sprite           DS.L    1
 player_2_start_sprite           DS.L    1
-punching_1_start_sprite         DS.L    1
-punching_2_start_sprite         DS.L    1
 filled_notes_1_start_sprite     DS.L    1
 filled_notes_2_start_sprite     DS.L    1
 unfilled_notes_1_start_sprite   DS.L    1
