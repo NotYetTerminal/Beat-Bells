@@ -3792,6 +3792,28 @@ DRAW_PAUSE_MENU
 
 
 DRAW_CONTROL_BUTTONS
+        ; sets fill colour
+        MOVEQ   #81,D0
+        CLR.L   D1
+        TRAP    #15
+
+        ; sets the cursor position
+        MOVEQ   #11,D0
+        MOVE.L  #$7B01,D1
+        TRAP    #15
+
+        ; set font colour
+        MOVEQ   #21,D0
+        MOVE.L  #WHITE,D1
+        MOVE.L  #$06120000,D2
+        TRAP    #15
+
+        ; show text
+        MOVEQ   #14,D0
+        LEA     controls_text,A1
+        TRAP    #15
+
+
         ; sets pen width
         MOVEQ   #93,D0
         MOVEQ   #5,D1
@@ -3806,7 +3828,7 @@ DRAW_CONTROL_BUTTONS
 
         ; draw circle
         MOVEQ   #88,D0
-        MOVE.W  #1750,D1
+        MOVE.W  #1770,D1
         MOVE.W  #15,D2
         MOVE.W  D1,D3
         MOVE.W  D2,D4
@@ -3823,7 +3845,7 @@ DRAW_CONTROL_BUTTONS
 
         ; draw circle
         MOVEQ   #88,D0
-        MOVE.W  #1770,D1
+        MOVE.W  #1790,D1
         MOVE.W  #35,D2
         MOVE.W  D1,D3
         MOVE.W  D2,D4
@@ -3840,7 +3862,7 @@ DRAW_CONTROL_BUTTONS
 
         ; draw circle
         MOVEQ   #88,D0
-        MOVE.W  #1750,D1
+        MOVE.W  #1770,D1
         MOVE.W  #55,D2
         MOVE.W  D1,D3
         MOVE.W  D2,D4
@@ -3857,7 +3879,7 @@ DRAW_CONTROL_BUTTONS
 
         ; draw circle
         MOVEQ   #88,D0
-        MOVE.W  #1730,D1
+        MOVE.W  #1750,D1
         MOVE.W  #35,D2
         MOVE.W  D1,D3
         MOVE.W  D2,D4
@@ -4204,6 +4226,8 @@ game_over_menu_active           DC.B    0
 
 select_song_menu_text           DC.B    'Select Song',0,'Play Song',0,'Main Menu',0
 select_marker                   DC.B    '> ',0
+
+controls_text                   DC.B    'Controls:',0
 
 ; COLOURS
 ; the treble notes are going to be red, yellow and blue
