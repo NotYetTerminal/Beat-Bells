@@ -91,7 +91,6 @@ START
         MOVE.L  #$06120000,D2
         TRAP    #15
 
-        MOVE.B  #1,two_player
         CLR.B   player_1_action_colour
 
         JSR     LOAD_IN_MENU_SONG
@@ -624,7 +623,6 @@ SELECT_SONG_MENU_LOOP
             JMP     GAME_START
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
-                MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
                 JSR     REPAINT_SCREEN
                 JMP     MAIN_MENU_LOOP
@@ -1140,7 +1138,6 @@ GAME_OVER_LOOP
             JMP     GAME_START
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
-                MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
                 JSR     REPAINT_SCREEN
                 JSR     LOAD_IN_MENU_SONG
@@ -1576,7 +1573,6 @@ PAUSE_MENU_LOOP
             JMP     GAME_LOOP
         ELSE
             IF.B player_1_action_colour <EQ> #2 THEN
-                MOVE.B  #1,two_player
                 CLR.B   player_1_action_colour
                 JSR     REPAINT_SCREEN
                 JSR     LOAD_IN_MENU_SONG
@@ -3879,7 +3875,7 @@ DRAW_CONTROL_BUTTONS
         ADD.W   #10,D4
         TRAP    #15
 
-        IF.B two_player <EQ> #1 THEN
+        IF.B menu_screen_game_type <NE> #0  THEN
             ; draw circle
             MOVEQ   #88,D0
             MOVE.W  #1830,D1
