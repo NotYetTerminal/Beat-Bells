@@ -1,7 +1,7 @@
 *-----------------------------------------------------------
 * Title      :  Beat Bells
 * Written by :  Gabor Major
-* Date       :  01/03/2023
+* Date       :  02/03/2023
 * Description:  The one and only assembly file for the game
 *-----------------------------------------------------------
 
@@ -15,13 +15,6 @@
 * There may be a game breaking bug where some rogue for or while loop is changing
 * the actual code in memory, however this has been patched by setting that memory
 * location to be ROM.
-* 
-* TODO
-* change notes sprites and colours to match controller's
-* change player sprites and colours to match controller's
-* change menu sprites and colours to match controller's
-* 
-* fix controller mappings
 * 
 
 ; set constants
@@ -125,7 +118,6 @@ NOTE_SET_UP
 
 LOAD_IN_SPRITES
         JSR     LOAD_IN_PLAYER_SPRITES
-        ;JSR     LOAD_IN_PUNCHING_SPRITES
         JSR     LOAD_IN_FILLED_NOTES_SPRITES
         JSR     LOAD_IN_UNFILLED_NOTES_SPRITES
         RTS
