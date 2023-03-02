@@ -1326,9 +1326,9 @@ NOTE_HIT_DETECTION
                     ADD.L   D7,A2
                     ADD.L   D7,A3
                     IF.W D1 <EQ> #1 THEN
-                        MOVE.L  #BLUE,(A2)
-                        MOVE.L  #BLUE,(A3)+
-                        MOVE.L  #BLUE,(A3)
+                        MOVE.L  #ORANGE,(A2)
+                        MOVE.L  #ORANGE,(A3)+
+                        MOVE.L  #ORANGE,(A3)
                     ELSE
                         IF.W D1 <EQ> #2 THEN
                             MOVE.L  #RED,(A2)
@@ -1336,13 +1336,13 @@ NOTE_HIT_DETECTION
                             MOVE.L  #RED,(A3)
                         ELSE
                             IF.W D1 <EQ> #3 THEN
-                                MOVE.L  #YELLOW,(A2)
-                                MOVE.L  #YELLOW,(A3)+
-                                MOVE.L  #YELLOW,(A3)
+                                MOVE.L  #LIME,(A2)
+                                MOVE.L  #LIME,(A3)+
+                                MOVE.L  #LIME,(A3)
                             ELSE
-                                MOVE.L  #PURPLE2,(A2)
-                                MOVE.L  #PURPLE2,(A3)+
-                                MOVE.L  #PURPLE2,(A3)
+                                MOVE.L  #BLUE,(A2)
+                                MOVE.L  #BLUE,(A3)+
+                                MOVE.L  #BLUE,(A3)
                                 MOVE.B  7(A1),player_1_lane_number
                             ENDI
                         ENDI
@@ -1370,23 +1370,23 @@ NOTE_HIT_DETECTION
                         ADD.L   D7,A2
                         ADD.L   D7,A3
                         IF.W D1 <EQ> #1 THEN
-                            MOVE.L  #AQUA,(A2)
-                            MOVE.L  #AQUA,(A3)+
-                            MOVE.L  #AQUA,(A3)
+                            MOVE.L  #YELLOW,(A2)
+                            MOVE.L  #YELLOW,(A3)+
+                            MOVE.L  #YELLOW,(A3)
                         ELSE
                             IF.W D1 <EQ> #2 THEN
-                                MOVE.L  #ORANGE,(A2)
-                                MOVE.L  #ORANGE,(A3)+
-                                MOVE.L  #ORANGE,(A3)
+                                MOVE.L  #PURPLE,(A2)
+                                MOVE.L  #PURPLE,(A3)+
+                                MOVE.L  #PURPLE,(A3)
                             ELSE
                                 IF.W D1 <EQ> #3 THEN
-                                    MOVE.L  #LIME,(A2)
-                                    MOVE.L  #LIME,(A3)+
-                                    MOVE.L  #LIME,(A3)
+                                    MOVE.L  #AQUA,(A2)
+                                    MOVE.L  #AQUA,(A3)+
+                                    MOVE.L  #AQUA,(A3)
                                 ELSE
-                                    MOVE.L  #PURPLE2,(A2)
-                                    MOVE.L  #PURPLE2,(A3)+
-                                    MOVE.L  #PURPLE2,(A3)
+                                    MOVE.L  #BLUE,(A2)
+                                    MOVE.L  #BLUE,(A3)+
+                                    MOVE.L  #BLUE,(A3)
                                     MOVE.B  7(A1),player_2_lane_number
                                 ENDI
                             ENDI
@@ -2265,7 +2265,7 @@ DRAW_PLAYERS
 
             ; set pen colour
             MOVEQ   #80,D0
-            MOVE.L  #LIME,D1
+            MOVE.L  #AQUA,D1
             TRAP    #15
             MOVEQ   #81,D0
             TRAP    #15
@@ -2764,7 +2764,7 @@ DRAW_NOTES_HIT_TEXT
         IF.B two_player <EQ> #1 THEN
             ; set font colour
             MOVEQ   #21,D0
-            MOVE.L  #LIME,D1
+            MOVE.L  #AQUA,D1
             MOVE.L  #$06120002,D2
             TRAP    #15
 
@@ -2838,9 +2838,9 @@ DRAW_LIFE_BARS
                 ENDI
                 TRAP    #15
 
-                ; sets pen and fill colour to lime
+                ; sets pen and fill colour to aqua
                 MOVEQ   #80,D0
-                MOVE.L  #LIME,D1
+                MOVE.L  #AQUA,D1
                 TRAP    #15
                 MOVE.W  #81,D0
                 TRAP    #15
@@ -2875,7 +2875,7 @@ DRAW_LIFE_BARS
                 FOR.B D5 = #0 TO D6 DO
                     BTST    #0,D5
                     IF  <NE>    THEN
-                        MOVE.L  #LIME,D1
+                        MOVE.L  #AQUA,D1
                     ELSE
                         MOVE.L  #RED,D1
                     ENDI
@@ -2897,7 +2897,7 @@ DRAW_LIFE_BARS
                     IF  <NE>    THEN
                         MOVE.L  #RED,D1
                     ELSE
-                        MOVE.L  #LIME,D1
+                        MOVE.L  #AQUA,D1
                     ENDI
                     ; sets pen and fill colour
                     MOVEQ   #80,D0
@@ -2977,7 +2977,7 @@ DRAW_STREAKS
         IF.B two_player <EQ> #1 THEN
             ; set font colour
             MOVEQ   #21,D0
-            MOVE.L  #LIME,D1
+            MOVE.L  #AQUA,D1
             MOVE.L  #$06120002,D2
             TRAP    #15
 
@@ -3005,24 +3005,24 @@ CHECK_INDEX_AGAIN
             MOVE.L  #WHITE,D1
         ELSE
             IF.B D2 <EQ> #1 THEN
-                MOVE.L  #BLUE,D1
+                MOVE.L  #ORANGE,D1
             ELSE
                 IF.B D2 <EQ> #2 THEN
                     MOVE.L  #RED,D1
                 ELSE
                     IF.B D2 <EQ> #3 THEN
-                        MOVE.L  #YELLOW,D1
+                        MOVE.L  #LIME,D1
                     ELSE
                         IF.B D2 <EQ> #4 THEN
-                            MOVE.L  #PURPLE2,D1
+                            MOVE.L  #BLUE,D1
                         ELSE
                             IF.B D2 <EQ> #5 THEN
-                                MOVE.L  #AQUA,D1
+                                MOVE.L  #YELLOW,D1
                             ELSE
                                 IF.B D2 <EQ> #6 THEN
-                                    MOVE.L  #ORANGE,D1
+                                    MOVE.L  #PURPLE,D1
                                 ELSE
-                                    MOVE.L  #LIME,D1
+                                    MOVE.L  #AQUA,D1
                                 ENDI
                             ENDI
                         ENDI
@@ -3055,7 +3055,7 @@ CHANGE_COLOUR
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        ; draw aqua bell
+        ; draw yellow bell
         MOVE.L  filled_notes_2_start_sprite,A0
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$02700078,(A1)
@@ -3065,7 +3065,7 @@ CHANGE_COLOUR
         MOVE.W  #66,D7
         JSR     DRAW_SPRITE
         
-        ; draw orange bell
+        ; draw purple bell
         MOVE.L  filled_notes_2_start_sprite,A0
         ADD.L   #$2600000,(A1)
         MOVEQ   #2,D0
@@ -3238,7 +3238,7 @@ CHANGE_COLOUR
         MOVEQ   #21,D0
         MOVE.L  #$06180000,D2
         IF.B menu_screen_game_type <NE> #0  THEN
-            MOVE.L  #LIME,D1
+            MOVE.L  #AQUA,D1
         ELSE
             MOVE.L  #DARKGREY,D1
         ENDI
@@ -3256,7 +3256,7 @@ CHANGE_COLOUR
         MOVEQ   #21,D0
         MOVE.L  #$06180000,D2
         IF.B menu_screen_game_type <EQ> #1  THEN
-            MOVE.L  #ORANGE,D1
+            MOVE.L  #YELLOW,D1
         ELSE
             MOVE.L  #DARKGREY,D1
         ENDI
@@ -3270,7 +3270,7 @@ CHANGE_COLOUR
         MOVEQ   #21,D0
         MOVE.L  #$06180000,D2
         IF.B menu_screen_game_type <EQ> #2  THEN
-            MOVE.L  #AQUA,D1
+            MOVE.L  #PURPLE,D1
         ELSE
             MOVE.L  #DARKGREY,D1
         ENDI
@@ -3319,7 +3319,7 @@ CHANGE_COLOUR
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        ; draw purple2 bell
+        ; draw purple bell
         MOVE.L  filled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$030001C0,(A1)
@@ -3328,7 +3328,7 @@ CHANGE_COLOUR
         MOVE.B  sprite_gif_index,D1
         JSR     DRAW_SPRITE
 
-        ; draw blue bell
+        ; draw orange bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #1,D0
@@ -3344,7 +3344,7 @@ CHANGE_COLOUR
         MOVE.B  sprite_gif_index,D1
         JSR     DRAW_SPRITE
 
-        ; draw yellow bell
+        ; draw lime bell
         MOVE.L  filled_notes_1_start_sprite,A0
         ADD.L   #$90,(A1)
         MOVEQ   #3,D0
@@ -3441,7 +3441,7 @@ DRAW_SELECT_SONG_MENU
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        ; draw blue bell
+        ; draw orange bell
         MOVE.L  filled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$02800370,(A1)
@@ -3681,7 +3681,7 @@ DRAW_GAME_OVER
             TRAP    #15
             ; set font colour
             MOVEQ   #21,D0
-            MOVE.L  #LIME,D1
+            MOVE.L  #AQUA,D1
             MOVE.L  #$06180002,D2
             TRAP    #15
             ; show x
@@ -3699,7 +3699,7 @@ DRAW_GAME_OVER
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        ; draw blue bell
+        ; draw orange bell
         MOVE.L  filled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$02800200,(A1)
@@ -3768,7 +3768,7 @@ DRAW_PAUSE_MENU
         MOVEQ   #MULTIPLIER_SIZE,D1
         TRAP    #15
 
-        ; draw blue bell
+        ; draw orange bell
         MOVE.L  filled_notes_1_start_sprite,A0
         LEA     main_menu_bell_positions,A1
         MOVE.L  #$03400200,(A1)
@@ -3821,7 +3821,7 @@ DRAW_CONTROL_BUTTONS
 
         ; sets pen colour
         MOVEQ   #80,D0
-        MOVE.L  #BLUE,D1
+        MOVE.L  #ORANGE,D1
         TRAP    #15
         MOVEQ   #81,D0
         TRAP    #15
@@ -3855,7 +3855,7 @@ DRAW_CONTROL_BUTTONS
 
         ; sets pen colour
         MOVEQ   #80,D0
-        MOVE.L  #YELLOW,D1
+        MOVE.L  #LIME,D1
         TRAP    #15
         MOVEQ   #81,D0
         TRAP    #15
@@ -3872,7 +3872,7 @@ DRAW_CONTROL_BUTTONS
 
         ; sets pen colour
         MOVEQ   #80,D0
-        MOVE.L  #PURPLE2,D1
+        MOVE.L  #BLUE,D1
         TRAP    #15
         MOVEQ   #81,D0
         TRAP    #15
@@ -3900,7 +3900,7 @@ DRAW_CONTROL_BUTTONS
 
             ; sets pen colour
             MOVEQ   #80,D0
-            MOVE.L  #AQUA,D1
+            MOVE.L  #YELLOW,D1
             TRAP    #15
             MOVEQ   #81,D0
             TRAP    #15
@@ -3917,7 +3917,7 @@ DRAW_CONTROL_BUTTONS
 
             ; sets pen colour
             MOVEQ   #80,D0
-            MOVE.L  #ORANGE,D1
+            MOVE.L  #PURPLE,D1
             TRAP    #15
             MOVEQ   #81,D0
             TRAP    #15
@@ -3934,7 +3934,7 @@ DRAW_CONTROL_BUTTONS
 
             ; sets pen colour
             MOVEQ   #80,D0
-            MOVE.L  #LIME,D1
+            MOVE.L  #AQUA,D1
             TRAP    #15
             MOVEQ   #81,D0
             TRAP    #15
@@ -4230,16 +4230,16 @@ select_marker                   DC.B    '> ',0
 controls_text                   DC.B    'Controls:',0
 
 ; COLOURS
-; the treble notes are going to be red, yellow and blue
-; the bass notes are going to be aqua, lime, and orange
-; teleport is going to be purple2
-BLUE            EQU     $00FF0000       ; Treble A, D
+; the treble notes are orange, red and lime
+; the bass notes are yellow, purple, and aqua
+; teleport is blue
+ORANGE          EQU     $000080FF       ; Treble A, D
 RED             EQU     $000000FF       ; Treble B, E
-YELLOW          EQU     $0000FFFF       ; Treble C, F
-AQUA            EQU     $00FFFF00       ; Bass A, D
-ORANGE          EQU     $000080FF       ; Bass B, E
-LIME            EQU     $0000FF00       ; Bass C, F
-PURPLE2         EQU     $00FF0080       ; Teleport
+LIME            EQU     $0000FF00       ; Treble C, F
+YELLOW          EQU     $0000FFFF       ; Bass A, D
+PURPLE          EQU     $00FF0080       ; Bass B, E
+AQUA            EQU     $00FFFF00       ; Bass C, F
+BLUE            EQU     $00FF0000       ; Teleport
 WHITE           EQU     $00FFFFFF
 DARKGREY        EQU     $00444444
 
