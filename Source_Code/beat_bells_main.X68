@@ -32,7 +32,7 @@ BEAT_LINE_X             EQU     200
 NOTE_SIZE               EQU     80
 
 NOTE_OBJECT_SIZE        EQU     48
-LANE_ADDRESSES_SIZE     EQU     55
+LANE_ADDRESSES_SIZE     EQU     71
 
 LIFE_BAR_X              EQU     700
 
