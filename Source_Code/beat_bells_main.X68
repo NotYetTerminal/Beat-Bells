@@ -40,7 +40,7 @@ NUMBER_OF_SONGS         EQU     15
 VARIABLES_START         EQU     $4200
 
     MEMORY  ROM     $1000,VARIABLES_START-1
-    ORG    $1000
+    ORG     $1000
 
 ; program start
 START
@@ -992,7 +992,6 @@ FRAME_DELAY
             MOVEQ   #1,D1
             TRAP    #15
         ENDI
-        ;BLO     FRAME_DELAY
         ; save time
         MOVE.W  #8,D0
         TRAP    #15
@@ -1887,7 +1886,6 @@ CREATE_NOTE_OBJECT
                 RTS
             ENDI
         ENDF
-        ILLEGAL
         RTS
 
 
@@ -2109,6 +2107,7 @@ DECREMENT_NOTES_TIMES
                 IF.B D0 <EQ> #1 THEN
                     ; load in new song or show victory screen with percentage hit
                     IF.B song_playing_type <EQ> #0  THEN
+                        CLR.B   game_over_status
                         MOVE.B  #1,game_over_menu_active
                     ELSE
                         JSR     LOAD_IN_RANDOM_NEW_SONG
@@ -4091,7 +4090,7 @@ note_objects            DS.W    NOTE_OBJECT_SIZE*LANE_ADDRESSES_SIZE*2    ; stor
 ;   W   x position
 ;   W   y position
 ;   B   stores the player number 0 or 1, treble or bass
-;   B   unused
+;   B   used by blue note for storing teleporting index
 ;   L*10   music notes data, same as in the file
 
 treble_note_path_index  DC.B    2       ; stores the lane index of the note path
@@ -4238,7 +4237,6 @@ SPRITES_PIXEL_LENGTH        EQU     $400        ; size of sprites is 16x16x4
 MULTIPLIER_SIZE             EQU     8           ; the size to multiply the sprites by
 
 PLAYER_SPRITES_BASIC_PATH   DC.B    'player_sprites/a0a.qoi',0
-PUNCHING_SPRITES_BASIC_PATH DC.B    'punching_sprites/aaa.qoi',0
 FILLED_NOTES_BASIC_PATH     DC.B    'filled_notes_sprites/aaa.qoi',0
 UNFILLED_NOTES_BASIC_PATH   DC.B    'unfilled_notes_sprites/aaa.qoi',0
 EMPTY_SEEN_PIXELS_FILE      DC.B    'files/empty_seen_pixels.bin',0
